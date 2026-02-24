@@ -40,7 +40,11 @@ plugins:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Tutorials: tutorials.md
   - Core Concepts: core-concepts.md
   - Flow Reference: flow-reference.md
   - Patterns: patterns.md
+  - Infrastructure: infrastructure.md
+  - CLI Reference: cli-reference.md
+  - API Reference: api-reference.md
   - Testing: testing.md

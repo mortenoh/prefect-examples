@@ -193,6 +193,84 @@ create_table_artifact(key="data", table=[{"col": "value"}])
 
 Without a Prefect server, artifact functions silently no-op.
 
+**See:** [029 Markdown Artifacts](flow-reference.md#029-markdown-artifacts),
+[030 Table and Link Artifacts](flow-reference.md#030-table-and-link-artifacts)
+
+## Tags
+
+**Tags** label flows and tasks for filtering, searching, and grouping in the
+Prefect UI. Apply them at definition time or dynamically at runtime:
+
+```python
+from prefect import flow, task, tags
+
+@task(tags=["etl", "extract"])
+def extract_data() -> dict:
+    ...
+
+@flow(name="my_flow", tags=["examples"])
+def my_flow() -> None:
+    extract_data()
+
+    # Dynamic tags applied at runtime
+    with tags("ad-hoc", "debug"):
+        debug_task()
+```
+
+Tags are additive -- tasks inherit tags from their parent flow, plus any set
+via the `tags()` context manager.
+
+**See:** [026 Tags](flow-reference.md#026-tags)
+
+## Events
+
+**Events** are custom signals emitted from flows and tasks. Use them to
+trigger automations or track domain-specific occurrences:
+
+```python
+from prefect.events import emit_event
+
+emit_event(
+    event="data.quality.check",
+    resource={"prefect.resource.id": "quality-monitor"},
+    payload={"score": 0.95, "status": "green"},
+)
+```
+
+Events are sent to the Prefect event system and can trigger automations
+configured in the UI. Without a server, `emit_event()` silently no-ops.
+
+**See:** [014 Events](flow-reference.md#014-events)
+
+## Custom Run Names
+
+Customise flow run and task run names for easier identification in the UI and
+logs. Names support template strings and callable generators:
+
+```python
+@task(task_run_name="fetch-{source}-page-{page}")
+def fetch_page(source: str, page: int) -> dict:
+    ...
+
+@flow(flow_run_name="report-{env}-{date_str}")
+def report_flow(env: str, date_str: str) -> None:
+    ...
+```
+
+For dynamic names, pass a callable:
+
+```python
+def generate_name():
+    return f"run-{datetime.now():%Y%m%d-%H%M}"
+
+@flow(flow_run_name=generate_name)
+def my_flow() -> None:
+    ...
+```
+
+**See:** [023 Task Run Names](flow-reference.md#023-task-run-names),
+[027 Flow Run Names](flow-reference.md#027-flow-run-names)
+
 ## Blocks
 
 **Blocks** are typed, reusable configuration objects. Built-in blocks include

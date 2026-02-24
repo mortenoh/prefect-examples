@@ -8,7 +8,7 @@
 ## Installation
 
 ```bash
-git clone https://github.com/morteoh/prefect-examples.git
+git clone https://github.com/mortenoh/prefect-examples.git
 cd prefect-examples
 make sync
 ```
@@ -44,7 +44,7 @@ uv run python flows/010_dynamic_tasks.py
 make test
 ```
 
-This runs the full pytest suite. All 20 flows have corresponding tests in
+This runs the full pytest suite. All 110+ flows have corresponding tests in
 `tests/`.
 
 ## Serve the documentation
@@ -55,18 +55,41 @@ make docs
 
 Opens a local MkDocs server at `http://127.0.0.1:8000`.
 
+## Run the Docker stack
+
+For a full Prefect environment with a server, worker, and database:
+
+```bash
+make start
+```
+
+This runs `docker compose up --build` and starts PostgreSQL, Prefect Server
+(UI at `http://localhost:4200`), a Prefect Worker, and RustFS for object
+storage. Once running, deploy the example flows:
+
+```bash
+make deploy
+```
+
+See [Infrastructure](infrastructure.md) for full details on the Docker stack.
+
 ## Project layout
 
 ```
 prefect-examples/
-    flows/              # All 20 example flows (001-020)
+    flows/              # All 110+ example flows (001-110)
+    deployments/        # Production deployment examples
+        dhis2_connection/   # Connection check deployment
+        dhis2_ou/           # Org unit listing deployment
     src/
         prefect_examples/
             config.py   # Shared configuration defaults
+            dhis2.py    # DHIS2 credentials block and API client
             tasks.py    # Reusable task library
     tests/              # pytest test suite
     docs/               # MkDocs documentation source
-    Makefile            # Common commands (sync, test, lint, docs)
+    compose.yml         # Docker Compose stack (Postgres, Server, Worker, RustFS)
+    Makefile            # Common commands (sync, test, lint, docs, start, deploy)
     pyproject.toml      # Project metadata and tool config
     mkdocs.yml          # MkDocs configuration
 ```

@@ -2495,16 +2495,18 @@ fan-in summary across heterogeneous outputs.
 **Airflow equivalent:** DHIS2 combined parallel export (DAG 062).
 
 ```python
-future_ou = export_org_units.submit(conn, password, output_dir)
-future_de = export_data_elements.submit(conn, password, output_dir)
-future_ind = export_indicators.submit(conn, password, output_dir)
+client = get_dhis2_credentials().get_client()
+future_ou = export_org_units.submit(client, output_dir)
+future_de = export_data_elements.submit(client, output_dir)
+future_ind = export_indicators.submit(client, output_dir)
 
 report = combined_report([future_ou.result(), future_de.result(),
                           future_ind.result()])
 ```
 
-Three endpoints are exported in parallel via `.submit()`. The combined report
-tracks total records and format distribution (CSV vs JSON).
+A shared `Dhis2Client` is created once from the credentials block, then passed
+to three parallel `.submit()` calls. The combined report tracks total records
+and format distribution (CSV vs JSON).
 
 ---
 
@@ -2540,12 +2542,15 @@ checks, timing, and markdown dashboard.
 ```python
 @flow(name="108_dhis2_pipeline", log_prints=True)
 def dhis2_pipeline_flow() -> Dhis2PipelineResult:
-    connect_and_verify(conn, password)
-    metadata = fetch_all_metadata(conn, password)
+    creds = get_dhis2_credentials()
+    client = creds.get_client()
+    connect_and_verify(client, creds.base_url)
+    metadata = fetch_all_metadata(client)
     quality = validate_metadata(metadata)
     build_dashboard(result)
 ```
 
+The credentials block provides a `Dhis2Client` used throughout the pipeline.
 A three-stage pipeline (connect, fetch, validate) with per-stage timing,
 quality scoring, and a markdown dashboard artifact. This is the DHIS2 capstone.
 

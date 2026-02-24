@@ -154,3 +154,97 @@ Key takeaways:
 2. **`return_state=True`** for integration-testing the full flow.
 3. **`importlib`** to handle digit-prefixed filenames.
 4. **`conftest.py`** fixture to reduce import boilerplate.
+
+## Testing with `Dhis2Client` mocks
+
+DHIS2 flows depend on an external API. Mock at the `Dhis2Client` method level
+using `MagicMock(spec=Dhis2Client)` to avoid hitting real endpoints while
+keeping Prefect's internal httpx usage untouched.
+
+### Mocking individual tasks
+
+Use `@patch.object` on the client method and pass a `MagicMock(spec=Dhis2Client)`
+to the task's `.fn()`:
+
+```python
+from unittest.mock import MagicMock, patch
+from prefect_examples.dhis2 import Dhis2Client
+
+@patch.object(Dhis2Client, "fetch_metadata")
+def test_export_org_units(mock_fetch, tmp_path):
+    mock_fetch.return_value = [{"id": "OU1", "name": "District A", "level": 1}]
+    client = MagicMock(spec=Dhis2Client)
+    client.fetch_metadata = mock_fetch
+
+    result = export_org_units.fn(client, str(tmp_path))
+    assert result.endpoint == "organisationUnits"
+    assert result.record_count == 1
+```
+
+The `spec=Dhis2Client` parameter ensures the mock only allows methods that
+exist on the real client, catching typos early.
+
+### Mocking for full flow integration tests
+
+Patch `Dhis2Credentials.get_client` to return a mock client. This lets the
+flow run end-to-end without any real HTTP calls:
+
+```python
+from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials
+
+@patch.object(Dhis2Credentials, "get_client")
+def test_flow_runs(mock_get_client, tmp_path):
+    mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.fetch_metadata.return_value = [{"id": "OU1", "name": "A"}]
+    mock_get_client.return_value = mock_client
+
+    state = my_dhis2_flow(return_state=True)
+    assert state.is_completed()
+```
+
+### Multi-endpoint dispatch with `side_effect`
+
+When a flow calls `fetch_metadata` with different endpoints, use
+`side_effect` to return different data based on the argument:
+
+```python
+def _mock_client_with_side_effect():
+    mock_client = MagicMock(spec=Dhis2Client)
+
+    def _fetch(endpoint, **kwargs):
+        if "organisationUnits" in endpoint:
+            return [{"id": "OU1", "name": "A", "level": 1}]
+        elif "dataElements" in endpoint:
+            return [{"id": "DE1", "name": "B", "valueType": "NUMBER"}]
+        return []
+
+    mock_client.fetch_metadata.side_effect = _fetch
+    return mock_client
+```
+
+This pattern is used in `test_106_dhis2_combined_export.py` where three
+endpoints are fetched in parallel.
+
+## Testing deployment flows
+
+Deployment flows (in `deployments/`) follow the same patterns as regular flows.
+The test imports the flow module from the deployment directory and patches the
+credentials block:
+
+```python
+from unittest.mock import MagicMock, patch
+from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials
+
+@patch.object(Dhis2Credentials, "get_client")
+def test_deployment_flow(mock_get_client):
+    mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.get_server_info.return_value = {"version": "2.41"}
+    mock_client.fetch_metadata.return_value = [{"id": "OU1"}]
+    mock_get_client.return_value = mock_client
+
+    state = dhis2_ou_flow(return_state=True)
+    assert state.is_completed()
+```
+
+Deployment tests live alongside the regular test files:
+`tests/test_deploy_dhis2_connection.py` and `tests/test_deploy_dhis2_ou.py`.
