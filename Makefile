@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help sync lint fmt test clean run server docs docs-build
+.PHONY: help sync lint fmt test clean run server start docs docs-build
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -29,6 +29,9 @@ run: ## Run flow 001
 
 server: ## Start Prefect UI server (http://127.0.0.1:4200)
 	PREFECT_SERVER_ANALYTICS_ENABLED=false PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT=false uv run prefect server start
+
+start: ## Start Prefect stack (PostgreSQL + Server + Worker + RustFS)
+	docker compose up
 
 docs: ## Serve docs locally
 	uv run mkdocs serve

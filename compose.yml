@@ -1,0 +1,64 @@
+x-prefect-env: &prefect-env
+  PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:prefect@postgres:5432/prefect
+  PREFECT_SERVER_ANALYTICS_ENABLED: "false"
+  PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT: "false"
+  PYTHONPATH: /opt/prefect/src
+
+x-prefect-volumes: &prefect-volumes
+  - ./flows:/opt/prefect/flows
+  - ./src:/opt/prefect/src
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: prefect
+      POSTGRES_PASSWORD: prefect
+      POSTGRES_DB: prefect
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "prefect"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    init: true
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      RUSTFS_ACCESS_KEY: prefect
+      RUSTFS_SECRET_KEY: prefect123
+
+  prefect-server:
+    image: prefecthq/prefect:3-python3.13
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *prefect-env
+    ports:
+      - "4200:4200"
+    volumes: *prefect-volumes
+    command: prefect server start --host 0.0.0.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:4200/api/health').raise_for_status()"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  prefect-worker:
+    image: prefecthq/prefect:3-python3.13
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    environment:
+      <<: *prefect-env
+      PREFECT_API_URL: http://prefect-server:4200/api
+    volumes: *prefect-volumes
+    command: prefect worker start -p default
+    restart: unless-stopped

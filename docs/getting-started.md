@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- **Python 3.12+**
+- **Python 3.13+**
 - **[uv](https://docs.astral.sh/uv/)** -- fast Python package manager
 
 ## Installation
