@@ -34,7 +34,7 @@ start: ## Start Prefect stack (PostgreSQL + Server + Worker + RustFS)
 	docker compose up --build
 
 docker-build: ## Clean rebuild of the entire Docker stack
-	docker compose down -v && docker compose build --no-cache && docker compose up --remove-orphans
+	docker compose down -v && docker compose build --no-cache
 
 deploy: ## Register flow deployments with Prefect server
 	PREFECT_API_URL=http://localhost:4200/api uv run python deployments/dhis2_connection/deploy.py
