@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 40 example flows, organised by category.
+Detailed walkthrough of all 60 example flows, organised by category.
 
 ---
 
@@ -950,3 +950,429 @@ def production_pipeline() -> None:
 This is the capstone flow for Phase 2, combining task caching (`INPUTS` policy),
 retries, markdown artifacts, tags, result persistence, and structured logging
 into a production-ready pipeline.
+
+---
+
+## Pydantic and Data Patterns (041--044)
+
+### 041 -- Pydantic Models
+
+**What it demonstrates:** Using Pydantic `BaseModel` as task parameters and return types for automatic validation and type safety.
+
+**Airflow equivalent:** XCom push/pull with complex types (JSON/pickle serialisation).
+
+```python
+from pydantic import BaseModel
+
+class UserRecord(BaseModel):
+    name: str
+    email: str
+    age: int
+
+@task
+def extract_users(config: PipelineConfig) -> list[UserRecord]:
+    raw = [{"name": "Alice", "email": "alice@example.com", "age": 30}]
+    return [UserRecord(**r) for r in raw[:config.batch_size]]
+```
+
+Pydantic models flow naturally between tasks -- no XCom serialisation pain. Validation happens automatically on construction.
+
+---
+
+### 042 -- Shell Tasks
+
+**What it demonstrates:** Running shell commands and scripts from Prefect tasks using `subprocess`.
+
+**Airflow equivalent:** BashOperator.
+
+```python
+@task
+def run_command(cmd: str) -> str:
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
+    return result.stdout.strip()
+```
+
+Prefect has no BashOperator. `subprocess.run()` inside a `@task` is the direct equivalent.
+
+---
+
+### 043 -- HTTP Tasks
+
+**What it demonstrates:** Making HTTP requests from tasks using `httpx`.
+
+**Airflow equivalent:** HttpOperator, HttpSensor.
+
+```python
+@task
+def http_get(url: str) -> dict:
+    response = httpx.get(url, timeout=10.0)
+    response.raise_for_status()
+    return response.json()
+```
+
+No special operator needed. `httpx` (a Prefect transitive dependency) in a `@task` replaces HttpOperator entirely.
+
+---
+
+### 044 -- Task Factories
+
+**What it demonstrates:** Creating reusable tasks dynamically with factory functions.
+
+**Airflow equivalent:** Custom operators, `@task.bash` decorator variants.
+
+```python
+def make_extractor(source: str):
+    @task(name=f"extract_{source}")
+    def extract() -> dict:
+        return {"source": source, "records": [...]}
+    return extract
+
+extract_api = make_extractor("api")
+extract_database = make_extractor("database")
+```
+
+Factory functions generate `@task`-decorated callables for consistent behaviour across different data sources.
+
+---
+
+## Advanced Mapping and Error Handling (045--048)
+
+### 045 -- Advanced Map Patterns
+
+**What it demonstrates:** Multi-argument `.map()`, chained maps, and result collection.
+
+**Airflow equivalent:** `expand_kwargs()`, `partial().expand()`.
+
+```python
+station_futures = process_station.map(
+    [s["station_id"] for s in stations],
+    [s["lat"] for s in stations],
+    [s["lon"] for s in stations],
+)
+station_results = [f.result() for f in station_futures]
+```
+
+Unpack list-of-dicts into parallel `.map()` calls by passing separate lists for each parameter.
+
+---
+
+### 046 -- Error Handling ETL
+
+**What it demonstrates:** The quarantine pattern -- good rows pass through, bad rows are captured with error reasons.
+
+**Airflow equivalent:** Error handling with quarantine pattern.
+
+```python
+class QuarantineResult(BaseModel):
+    good_records: list[dict]
+    bad_records: list[dict]
+    errors: list[str]
+
+@task
+def process_with_quarantine(records: list[dict]) -> QuarantineResult:
+    good, bad, errors = [], [], []
+    for record in records:
+        try:
+            validate(record)
+            good.append(record)
+        except ValueError as e:
+            bad.append(record)
+            errors.append(str(e))
+    return QuarantineResult(good_records=good, bad_records=bad, errors=errors)
+```
+
+Pydantic models make quarantine results structured and type-safe.
+
+---
+
+### 047 -- Pydantic Validation
+
+**What it demonstrates:** Using Pydantic `field_validator` for data quality enforcement.
+
+**Airflow equivalent:** Schema validation pipeline.
+
+```python
+class WeatherReading(BaseModel):
+    station_id: str
+    temperature: float
+    humidity: float
+
+    @field_validator("temperature")
+    @classmethod
+    def temperature_in_range(cls, v: float) -> float:
+        if v < -100 or v > 60:
+            raise ValueError(f"Temperature {v} out of range")
+        return v
+```
+
+`field_validator` replaces manual schema checking code. Invalid data raises a `ValidationError` automatically.
+
+---
+
+### 048 -- SLA Monitoring
+
+**What it demonstrates:** Tracking task durations and comparing against SLA thresholds.
+
+**Airflow equivalent:** SLA miss detection, `execution_timeout`.
+
+```python
+@task
+def sla_report(results: list[dict], thresholds: dict | None = None) -> str:
+    for result in results:
+        duration = result["duration"]
+        limit = thresholds.get(result["task"], 1.0)
+        status = "OK" if duration <= limit else "BREACH"
+```
+
+Use `time.monotonic()` for accurate timing and compare against configurable thresholds.
+
+---
+
+## Notifications and Observability (049--052)
+
+### 049 -- Webhook Notifications
+
+**What it demonstrates:** Sending webhook notifications on pipeline events.
+
+**Airflow equivalent:** Webhook alerts on pipeline events.
+
+```python
+@flow(
+    name="049_webhook_notifications",
+    on_completion=[on_flow_completion],
+    on_failure=[on_flow_failure],
+)
+def webhook_notifications_flow() -> None:
+    send_notification("pipeline.started", {"source": "demo"})
+    result = process_data()
+    send_notification("pipeline.completed", result)
+```
+
+Flow hooks (`on_completion`, `on_failure`) trigger automatically. In production, `send_notification` would POST to Slack, PagerDuty, etc.
+
+---
+
+### 050 -- Failure Escalation
+
+**What it demonstrates:** Progressive retry with escalation hooks at each failure.
+
+**Airflow equivalent:** Progressive retry with escalating callbacks.
+
+```python
+@task(retries=3, retry_delay_seconds=0, on_failure=[on_task_failure])
+def flaky_task(fail_count: int = 2) -> str:
+    ...
+```
+
+The `on_failure` hook fires on each retry failure, allowing escalation logging. After all retries exhaust, the flow-level `on_completion` hook reports the final outcome.
+
+---
+
+### 051 -- Testable Flow Patterns
+
+**What it demonstrates:** Separating business logic from Prefect wiring for maximum testability.
+
+**Airflow equivalent:** Thin DAG wiring with logic in external modules.
+
+```python
+# Pure function (no Prefect imports)
+def _validate_record(record: dict) -> dict:
+    if not record.get("name"):
+        raise ValueError("missing name")
+    return {**record, "valid": True}
+
+# Thin task wrapper
+@task
+def validate(record: dict) -> dict:
+    return _validate_record(record)
+```
+
+Test pure functions directly (fast, no Prefect overhead) and task wrappers via `.fn()`.
+
+---
+
+### 052 -- Reusable Utilities
+
+**What it demonstrates:** Custom task utility decorators for consistent behaviour.
+
+**Airflow equivalent:** Custom hooks and sensors.
+
+```python
+def timed_task(fn):
+    @task(name=fn.__name__)
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        start = time.monotonic()
+        result = fn(*args, **kwargs)
+        result["_duration"] = round(time.monotonic() - start, 4)
+        return result
+    return wrapper
+
+@timed_task
+def compute_metric(name: str, value: float) -> dict:
+    return {"name": name, "value": value * 1.1, "unit": "ops/sec"}
+```
+
+Build a task utility library for timing, validation, and other cross-cutting concerns.
+
+---
+
+## Composition and Scheduling (053--056)
+
+### 053 -- Advanced State Handling
+
+**What it demonstrates:** Using `allow_failure` and state inspection for mixed-outcome workflows.
+
+**Airflow equivalent:** Trigger rules (`all_success`, `all_done`, etc.).
+
+```python
+from prefect import allow_failure
+
+fail_future = fail_task.submit()
+skip_task(wait_for=[allow_failure(fail_future)])
+```
+
+`allow_failure` lets downstream tasks run even when upstream tasks fail. Combine with state inspection for conditional logic.
+
+---
+
+### 054 -- Nested Subflows
+
+**What it demonstrates:** Organising complex pipelines with hierarchical subflow groups.
+
+**Airflow equivalent:** TaskGroups and nested groups.
+
+```python
+@flow(name="054_nested_subflows", log_prints=True)
+def nested_subflows_flow() -> None:
+    raw = extract_group()       # subflow with multiple tasks
+    transformed = transform_group(raw)  # subflow with clean + enrich
+    load_group(transformed)     # subflow with write + verify
+```
+
+Each subflow appears as a nested flow run in the Prefect UI with independent state tracking -- the equivalent of Airflow TaskGroups.
+
+---
+
+### 055 -- Backfill Patterns
+
+**What it demonstrates:** Parameterised pipelines for date-range processing with gap detection.
+
+**Airflow equivalent:** Backfill awareness, parameterised pipelines.
+
+```python
+@flow(name="055_backfill_patterns", log_prints=True)
+def backfill_patterns_flow(start_date: str = "2024-01-01", end_date: str = "2024-01-05"):
+    initial_results = process_date.map(initial_dates)
+    gaps = detect_gaps(initial_dates, start_date, end_date)
+    backfill_results = process_date.map(gaps)
+```
+
+Flow parameters replace Airflow's `logical_date`. Gap detection identifies missing dates for incremental backfill.
+
+---
+
+### 056 -- Runtime Context
+
+**What it demonstrates:** Accessing flow and task run metadata at runtime.
+
+**Airflow equivalent:** Jinja templating (`{{ ds }}`), macros, runtime info.
+
+```python
+from prefect.runtime import flow_run, task_run
+
+@task
+def get_flow_info() -> dict:
+    return {
+        "flow_run_name": flow_run.name,
+        "flow_name": flow_run.flow_name,
+    }
+```
+
+`prefect.runtime` provides access to flow run ID, name, parameters, and tags -- replacing Airflow's Jinja template variables.
+
+---
+
+## Advanced Features and Capstone (057--060)
+
+### 057 -- Transactions
+
+**What it demonstrates:** Atomic task groups with rollback on failure using Prefect transactions.
+
+**Airflow equivalent:** No direct equivalent -- Prefect-specific feature.
+
+```python
+from prefect.transactions import transaction
+
+@flow(name="057_transactions", log_prints=True)
+def transactions_flow() -> None:
+    with transaction():
+        a = step_a()
+        b = step_b()
+        c = step_c()
+    summarize_transaction([a, b, c])
+```
+
+The `transaction()` context manager groups tasks atomically. This is a unique Prefect advantage with no Airflow equivalent.
+
+---
+
+### 058 -- Interactive Flows
+
+**What it demonstrates:** Human-in-the-loop approval patterns.
+
+**Airflow equivalent:** Human-in-the-loop operators.
+
+```python
+@flow(name="058_interactive_flows", log_prints=True)
+def interactive_flows_flow() -> None:
+    data = prepare_data()
+    approved = mock_approval(data)  # In production: pause_flow_run()
+    if approved:
+        publish(data)
+    else:
+        archive(data)
+```
+
+In production, use `pause_flow_run()` to pause and wait for human input via the Prefect UI. The mock approval pattern enables local testing.
+
+---
+
+### 059 -- Task Runners
+
+**What it demonstrates:** Comparing thread pool and default task runners for different workloads.
+
+**Airflow equivalent:** Executors (Local, Celery, Kubernetes).
+
+```python
+from prefect.task_runners import ThreadPoolTaskRunner
+
+@flow(task_runner=ThreadPoolTaskRunner(max_workers=3))
+def threaded_io_flow() -> str:
+    futures = io_bound_task.map(items)
+    return summarize_runner([f.result() for f in futures], "ThreadPool")
+```
+
+`ThreadPoolTaskRunner` provides concurrent execution for I/O-bound tasks. The default runner handles CPU-bound work.
+
+---
+
+### 060 -- Production Pipeline v2
+
+**What it demonstrates:** Capstone flow combining all Phase 3 features into a production-ready pipeline.
+
+**Airflow equivalent:** Full ETL SCD capstone.
+
+```python
+@flow(name="060_production_pipeline_v2", log_prints=True, on_completion=[on_pipeline_completion])
+def production_pipeline_v2_flow() -> None:
+    with tags("production", "phase-3"):
+        source_records = extract_stage()
+        with transaction():
+            validated = validate_stage(source_records)
+        transformed = transform_stage(validated)
+        metrics = compute_metrics(transformed)
+        publish_summary(metrics)
+```
+
+This capstone combines Pydantic models with field validators, transactions, retries, markdown artifacts, tags, state hooks, and `.map()` into a realistic production pipeline.

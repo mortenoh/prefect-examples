@@ -63,6 +63,26 @@ make docs                                  # serve documentation locally
 | 038 | Schedules | `CronSchedule`, `IntervalSchedule`, `RRuleSchedule` |
 | 039 | Work Pools | `flow.deploy()`, work pools, workers |
 | 040 | Production Pipeline | Capstone: caching, retries, artifacts, tags, persistence |
+| 041 | Pydantic Models | `BaseModel` as task params/returns, type-safe data passing |
+| 042 | Shell Tasks | `subprocess.run()` in tasks (replaces BashOperator) |
+| 043 | HTTP Tasks | `httpx` GET/POST in tasks (replaces HttpOperator) |
+| 044 | Task Factories | Factory functions that generate `@task` callables |
+| 045 | Advanced Map Patterns | Multi-arg `.map()`, chained maps, result collection |
+| 046 | Error Handling ETL | Quarantine pattern: good rows pass, bad rows captured |
+| 047 | Pydantic Validation | `field_validator` for data quality checks |
+| 048 | SLA Monitoring | Task duration tracking, threshold comparison |
+| 049 | Webhook Notifications | httpx POST notifications, flow hooks |
+| 050 | Failure Escalation | Progressive retry with escalation hooks |
+| 051 | Testable Flow Patterns | Pure functions + thin `@task` wrappers |
+| 052 | Reusable Utilities | Custom decorators: `timed_task`, `validated_task` |
+| 053 | Advanced State Handling | `allow_failure`, state inspection |
+| 054 | Nested Subflows | Hierarchical `@flow` groups (replaces TaskGroups) |
+| 055 | Backfill Patterns | Date-range parameters, gap detection, incremental processing |
+| 056 | Runtime Context | `prefect.runtime` for flow/task metadata |
+| 057 | Transactions | `transaction()` for atomic task groups |
+| 058 | Interactive Flows | Human-in-the-loop approval pattern |
+| 059 | Task Runners | `ThreadPoolTaskRunner`, I/O vs CPU workloads |
+| 060 | Production Pipeline v2 | Capstone: Pydantic, transactions, artifacts, hooks, `.map()` |
 
 ## Documentation
 

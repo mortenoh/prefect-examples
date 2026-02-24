@@ -124,6 +124,48 @@ from prefect.blocks.system import Secret
 api_key = Secret.load("my-key").get()
 ```
 
+## Pydantic Models
+
+Prefect works natively with **Pydantic models** as task parameters and return
+types. This gives automatic validation, serialisation, and type safety:
+
+```python
+from pydantic import BaseModel, field_validator
+
+class WeatherReading(BaseModel):
+    station_id: str
+    temperature: float
+    humidity: float
+
+    @field_validator("temperature")
+    @classmethod
+    def temperature_in_range(cls, v: float) -> float:
+        if v < -100 or v > 60:
+            raise ValueError(f"Temperature {v} out of range")
+        return v
+```
+
+Pydantic replaces the manual serialisation required by Airflow's XCom. Models
+flow between tasks naturally, with validation happening automatically.
+
+## Transactions
+
+**Transactions** group tasks atomically. If any task in the group fails, the
+entire transaction is treated as a unit:
+
+```python
+from prefect.transactions import transaction
+
+@flow
+def atomic_pipeline():
+    with transaction():
+        step_a()
+        step_b()
+        step_c()
+```
+
+Transactions are a Prefect-specific feature with no direct Airflow equivalent.
+
 ## Async Flows
 
 Prefect natively supports `async def` tasks and flows. Use `asyncio.gather()`
@@ -202,3 +244,23 @@ my_flow.serve(name="every-15m", interval=900)
 | `schedule_interval` | `CronSchedule`, `IntervalSchedule`, `RRuleSchedule` | 038 |
 | Executors (Celery, K8s) | Work pools + workers | 039 |
 | Production DAG | Caching + retries + artifacts + tags | 040 |
+| XCom + complex types | Pydantic `BaseModel` params/returns | 041 |
+| BashOperator | `subprocess.run()` in a `@task` | 042 |
+| HttpOperator | `httpx` in a `@task` | 043 |
+| Custom operators | Task factory functions | 044 |
+| `expand_kwargs` | Multi-arg `.map()` | 045 |
+| Error handling patterns | Quarantine pattern with Pydantic | 046 |
+| Schema validation | Pydantic `field_validator` | 047 |
+| SLA miss detection | `time.monotonic()` + threshold checks | 048 |
+| Webhook callbacks | `httpx.post()` + flow hooks | 049 |
+| Progressive retry | `retries` + `on_failure` hooks | 050 |
+| Thin DAG wiring | Pure functions + thin `@task` wrappers | 051 |
+| Custom hooks/sensors | Python decorators wrapping `@task` | 052 |
+| Trigger rules | `allow_failure`, state inspection | 053 |
+| TaskGroups | Nested subflows (`@flow` calling `@flow`) | 054 |
+| Backfill / `logical_date` | Flow parameters for date ranges | 055 |
+| Jinja `{{ ds }}` macros | `prefect.runtime` context | 056 |
+| No equivalent | `transaction()` for atomic groups | 057 |
+| Human-in-the-loop ops | `pause_flow_run()` / approval pattern | 058 |
+| Executors | Task runners (`ThreadPoolTaskRunner`) | 059 |
+| Full ETL SCD pipeline | Capstone: all Phase 3 features | 060 |

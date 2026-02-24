@@ -328,3 +328,138 @@ pools for scheduled runs.
 **See:** [037 Flow Serve](flow-reference.md#037-flow-serve),
 [038 Schedules](flow-reference.md#038-schedules),
 [039 Work Pools](flow-reference.md#039-work-pools)
+
+## Pydantic models for type-safe pipelines
+
+Use Pydantic `BaseModel` as task parameters and return types for automatic
+validation and serialisation:
+
+```python
+from pydantic import BaseModel
+
+class UserRecord(BaseModel):
+    name: str
+    email: str
+    age: int
+
+class ProcessingResult(BaseModel):
+    records: list[dict]
+    errors: list[str]
+    summary: str
+
+@task
+def validate_users(users: list[UserRecord]) -> ProcessingResult:
+    valid, errors = [], []
+    for user in users:
+        if user.age < 0:
+            errors.append(f"Invalid age for {user.name}")
+        else:
+            valid.append(user.model_dump())
+    return ProcessingResult(records=valid, errors=errors, summary=f"{len(valid)} valid")
+```
+
+Pydantic replaces XCom serialisation pain with automatic validation, type safety,
+and clean `.model_dump()` for dict conversion.
+
+**See:** [041 Pydantic Models](flow-reference.md#041-pydantic-models),
+[047 Pydantic Validation](flow-reference.md#047-pydantic-validation)
+
+## Shell and HTTP tasks
+
+Replace Airflow's BashOperator and HttpOperator with plain Python in `@task`
+functions:
+
+```python
+# Shell: subprocess.run() replaces BashOperator
+@task
+def run_command(cmd: str) -> str:
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
+    return result.stdout.strip()
+
+# HTTP: httpx replaces HttpOperator
+@task
+def http_get(url: str) -> dict:
+    response = httpx.get(url, timeout=10.0)
+    response.raise_for_status()
+    return response.json()
+```
+
+No special operators needed. Standard Python libraries inside tasks are the
+Prefect way.
+
+**See:** [042 Shell Tasks](flow-reference.md#042-shell-tasks),
+[043 HTTP Tasks](flow-reference.md#043-http-tasks)
+
+## Error handling with quarantine pattern
+
+Separate good and bad records during processing, capturing error reasons:
+
+```python
+from pydantic import BaseModel
+
+class QuarantineResult(BaseModel):
+    good_records: list[dict]
+    bad_records: list[dict]
+    errors: list[str]
+
+@task
+def process_with_quarantine(records: list[dict]) -> QuarantineResult:
+    good, bad, errors = [], [], []
+    for record in records:
+        try:
+            validate(record)
+            good.append(record)
+        except ValueError as e:
+            bad.append(record)
+            errors.append(str(e))
+    return QuarantineResult(good_records=good, bad_records=bad, errors=errors)
+```
+
+The quarantine pattern prevents a few bad records from failing the entire pipeline.
+
+**See:** [046 Error Handling ETL](flow-reference.md#046-error-handling-etl)
+
+## Transactions for atomic operations
+
+Group tasks atomically with `transaction()` -- if any task fails, the group
+is treated as a unit:
+
+```python
+from prefect.transactions import transaction
+
+@flow
+def atomic_pipeline():
+    with transaction():
+        step_a()
+        step_b()
+        step_c()
+```
+
+Transactions are a Prefect-specific feature with no direct Airflow equivalent.
+
+**See:** [057 Transactions](flow-reference.md#057-transactions)
+
+## Task runners for concurrent execution
+
+Choose the right task runner for your workload:
+
+```python
+from prefect.task_runners import ThreadPoolTaskRunner
+
+# I/O-bound: ThreadPoolTaskRunner for concurrent execution
+@flow(task_runner=ThreadPoolTaskRunner(max_workers=3))
+def io_flow():
+    futures = fetch_data.map(urls)
+    return [f.result() for f in futures]
+
+# CPU-bound: default runner (or ConcurrentTaskRunner)
+@flow
+def cpu_flow():
+    futures = compute.map(inputs)
+    return [f.result() for f in futures]
+```
+
+`ThreadPoolTaskRunner` provides concurrent execution for I/O-bound tasks like
+API calls and file reads.
+
+**See:** [059 Task Runners](flow-reference.md#059-task-runners)
