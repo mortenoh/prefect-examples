@@ -1,6 +1,6 @@
 site_name: Prefect Examples
 site_description: Progressive Prefect 3 examples — from hello-world to production patterns.
-repo_url: https://github.com/morteoh/prefect-examples
+repo_url: https://github.com/mortenoh/prefect-examples
 
 theme:
   name: material
