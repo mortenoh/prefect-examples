@@ -14,7 +14,8 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["flow_103"] = _mod
 _spec.loader.exec_module(_mod)
 
-from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials
+from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials  # noqa: E402
+
 FlatDataElement = _mod.FlatDataElement
 DataElementReport = _mod.DataElementReport
 fetch_data_elements = _mod.fetch_data_elements

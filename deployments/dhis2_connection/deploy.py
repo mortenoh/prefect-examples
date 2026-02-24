@@ -3,6 +3,7 @@
 Usage:
     PREFECT_API_URL=http://localhost:4200/api uv run python deployments/dhis2_connection/deploy.py
 """
+
 from flow import dhis2_connection_flow
 
 if __name__ == "__main__":

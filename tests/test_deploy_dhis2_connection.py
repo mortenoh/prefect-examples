@@ -7,10 +7,7 @@ from unittest.mock import MagicMock, patch
 
 _spec = importlib.util.spec_from_file_location(
     "deploy_dhis2_connection",
-    Path(__file__).resolve().parent.parent
-    / "deployments"
-    / "dhis2_connection"
-    / "flow.py",
+    Path(__file__).resolve().parent.parent / "deployments" / "dhis2_connection" / "flow.py",
 )
 assert _spec and _spec.loader
 _mod = importlib.util.module_from_spec(_spec)

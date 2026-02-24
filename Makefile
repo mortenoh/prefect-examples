@@ -11,7 +11,7 @@ sync: ## Install dependencies
 
 lint: ## Run ruff check and mypy
 	uv run ruff check .
-	uv run mypy src/
+	uv run mypy src/ packages/
 
 fmt: ## Auto-format with ruff
 	uv run ruff format .

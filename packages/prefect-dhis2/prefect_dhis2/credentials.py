@@ -111,9 +111,9 @@ class Dhis2Credentials(Block):
 
     _block_type_name = "dhis2-credentials"
     _block_type_slug = "dhis2-credentials"
-    _logo_url = "https://dhis2.org/wp-content/uploads/dhis2-logo-rgb-positive.svg"
+    _logo_url = "https://dhis2.org/wp-content/uploads/dhis2-logo-rgb-positive.svg"  # type: ignore[assignment]
     _description = "Credentials block for connecting to a DHIS2 instance."
-    _documentation_url = "https://github.com/morteoh/prefect-examples/tree/main/packages/prefect-dhis2/docs"
+    _documentation_url = "https://github.com/morteoh/prefect-examples/tree/main/packages/prefect-dhis2/docs"  # type: ignore[assignment]
 
     base_url: str = Field(
         default="https://play.im.dhis2.org/dev",

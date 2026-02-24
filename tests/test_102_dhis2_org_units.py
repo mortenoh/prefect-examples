@@ -14,7 +14,8 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["flow_102"] = _mod
 _spec.loader.exec_module(_mod)
 
-from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials
+from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials  # noqa: E402
+
 FlatOrgUnit = _mod.FlatOrgUnit
 OrgUnitReport = _mod.OrgUnitReport
 fetch_org_units = _mod.fetch_org_units

@@ -17,6 +17,7 @@ Three ways to register this deployment:
 
     python deployments/dhis2_connection/deploy.py
 """
+
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.runtime import deployment
@@ -49,7 +50,9 @@ def fetch_org_unit_count(client: Dhis2Client) -> int:
 
 @task
 def build_report(
-    creds: Dhis2Credentials, server_info: dict, org_unit_count: int,
+    creds: Dhis2Credentials,
+    server_info: dict,
+    org_unit_count: int,
 ) -> ConnectionReport:
     return ConnectionReport(
         deployment_name=deployment.name or "local",
@@ -83,8 +86,10 @@ def dhis2_connection_flow() -> ConnectionReport:
         markdown=markdown,
         description="DHIS2 connection verification report",
     )
-    print(f"[{report.deployment_name}] {report.username}@{report.host} "
-          f"-- v{report.server_version}, {report.org_unit_count} org units")
+    print(
+        f"[{report.deployment_name}] {report.username}@{report.host} "
+        f"-- v{report.server_version}, {report.org_unit_count} org units"
+    )
     return report
 
 

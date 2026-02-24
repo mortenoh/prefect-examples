@@ -19,7 +19,6 @@ from pydantic import BaseModel
 from prefect_examples.dhis2 import (
     Dhis2ApiResponse,
     Dhis2Client,
-    Dhis2Credentials,
     get_dhis2_credentials,
 )
 

@@ -18,6 +18,7 @@ Three ways to register this deployment:
 
     python deployments/dhis2_ou/deploy.py
 """
+
 from __future__ import annotations
 
 from prefect import flow, task

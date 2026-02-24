@@ -21,7 +21,7 @@ class TestDhis2Credentials:
         creds = Dhis2Credentials(
             base_url="https://dhis2.example.org",
             username="user",
-            password="secret",
+            password="secret",  # type: ignore[arg-type]
         )
         assert creds.base_url == "https://dhis2.example.org"
         assert creds.username == "user"
@@ -44,7 +44,7 @@ class TestDhis2Credentials:
         creds = Dhis2Credentials(
             base_url="https://test.dhis2.org",
             username="testuser",
-            password="testpass",
+            password="testpass",  # type: ignore[arg-type]
         )
         data = creds.model_dump()
         restored = Dhis2Credentials(**data)
