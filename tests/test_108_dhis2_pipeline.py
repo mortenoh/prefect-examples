@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from prefect_examples.dhis2 import Dhis2Credentials
+
 _spec = importlib.util.spec_from_file_location(
     "flow_108",
     Path(__file__).resolve().parent.parent / "flows" / "108_dhis2_pipeline.py",
@@ -15,7 +17,6 @@ sys.modules["flow_108"] = _mod
 _spec.loader.exec_module(_mod)
 
 Dhis2Client = _mod.Dhis2Client
-Dhis2Credentials = _mod.Dhis2Credentials
 Dhis2ApiResponse = _mod.Dhis2ApiResponse
 PipelineStage = _mod.PipelineStage
 QualityResult = _mod.QualityResult

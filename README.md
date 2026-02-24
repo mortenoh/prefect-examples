@@ -28,7 +28,7 @@ make docs                                  # serve documentation locally
 ## Project structure
 
 ```
-flows/                  110 numbered example flows
+flows/                  111 numbered example flows
 src/prefect_examples/   Shared task library
 packages/prefect-dhis2/ DHIS2 integration package (workspace dependency)
 deployments/            Prefect deployment definitions
@@ -159,6 +159,7 @@ Flows are grouped into phases:
 | 108 | DHIS2 Pipeline | End-to-end DHIS2 pipeline with quality checks and dashboard |
 | 109 | DHIS2 Env Config | Environment-based configuration strategies |
 | 110 | DHIS2 Authenticated API | Reusable authenticated API pattern (api_key, bearer, basic) |
+| 111 | S3 Parquet Export | Pydantic models, pandas transform, parquet write to S3 (RustFS) |
 
 ## Makefile targets
 

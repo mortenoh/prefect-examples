@@ -7,6 +7,8 @@ dependencies = [
     "prefect>=3.6",
     "prefect-aws",
     "prefect-dhis2",
+    "pandas",
+    "pyarrow",
     "s3fs",
 ]
 

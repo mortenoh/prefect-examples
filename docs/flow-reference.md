@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 110 example flows, organised by category.
+Detailed walkthrough of all 111 example flows, organised by category.
 
 ---
 
@@ -2604,6 +2604,62 @@ def build_auth_header(config: ApiAuthConfig, credentials: str) -> AuthHeader:
 
 Three authentication strategies are tested against a simulated API. The block
 pattern is reusable for any authenticated HTTP service.
+
+---
+
+## Cloud Storage (111)
+
+### 111 -- S3 Parquet Export
+
+**What it demonstrates:** Generate sample data as Pydantic models, transform
+with pandas, and write parquet to S3-compatible storage (RustFS/MinIO) using
+prefect-aws blocks.
+
+**Airflow equivalent:** PythonOperator + S3Hook.upload_file().
+
+```python
+class SensorReading(BaseModel):
+    station: StationId
+    date: date
+    temperature_c: float = Field(ge=-50.0, le=60.0)
+    humidity_pct: float = Field(ge=0.0, le=100.0)
+    status: OperationalStatus
+
+    @computed_field
+    @property
+    def heat_index(self) -> float:
+        return round(self.temperature_c + 0.05 * self.humidity_pct, 1)
+
+    @computed_field
+    @property
+    def temp_category(self) -> TempCategory:
+        if self.temperature_c <= 0.0:
+            return TempCategory.COLD
+        ...
+
+@task
+def transform_to_dataframe(readings: list[SensorReading]) -> TransformResult:
+    rows = [r.model_dump() for r in readings]
+    df = pd.DataFrame(rows)
+    buf = io.BytesIO()
+    df.to_parquet(buf, engine="pyarrow", index=False)
+    return TransformResult(parquet_data=buf.getvalue(), ...)
+
+@task
+def upload_to_s3(transform: TransformResult, key: str) -> UploadResult:
+    minio_creds = MinIOCredentials(minio_root_user="prefect", ...)
+    bucket = S3Bucket(bucket_name="prefect-data", credentials=minio_creds,
+                      aws_client_parameters=AwsClientParameters(endpoint_url=...))
+    bucket.upload_from_file_object(io.BytesIO(transform.parquet_data), key)
+    return UploadResult(key=key, backend=StorageBackend.S3, ...)
+```
+
+Sensor readings are validated with Pydantic `Field` constraints and `computed_field`
+for derived values (heat index, temperature category). The `model_dump()` method
+converts validated models to dicts for pandas. `MinIOCredentials` and `S3Bucket`
+from prefect-aws provide the S3 client -- the same blocks work with AWS S3 or any
+S3-compatible service (MinIO, RustFS). If S3 is unavailable, the flow falls back
+to a local temp file.
 
 ---
 
