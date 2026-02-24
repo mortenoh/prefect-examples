@@ -14,7 +14,7 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["flow_103"] = _mod
 _spec.loader.exec_module(_mod)
 
-Dhis2Connection = _mod.Dhis2Connection
+from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials
 FlatDataElement = _mod.FlatDataElement
 DataElementReport = _mod.DataElementReport
 fetch_data_elements = _mod.fetch_data_elements
@@ -57,24 +57,12 @@ SAMPLE_DATA_ELEMENTS = [
 ]
 
 
-def _mock_client(json_data: dict) -> MagicMock:
-    mock_resp = MagicMock()
-    mock_resp.status_code = 200
-    mock_resp.json.return_value = json_data
-    mock_resp.raise_for_status.return_value = None
-
-    mock_cl = MagicMock()
-    mock_cl.__enter__ = MagicMock(return_value=mock_cl)
-    mock_cl.__exit__ = MagicMock(return_value=False)
-    mock_cl.get.return_value = mock_resp
-    return mock_cl
-
-
-@patch.object(Dhis2Connection, "get_client")
-def test_fetch_data_elements(mock_get_client: MagicMock) -> None:
-    mock_get_client.return_value = _mock_client({"dataElements": SAMPLE_DATA_ELEMENTS})
-    conn = Dhis2Connection()
-    elements = fetch_data_elements.fn(conn)
+@patch.object(Dhis2Client, "fetch_metadata")
+def test_fetch_data_elements(mock_fetch: MagicMock) -> None:
+    mock_fetch.return_value = SAMPLE_DATA_ELEMENTS
+    client = MagicMock(spec=Dhis2Client)
+    client.fetch_metadata = mock_fetch
+    elements = fetch_data_elements.fn(client)
     assert len(elements) == 3
 
 
@@ -120,8 +108,10 @@ def test_write_csv(tmp_path: Path) -> None:
     assert path.name == "data_elements.csv"
 
 
-@patch.object(Dhis2Connection, "get_client")
+@patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(mock_get_client: MagicMock, tmp_path: Path) -> None:
-    mock_get_client.return_value = _mock_client({"dataElements": SAMPLE_DATA_ELEMENTS})
+    mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.fetch_metadata.return_value = SAMPLE_DATA_ELEMENTS
+    mock_get_client.return_value = mock_client
     state = dhis2_data_elements_flow(output_dir=str(tmp_path), return_state=True)
     assert state.is_completed()

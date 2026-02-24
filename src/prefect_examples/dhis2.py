@@ -1,7 +1,8 @@
-"""Shared DHIS2 helpers -- block with methods, models, and API client.
+"""Shared DHIS2 helpers -- credentials block, API client, models.
 
-Provides the ``Dhis2Connection`` custom block with built-in authentication
-and methods for common DHIS2 API operations.  Used by flows 101--108.
+Provides ``Dhis2Credentials`` (custom Block storing connection details) and
+``Dhis2Client`` (authenticated API client with methods for common DHIS2
+operations).  Used by flows 101--108.
 
 The DHIS2 play server (https://play.im.dhis2.org/dev) is publicly available
 with credentials admin/district.
@@ -17,44 +18,46 @@ from prefect.blocks.core import Block
 from pydantic import BaseModel, Field, SecretStr
 
 # ---------------------------------------------------------------------------
-# Custom Block
+# API Client
 # ---------------------------------------------------------------------------
 
 
-class Dhis2Connection(Block):
-    """Connection block for a DHIS2 instance.
+class Dhis2Client:
+    """Authenticated DHIS2 API client.
 
-    Equivalent to ``BaseHook.get_connection("dhis2_default")`` in Airflow.
-    Stores credentials and exposes methods for common API operations.
+    Wraps an ``httpx.Client`` scoped to ``/api`` and exposes methods for
+    common DHIS2 operations.  Use as a context manager or call ``.close()``
+    explicitly.
     """
 
-    _block_type_name = "dhis2-connection"
-
-    base_url: str = Field(
-        default="https://play.im.dhis2.org/dev",
-        description="DHIS2 instance base URL",
-    )
-    username: str = Field(default="admin", description="DHIS2 username")
-    password: SecretStr = Field(
-        default=SecretStr("district"),
-        description="DHIS2 password",
-    )
-
-    def get_client(self) -> httpx.Client:
-        """Return an authenticated httpx client scoped to /api."""
-        return httpx.Client(
-            base_url=f"{self.base_url}/api",
-            auth=(self.username, self.password.get_secret_value()),
+    def __init__(self, base_url: str, username: str, password: str) -> None:
+        self._http = httpx.Client(
+            base_url=f"{base_url}/api",
+            auth=(username, password),
             timeout=60,
         )
 
+    def __enter__(self) -> Dhis2Client:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
+        self.close()
+
+    def close(self) -> None:
+        """Close the underlying HTTP client."""
+        self._http.close()
+
     def get_server_info(self) -> dict[str, Any]:
         """Fetch /api/system/info -- version, revision, etc."""
-        with self.get_client() as client:
-            resp = client.get("/system/info")
-            resp.raise_for_status()
-            result: dict[str, Any] = resp.json()
-            return result
+        resp = self._http.get("/system/info")
+        resp.raise_for_status()
+        result: dict[str, Any] = resp.json()
+        return result
 
     def fetch_metadata(
         self,
@@ -70,16 +73,15 @@ class Dhis2Connection(Block):
         Returns:
             List of metadata records as dicts.
         """
-        with self.get_client() as client:
-            resp = client.get(
-                f"/{endpoint}",
-                params={"paging": "false", "fields": fields},
-            )
-            resp.raise_for_status()
-            data: dict[str, Any] = resp.json()
-            key = endpoint.split("?")[0]
-            result: list[dict[str, Any]] = data[key]
-            return result
+        resp = self._http.get(
+            f"/{endpoint}",
+            params={"paging": "false", "fields": fields},
+        )
+        resp.raise_for_status()
+        data: dict[str, Any] = resp.json()
+        key = endpoint.split("?")[0]
+        result: list[dict[str, Any]] = data[key]
+        return result
 
     def fetch_analytics(
         self,
@@ -98,11 +100,44 @@ class Dhis2Connection(Block):
         params: dict[str, Any] = {"dimension": dimension}
         if filter_param:
             params["filter"] = filter_param
-        with self.get_client() as client:
-            resp = client.get("/analytics", params=params)
-            resp.raise_for_status()
-            result: dict[str, Any] = resp.json()
-            return result
+        resp = self._http.get("/analytics", params=params)
+        resp.raise_for_status()
+        result: dict[str, Any] = resp.json()
+        return result
+
+
+# ---------------------------------------------------------------------------
+# Credentials Block
+# ---------------------------------------------------------------------------
+
+
+class Dhis2Credentials(Block):
+    """Credentials block for a DHIS2 instance.
+
+    Equivalent to ``BaseHook.get_connection("dhis2_default")`` in Airflow.
+    Stores connection details and returns a ``Dhis2Client`` via
+    ``get_client()``.
+    """
+
+    _block_type_name = "dhis2-credentials"
+
+    base_url: str = Field(
+        default="https://play.im.dhis2.org/dev",
+        description="DHIS2 instance base URL",
+    )
+    username: str = Field(default="admin", description="DHIS2 username")
+    password: SecretStr = Field(
+        default=SecretStr("district"),
+        description="DHIS2 password",
+    )
+
+    def get_client(self) -> Dhis2Client:
+        """Return an authenticated ``Dhis2Client``."""
+        return Dhis2Client(
+            self.base_url,
+            self.username,
+            self.password.get_secret_value(),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -119,19 +154,19 @@ class Dhis2ApiResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Connection helpers
+# Credentials helpers
 # ---------------------------------------------------------------------------
 
 OPERAND_PATTERN = re.compile(r"#\{[^}]+\}")
 
 
-def get_dhis2_connection() -> Dhis2Connection:
-    """Load the DHIS2 connection block, falling back to inline defaults.
+def get_dhis2_credentials() -> Dhis2Credentials:
+    """Load the DHIS2 credentials block, falling back to inline defaults.
 
     Returns:
-        Dhis2Connection instance.
+        Dhis2Credentials instance.
     """
     try:
-        return Dhis2Connection.load("dhis2")  # type: ignore[return-value]
+        return Dhis2Credentials.load("dhis2")  # type: ignore[return-value]
     except Exception:
-        return Dhis2Connection()
+        return Dhis2Credentials()

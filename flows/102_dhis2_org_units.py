@@ -18,8 +18,8 @@ from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
-    Dhis2Connection,
-    get_dhis2_connection,
+    Dhis2Client,
+    get_dhis2_credentials,
 )
 
 # ---------------------------------------------------------------------------
@@ -55,16 +55,16 @@ class OrgUnitReport(BaseModel):
 
 
 @task
-def fetch_org_units(conn: Dhis2Connection) -> list[dict]:
+def fetch_org_units(client: Dhis2Client) -> list[dict]:
     """Fetch all organisation units from DHIS2.
 
     Args:
-        conn: DHIS2 connection block.
+        client: Authenticated DHIS2 API client.
 
     Returns:
         List of raw org unit dicts.
     """
-    records = conn.fetch_metadata("organisationUnits")
+    records = client.fetch_metadata("organisationUnits")
     print(f"Fetched {len(records)} org units")
     return records
 
@@ -175,9 +175,9 @@ def dhis2_org_units_flow(output_dir: str | None = None) -> OrgUnitReport:
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    conn = get_dhis2_connection()
+    client = get_dhis2_credentials().get_client()
 
-    raw = fetch_org_units(conn)
+    raw = fetch_org_units(client)
     flat = flatten_org_units(raw)
     write_org_unit_csv(flat, output_dir)
     report = org_unit_report(flat)

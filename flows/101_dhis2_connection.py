@@ -16,8 +16,9 @@ from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
     Dhis2ApiResponse,
-    Dhis2Connection,
-    get_dhis2_connection,
+    Dhis2Client,
+    Dhis2Credentials,
+    get_dhis2_credentials,
 )
 
 # ---------------------------------------------------------------------------
@@ -40,7 +41,7 @@ class ConnectionInfo(BaseModel):
 
 
 @task
-def get_connection_info(conn: Dhis2Connection) -> ConnectionInfo:
+def get_connection_info(conn: Dhis2Credentials) -> ConnectionInfo:
     """Inspect a DHIS2 connection block.
 
     Args:
@@ -60,31 +61,32 @@ def get_connection_info(conn: Dhis2Connection) -> ConnectionInfo:
 
 
 @task
-def verify_connection(conn: Dhis2Connection) -> Dhis2ApiResponse:
+def verify_connection(client: Dhis2Client, base_url: str) -> Dhis2ApiResponse:
     """Verify connectivity by fetching system/info from the DHIS2 API.
 
     Args:
-        conn: DHIS2 connection block.
+        client: Authenticated DHIS2 API client.
+        base_url: DHIS2 instance base URL (for display).
 
     Returns:
         Dhis2ApiResponse from the system/info endpoint.
     """
-    data: dict[str, Any] = conn.get_server_info()
-    print(f"Verified: DHIS2 v{data.get('version', 'unknown')} at {conn.base_url}")
+    data: dict[str, Any] = client.get_server_info()
+    print(f"Verified: DHIS2 v{data.get('version', 'unknown')} at {base_url}")
     return Dhis2ApiResponse(endpoint="system/info", record_count=1)
 
 
 @task
-def fetch_org_unit_count(conn: Dhis2Connection) -> int:
+def fetch_org_unit_count(client: Dhis2Client) -> int:
     """Fetch org unit count to confirm API access.
 
     Args:
-        conn: DHIS2 connection block.
+        client: Authenticated DHIS2 API client.
 
     Returns:
         Number of organisation units.
     """
-    records = conn.fetch_metadata("organisationUnits", fields="id")
+    records = client.fetch_metadata("organisationUnits", fields="id")
     count = len(records)
     print(f"Organisation unit count: {count}")
     return count
@@ -124,10 +126,11 @@ def dhis2_connection_flow() -> ConnectionInfo:
     Returns:
         ConnectionInfo.
     """
-    conn = get_dhis2_connection()
-    info = get_connection_info(conn)
-    verify_connection(conn)
-    count = fetch_org_unit_count(conn)
+    creds = get_dhis2_credentials()
+    client = creds.get_client()
+    info = get_connection_info(creds)
+    verify_connection(client, creds.base_url)
+    count = fetch_org_unit_count(client)
     display_connection(info, count)
     return info
 

@@ -119,10 +119,8 @@ root. This is the Prefect equivalent of Airflow's `dags/` folder:
 
 ```yaml
 deployments:
-  - name: dhis2-daily-sync
-    entrypoint: flows/111_dhis2_deployment.py:dhis2_deployment_flow
-    parameters:
-      endpoints: [organisationUnits, dataElements, indicators]
+  - name: dhis2-ou
+    entrypoint: flow.py:dhis2_ou_flow
     schedules:
       - cron: "0 6 * * *"
         timezone: "UTC"
@@ -130,7 +128,7 @@ deployments:
       name: default
 ```
 
-Deploy with `prefect deploy --all` or `prefect deploy -n dhis2-daily-sync`.
+Deploy with `prefect deploy --all` or `prefect deploy -n dhis2-ou`.
 
 ### Work pools
 
@@ -233,7 +231,7 @@ defaults.
 
 | Type | Use for | Example |
 |---|---|---|
-| Custom `Block` | Typed connection config with methods | `Dhis2Connection` |
+| Custom `Block` | Typed connection config with methods | `Dhis2Credentials` |
 | `Secret` | Single credential value | API key, token |
 | `JSON` | Unstructured config | Feature flags, thresholds |
 
@@ -257,32 +255,40 @@ conn.password.get_secret_value()    # 'changeme'
 ### Adding methods to blocks (the integration pattern)
 
 Official Prefect integrations (prefect-aws, prefect-gcp, prefect-slack) put
-methods directly on blocks. A credentials block exposes `get_client()` returning
-an authenticated SDK client; a resource block exposes domain methods like
-`fetch()` or `read_path()`.
+a `get_client()` method on credentials blocks that returns an authenticated
+SDK client. API methods live on the client class, not the block:
 
 ```python
-class Dhis2Connection(Block):
-    base_url: str = "https://play.im.dhis2.org/dev"
-    username: str = "admin"
-    password: SecretStr = Field(default=SecretStr("district"))
+class Dhis2Client:
+    """Authenticated DHIS2 API client."""
 
-    def get_client(self) -> httpx.Client:
-        return httpx.Client(
-            base_url=f"{self.base_url}/api",
-            auth=(self.username, self.password.get_secret_value()),
+    def __init__(self, base_url: str, username: str, password: str) -> None:
+        self._http = httpx.Client(
+            base_url=f"{base_url}/api",
+            auth=(username, password),
             timeout=60,
         )
 
     def fetch_metadata(self, endpoint: str) -> list[dict]:
-        with self.get_client() as client:
-            resp = client.get(f"/{endpoint}", params={"paging": "false"})
-            resp.raise_for_status()
-            return resp.json()[endpoint]
+        resp = self._http.get(f"/{endpoint}", params={"paging": "false"})
+        resp.raise_for_status()
+        return resp.json()[endpoint]
+
+class Dhis2Credentials(Block):
+    base_url: str = "https://play.im.dhis2.org/dev"
+    username: str = "admin"
+    password: SecretStr = Field(default=SecretStr("district"))
+
+    def get_client(self) -> Dhis2Client:
+        return Dhis2Client(
+            self.base_url,
+            self.username,
+            self.password.get_secret_value(),
+        )
 ```
 
-This pattern keeps authentication and API logic together on the block, rather
-than scattered across standalone helper functions.
+This pattern separates credential storage (Block) from API logic (Client),
+following the same convention as `GcpCredentials.get_client()` in prefect-gcp.
 
 ### Airflow Connections vs Prefect Blocks
 
@@ -476,36 +482,32 @@ stdlib modules alone, making flows lightweight and dependency-free.
 
 In Airflow, external system credentials are stored as **Connections** and
 accessed via `BaseHook.get_connection("conn_id")`. In Prefect, the equivalent
-is a custom **Block** -- a typed, serializable configuration object with
-methods for common operations:
+is a custom **Block** -- a typed, serializable configuration object whose
+`get_client()` method returns an authenticated API client:
 
 ```python
 from prefect.blocks.core import Block
 from pydantic import Field, SecretStr
 
-class Dhis2Connection(Block):
+class Dhis2Credentials(Block):
     base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
     password: SecretStr = Field(default=SecretStr("district"))
 
-    def get_client(self) -> httpx.Client:
-        return httpx.Client(
-            base_url=f"{self.base_url}/api",
-            auth=(self.username, self.password.get_secret_value()),
+    def get_client(self) -> Dhis2Client:
+        return Dhis2Client(
+            self.base_url,
+            self.username,
+            self.password.get_secret_value(),
         )
 
-    def fetch_metadata(self, endpoint: str) -> list[dict]:
-        with self.get_client() as client:
-            resp = client.get(f"/{endpoint}", params={"paging": "false"})
-            resp.raise_for_status()
-            return resp.json()[endpoint]
-
 # Register once:
-Dhis2Connection(base_url="https://dhis2.example.org").save("dhis2")
+Dhis2Credentials(base_url="https://dhis2.example.org").save("dhis2")
 
 # Load in any flow:
-conn = Dhis2Connection.load("dhis2")
-units = conn.fetch_metadata("organisationUnits")
+creds = Dhis2Credentials.load("dhis2")
+client = creds.get_client()
+units = client.fetch_metadata("organisationUnits")
 ```
 
 Password is stored as `SecretStr` directly on the block. When saved to a
@@ -516,8 +518,8 @@ development, saved blocks for production, environment variables for CI:
 
 | Strategy | Best for | Example |
 |---|---|---|
-| Inline `Block()` | Development, testing | `Dhis2Connection()` |
-| `Block.load()` | Production with Prefect server | `Dhis2Connection.load("dhis2")` |
+| Inline `Block()` | Development, testing | `Dhis2Credentials()` |
+| `Block.load()` | Production with Prefect server | `Dhis2Credentials.load("dhis2")` |
 | `SecretStr` on Block | Credentials with config | `password: SecretStr` |
 | `Secret.load()` | Standalone passwords, API keys | `Secret.load("dhis2-password")` |
 | `os.environ` | CI/CD, containers | `os.environ["DHIS2_PASSWORD"]` |
@@ -637,4 +639,4 @@ development, saved blocks for production, environment variables for CI:
 | Full DHIS2 pipeline | Multi-stage pipeline + quality + dashboard | 108 |
 | Connection/Variable config | Multiple config strategies (Block, Secret, env) | 109 |
 | Authenticated API pattern | Pluggable auth block (api_key, bearer, basic) | 110 |
-| Scheduled DAG + Connections | `flow.serve()`/`flow.deploy()` with blocks + params | 111 |
+| Scheduled DAG + Connections | `flow.deploy()` with blocks + artifacts | `deployments/dhis2_ou` |

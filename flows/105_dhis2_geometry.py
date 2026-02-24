@@ -17,8 +17,8 @@ from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
-    Dhis2Connection,
-    get_dhis2_connection,
+    Dhis2Client,
+    get_dhis2_credentials,
 )
 
 # ---------------------------------------------------------------------------
@@ -56,16 +56,16 @@ class GeometryReport(BaseModel):
 
 
 @task
-def fetch_with_geometry(conn: Dhis2Connection) -> list[dict]:
+def fetch_with_geometry(client: Dhis2Client) -> list[dict]:
     """Fetch org units with geometry from DHIS2.
 
     Args:
-        conn: DHIS2 connection block.
+        client: Authenticated DHIS2 API client.
 
     Returns:
         List of raw org unit dicts including geometry.
     """
-    records = conn.fetch_metadata(
+    records = client.fetch_metadata(
         "organisationUnits",
         fields="id,name,shortName,level,parent,geometry",
     )
@@ -220,9 +220,9 @@ def dhis2_geometry_flow(output_dir: str | None = None) -> GeometryReport:
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    conn = get_dhis2_connection()
+    client = get_dhis2_credentials().get_client()
 
-    raw = fetch_with_geometry(conn)
+    raw = fetch_with_geometry(client)
     features = build_features(raw)
     collection = build_collection(features)
     write_geojson(collection, output_dir)

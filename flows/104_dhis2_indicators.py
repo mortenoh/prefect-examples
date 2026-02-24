@@ -20,8 +20,8 @@ from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
     OPERAND_PATTERN,
-    Dhis2Connection,
-    get_dhis2_connection,
+    Dhis2Client,
+    get_dhis2_credentials,
 )
 
 # ---------------------------------------------------------------------------
@@ -89,16 +89,16 @@ def _complexity_bin(score: int) -> str:
 
 
 @task
-def fetch_indicators(conn: Dhis2Connection) -> list[dict]:
+def fetch_indicators(client: Dhis2Client) -> list[dict]:
     """Fetch all indicators from DHIS2.
 
     Args:
-        conn: DHIS2 connection block.
+        client: Authenticated DHIS2 API client.
 
     Returns:
         List of raw indicator dicts.
     """
-    records = conn.fetch_metadata("indicators")
+    records = client.fetch_metadata("indicators")
     print(f"Fetched {len(records)} indicators")
     return records
 
@@ -210,9 +210,9 @@ def dhis2_indicators_flow(output_dir: str | None = None) -> IndicatorReport:
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    conn = get_dhis2_connection()
+    client = get_dhis2_credentials().get_client()
 
-    raw = fetch_indicators(conn)
+    raw = fetch_indicators(client)
     flat = flatten_indicators(raw)
     write_indicator_csv(flat, output_dir)
     report = indicator_report(flat)

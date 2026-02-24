@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 111 example flows, organised by category.
+Detailed walkthrough of all 110 example flows, organised by category.
 
 ---
 
@@ -2377,24 +2377,27 @@ operations, `SecretStr` for password management, connection verification.
 **Airflow equivalent:** `BaseHook.get_connection("dhis2_default")` (DAG 110).
 
 ```python
-class Dhis2Connection(Block):
+class Dhis2Credentials(Block):
     base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
     password: SecretStr = Field(default=SecretStr("district"))
 
-    def get_client(self) -> httpx.Client: ...
+    def get_client(self) -> Dhis2Client: ...
+
+class Dhis2Client:
     def get_server_info(self) -> dict: ...
     def fetch_metadata(self, endpoint: str) -> list[dict]: ...
 
-conn = get_dhis2_connection()       # Block.load() with fallback
-info = get_connection_info(conn)    # SecretStr handles masking
-verify_connection(conn)             # uses conn.get_server_info()
+creds = get_dhis2_credentials()       # Block.load() with fallback
+client = creds.get_client()
+info = get_connection_info(creds)     # SecretStr handles masking
+verify_connection(client, creds.base_url)  # uses client.get_server_info()
 ```
 
 The Airflow pattern `BaseHook.get_connection()` maps to `Block.load()` in
 Prefect. Password is stored as `SecretStr` directly on the block (encrypted
-at rest when saved to the server). Methods on the block handle authentication
-internally -- callers never touch the password directly.
+at rest when saved to the server). `get_client()` returns a `Dhis2Client`
+that handles API calls -- callers never touch the password directly.
 
 ---
 
@@ -2559,7 +2562,7 @@ single flow.
 **Airflow equivalent:** None (Prefect-native pattern).
 
 ```python
-sources.append(from_inline_block())    # Dhis2Connection()
+sources.append(from_inline_block())    # Dhis2Credentials()
 sources.append(from_secret_block())    # Secret.load()
 sources.append(from_env_var("KEY"))    # os.environ.get()
 sources.append(from_json_config())     # JSON.load()
@@ -2599,59 +2602,63 @@ pattern is reusable for any authenticated HTTP service.
 
 ---
 
-## Deployment (111)
+## Deployments directory
 
-### 111 -- DHIS2 Deployment
+Production deployment examples live in the `deployments/` directory. Each
+subdirectory is a self-contained deployment with its own `flow.py`,
+`prefect.yaml`, and `deploy.py`.
 
-**What it demonstrates:** Deploying a DHIS2 integration flow with parameters,
-schedules, `prefect.runtime` context, and block references. Bridges the
-deployment basics (037-039) with the DHIS2 integration (101-110).
+### dhis2_connection -- DHIS2 Connection Check
 
-**Airflow equivalent:** Scheduled DAG with Connections + Variables.
+**What it demonstrates:** Verifies DHIS2 connectivity, fetches the org unit
+count, and produces a connection status artifact.
 
 ```python
-@flow(name="111_dhis2_deployment", log_prints=True)
-def dhis2_deployment_flow(endpoints: list[str] | None = None) -> str:
-    if endpoints is None:
-        endpoints = ["organisationUnits", "dataElements", "indicators"]
-    conn = get_dhis2_connection()
-    info = conn.get_server_info()
-    for ep in endpoints:
-        counts[ep] = sync_endpoint(conn, ep)
-    summary = build_sync_summary(counts)  # uses prefect.runtime
-    return summary
+@flow(name="dhis2_connection", log_prints=True)
+def dhis2_connection_flow() -> ConnectionReport:
+    creds = get_dhis2_credentials()
+    client = creds.get_client()
+    server_info = verify_connection(client)
+    count = fetch_org_unit_count(client)
+    report = build_report(creds, server_info, count)
+    return report
+```
+
+### dhis2_ou -- DHIS2 Organisation Units
+
+**What it demonstrates:** A deployment-ready flow that fetches DHIS2
+organisation units and produces a markdown artifact listing each unit's
+ID and display name.
+
+```python
+@flow(name="dhis2_ou", log_prints=True)
+def dhis2_ou_flow() -> OrgUnitReport:
+    client = get_dhis2_credentials().get_client()
+    org_units = fetch_org_units(client)
+    report = build_report(org_units)
+    return report
 ```
 
 Key patterns demonstrated:
 
-- **Parameterized deployment** -- `endpoints` parameter lets one deployment
-  config drive different sync jobs
 - **`prefect.runtime`** -- `deployment.name` provides deployment-aware
   context (falls back to "local" for direct runs)
-- **Block reference** -- `get_dhis2_connection()` loads credentials from a
+- **Block reference** -- `get_dhis2_credentials()` loads credentials from a
   saved block or falls back to inline defaults
-- **`prefect.yaml`** -- declarative deployment config at the repo root
-
-Deploy with `flow.serve()`:
-
-```python
-dhis2_deployment_flow.serve(
-    name="dhis2-daily-sync",
-    cron="0 6 * * *",
-    parameters={"endpoints": ["organisationUnits", "dataElements"]},
-)
-```
+- **Markdown artifact** -- `create_markdown_artifact` produces a table
+  visible in the Prefect UI artifacts tab
+- **Per-deployment `prefect.yaml`** -- declarative config lives alongside
+  the flow code
 
 Deploy with `prefect.yaml`:
 
 ```yaml
 deployments:
-  - name: dhis2-daily-sync
-    entrypoint: flows/111_dhis2_deployment.py:dhis2_deployment_flow
-    parameters:
-      endpoints: [organisationUnits, dataElements, indicators]
+  - name: dhis2-ou
+    entrypoint: flow.py:dhis2_ou_flow
     schedules:
       - cron: "0 6 * * *"
+        timezone: "UTC"
     work_pool:
       name: default
 ```
@@ -2659,8 +2666,8 @@ deployments:
 Manage after deployment:
 
 ```bash
-prefect deploy -n dhis2-daily-sync               # create deployment
-prefect deployment run 111_dhis2_deployment/dhis2-daily-sync  # trigger run
+cd deployments/dhis2_ou && prefect deploy --all   # register deployment
+prefect deployment run dhis2_ou/dhis2-ou           # trigger run
 prefect deployment set-schedule <name> --cron "0 8 * * *"     # change schedule
 prefect deployment pause <name>                   # pause scheduling
 prefect deployment resume <name>                  # resume scheduling

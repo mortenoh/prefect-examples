@@ -18,8 +18,9 @@ from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
     Dhis2ApiResponse,
-    Dhis2Connection,
-    get_dhis2_connection,
+    Dhis2Client,
+    Dhis2Credentials,
+    get_dhis2_credentials,
 )
 
 # ---------------------------------------------------------------------------
@@ -60,35 +61,36 @@ class Dhis2PipelineResult(BaseModel):
 
 
 @task
-def connect_and_verify(conn: Dhis2Connection) -> Dhis2ApiResponse:
+def connect_and_verify(client: Dhis2Client, base_url: str) -> Dhis2ApiResponse:
     """Connect to DHIS2 and verify access via system/info.
 
     Args:
-        conn: DHIS2 connection block.
+        client: Authenticated DHIS2 API client.
+        base_url: DHIS2 instance base URL (for display).
 
     Returns:
         Dhis2ApiResponse from verification.
     """
-    data: dict[str, Any] = conn.get_server_info()
-    print(f"Connected to {conn.base_url}, DHIS2 v{data.get('version', 'unknown')}")
+    data: dict[str, Any] = client.get_server_info()
+    print(f"Connected to {base_url}, DHIS2 v{data.get('version', 'unknown')}")
     return Dhis2ApiResponse(endpoint="system/info", record_count=1)
 
 
 @task
 def fetch_all_metadata(
-    conn: Dhis2Connection,
+    client: Dhis2Client,
 ) -> dict[str, list[dict[str, Any]]]:
     """Fetch org units, data elements, and indicators from the DHIS2 API.
 
     Args:
-        conn: DHIS2 connection block.
+        client: Authenticated DHIS2 API client.
 
     Returns:
         Dict mapping endpoint name to list of records.
     """
-    org_units = conn.fetch_metadata("organisationUnits")
-    data_elements = conn.fetch_metadata("dataElements")
-    indicators = conn.fetch_metadata("indicators")
+    org_units = client.fetch_metadata("organisationUnits")
+    data_elements = client.fetch_metadata("dataElements")
+    indicators = client.fetch_metadata("indicators")
     result: dict[str, list[dict[str, Any]]] = {
         "organisationUnits": org_units,
         "dataElements": data_elements,
@@ -206,16 +208,17 @@ def dhis2_pipeline_flow() -> Dhis2PipelineResult:
     pipeline_start = time.monotonic()
     stages: list[PipelineStage] = []
 
-    conn = get_dhis2_connection()
+    creds = get_dhis2_credentials()
+    client = creds.get_client()
 
     # Stage 1: Connect and verify
     t0 = time.monotonic()
-    connect_and_verify(conn)
+    connect_and_verify(client, creds.base_url)
     stages.append(PipelineStage(name="connect", status="completed", record_count=1, duration=time.monotonic() - t0))
 
     # Stage 2: Fetch all metadata
     t0 = time.monotonic()
-    metadata = fetch_all_metadata(conn)
+    metadata = fetch_all_metadata(client)
     total_records = sum(len(v) for v in metadata.values())
     stages.append(
         PipelineStage(name="fetch", status="completed", record_count=total_records, duration=time.monotonic() - t0)

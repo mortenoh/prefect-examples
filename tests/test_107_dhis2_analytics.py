@@ -14,7 +14,7 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["flow_107"] = _mod
 _spec.loader.exec_module(_mod)
 
-Dhis2Connection = _mod.Dhis2Connection
+from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials
 AnalyticsQuery = _mod.AnalyticsQuery
 AnalyticsRow = _mod.AnalyticsRow
 AnalyticsReport = _mod.AnalyticsReport
@@ -41,19 +41,6 @@ SAMPLE_ANALYTICS_RESPONSE = {
 }
 
 
-def _mock_client(json_data: dict) -> MagicMock:
-    mock_resp = MagicMock()
-    mock_resp.status_code = 200
-    mock_resp.json.return_value = json_data
-    mock_resp.raise_for_status.return_value = None
-
-    mock_cl = MagicMock()
-    mock_cl.__enter__ = MagicMock(return_value=mock_cl)
-    mock_cl.__exit__ = MagicMock(return_value=False)
-    mock_cl.get.return_value = mock_resp
-    return mock_cl
-
-
 def test_build_query_defaults() -> None:
     query = build_query.fn()
     assert len(query.dimension) == 2
@@ -69,12 +56,13 @@ def test_build_query_custom() -> None:
     assert query.filter_param == "pe:2024Q1"
 
 
-@patch.object(Dhis2Connection, "get_client")
-def test_fetch_analytics(mock_get_client: MagicMock) -> None:
-    mock_get_client.return_value = _mock_client(SAMPLE_ANALYTICS_RESPONSE)
-    conn = Dhis2Connection()
+@patch.object(Dhis2Client, "fetch_analytics")
+def test_fetch_analytics(mock_fetch: MagicMock) -> None:
+    mock_fetch.return_value = SAMPLE_ANALYTICS_RESPONSE
+    client = MagicMock(spec=Dhis2Client)
+    client.fetch_analytics = mock_fetch
     query = build_query.fn()
-    response = fetch_analytics.fn(conn, query)
+    response = fetch_analytics.fn(client, query)
     assert "headers" in response
     assert "rows" in response
     assert len(response["rows"]) == 4
@@ -112,8 +100,10 @@ def test_write_csv(tmp_path: Path) -> None:
     assert path.name == "analytics.csv"
 
 
-@patch.object(Dhis2Connection, "get_client")
+@patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(mock_get_client: MagicMock, tmp_path: Path) -> None:
-    mock_get_client.return_value = _mock_client(SAMPLE_ANALYTICS_RESPONSE)
+    mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.fetch_analytics.return_value = SAMPLE_ANALYTICS_RESPONSE
+    mock_get_client.return_value = mock_client
     state = dhis2_analytics_flow(output_dir=str(tmp_path), return_state=True)
     assert state.is_completed()

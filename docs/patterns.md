@@ -287,36 +287,45 @@ except ValueError:
     api_key = "dev-fallback"
 ```
 
-Define custom blocks for typed configuration with `SecretStr` for credentials:
+Define custom blocks for typed configuration with `SecretStr` for credentials.
+The block stores connection details; `get_client()` returns a dedicated API
+client class:
 
 ```python
 from prefect.blocks.core import Block
 from pydantic import Field, SecretStr
 
-class Dhis2Connection(Block):
-    base_url: str = "https://play.im.dhis2.org/dev"
-    username: str = "admin"
-    password: SecretStr = Field(default=SecretStr("district"))
+class Dhis2Client:
+    """Authenticated DHIS2 API client."""
 
-    def get_client(self) -> httpx.Client:
-        """Return an authenticated httpx client scoped to /api."""
-        return httpx.Client(
-            base_url=f"{self.base_url}/api",
-            auth=(self.username, self.password.get_secret_value()),
+    def __init__(self, base_url: str, username: str, password: str) -> None:
+        self._http = httpx.Client(
+            base_url=f"{base_url}/api",
+            auth=(username, password),
             timeout=60,
         )
 
     def fetch_metadata(self, endpoint: str) -> list[dict]:
-        """Fetch all records from a DHIS2 metadata endpoint."""
-        with self.get_client() as client:
-            resp = client.get(f"/{endpoint}", params={"paging": "false"})
-            resp.raise_for_status()
-            return resp.json()[endpoint]
+        resp = self._http.get(f"/{endpoint}", params={"paging": "false"})
+        resp.raise_for_status()
+        return resp.json()[endpoint]
+
+class Dhis2Credentials(Block):
+    base_url: str = "https://play.im.dhis2.org/dev"
+    username: str = "admin"
+    password: SecretStr = Field(default=SecretStr("district"))
+
+    def get_client(self) -> Dhis2Client:
+        return Dhis2Client(
+            self.base_url,
+            self.username,
+            self.password.get_secret_value(),
+        )
 ```
 
 The `get_client()` pattern is used by official Prefect integrations (prefect-aws,
-prefect-gcp). It returns an authenticated SDK client, keeping auth logic on the
-block rather than in standalone functions.
+prefect-gcp). It returns an authenticated client, keeping credential storage
+(Block) separate from API logic (Client).
 
 Blocks can be saved (`block.save("name")`) and loaded (`Block.load("name")`)
 from the Prefect server. `SecretStr` fields are encrypted at rest.
@@ -327,31 +336,40 @@ Load from the server when available, fall back to inline defaults when
 developing without a server:
 
 ```python
-def get_dhis2_connection() -> Dhis2Connection:
+def get_dhis2_credentials() -> Dhis2Credentials:
     try:
-        return Dhis2Connection.load("dhis2")
+        return Dhis2Credentials.load("dhis2")
     except Exception:
-        return Dhis2Connection()  # uses inline defaults
+        return Dhis2Credentials()  # uses inline defaults
 ```
 
 ### Testing blocks (mock patterns)
 
-Mock at the method level with `@patch.object` to avoid interfering with
-Prefect's internal httpx usage:
+Mock at the `Dhis2Client` method level with `@patch.object` to avoid
+interfering with Prefect's internal httpx usage:
 
 ```python
 from unittest.mock import MagicMock, patch
 
-@patch.object(Dhis2Connection, "get_client")
-def test_fetch(mock_get_client):
-    mock_client = MagicMock()
-    mock_client.__enter__ = MagicMock(return_value=mock_client)
-    mock_client.__exit__ = MagicMock(return_value=False)
-    mock_client.get.return_value = mock_response({"organisationUnits": [...]})
-    mock_get_client.return_value = mock_client
+@patch.object(Dhis2Client, "fetch_metadata")
+def test_fetch(mock_fetch):
+    mock_fetch.return_value = [{"id": "OU1"}, {"id": "OU2"}]
+    client = MagicMock(spec=Dhis2Client)
+    client.fetch_metadata = mock_fetch
+    result = some_task.fn(client)
+```
 
-    conn = Dhis2Connection()
-    result = some_task.fn(conn)
+For full flow integration tests, patch `Dhis2Credentials.get_client` to return
+a mock `Dhis2Client`:
+
+```python
+@patch.object(Dhis2Credentials, "get_client")
+def test_flow(mock_get_client):
+    mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.fetch_metadata.return_value = [{"id": "OU1"}]
+    mock_get_client.return_value = mock_client
+    state = my_flow(return_state=True)
+    assert state.is_completed()
 ```
 
 **See:** [031 Secret Block](flow-reference.md#031-secret-block),
@@ -420,17 +438,14 @@ my_flow.serve(
 
 # In prefect.yaml
 # deployments:
-#   - name: dhis2-daily-sync
-#     entrypoint: flows/111_dhis2_deployment.py:dhis2_deployment_flow
-#     parameters:
-#       endpoints: [organisationUnits, dataElements]
+#   - name: dhis2-ou
+#     entrypoint: deployments/dhis2_ou/flow.py:dhis2_ou_flow
 ```
 
 Override at run time:
 
 ```bash
-prefect deployment run 111_dhis2_deployment/dhis2-daily-sync \
-    -p endpoints='["organisationUnits"]'
+prefect deployment run dhis2_ou/dhis2-ou
 ```
 
 ### `prefect.yaml` pattern
@@ -439,10 +454,8 @@ Define multiple deployments in a single YAML file at the project root:
 
 ```yaml
 deployments:
-  - name: dhis2-daily-sync
-    entrypoint: flows/111_dhis2_deployment.py:dhis2_deployment_flow
-    parameters:
-      endpoints: [organisationUnits, dataElements, indicators]
+  - name: dhis2-ou
+    entrypoint: flow.py:dhis2_ou_flow
     schedules:
       - cron: "0 6 * * *"
         timezone: "UTC"
@@ -458,7 +471,7 @@ deployments:
 ```
 
 Deploy all at once with `prefect deploy --all` or individually with
-`prefect deploy -n dhis2-daily-sync`.
+`prefect deploy -n dhis2-ou`.
 
 ### Deployment-aware flows with `prefect.runtime`
 
@@ -485,10 +498,10 @@ prefect work-pool create my-pool --type process
 prefect worker start --pool my-pool
 
 # 3. Deploy a flow to the pool
-prefect deploy -n dhis2-daily-sync
+prefect deploy -n dhis2-ou
 
 # 4. Trigger a run manually
-prefect deployment run 111_dhis2_deployment/dhis2-daily-sync
+prefect deployment run dhis2_ou/dhis2-ou
 ```
 
 ### Managing deployments with the CLI
@@ -523,30 +536,32 @@ Use `flow.serve()` during development for fast iteration, then switch to
 ```python
 if __name__ == "__main__":
     # Dev: run directly
-    # dhis2_deployment_flow()
+    # dhis2_ou_flow()
 
     # Dev: serve with schedule
-    # dhis2_deployment_flow.serve(name="dev-sync", cron="*/5 * * * *")
+    # dhis2_ou_flow.serve(name="dev-sync", cron="*/5 * * * *")
 
     # Prod: deploy to work pool (or use prefect.yaml)
-    # dhis2_deployment_flow.deploy(
-    #     name="dhis2-daily-sync",
+    # dhis2_ou_flow.deploy(
+    #     name="dhis2-ou",
     #     work_pool_name="my-pool",
     #     cron="0 6 * * *",
     # )
-    dhis2_deployment_flow()
+    dhis2_ou_flow()
 ```
 
 ### Deploying DHIS2 flows
 
-Flow 111 demonstrates deploying a real-world DHIS2 integration with parameters,
-block references, and `prefect.runtime` context. See the repo-root
-`prefect.yaml` for a complete declarative example.
+The `deployments/` directory contains production deployment examples, each
+with its own `flow.py`, `prefect.yaml`, and `deploy.py`:
+
+- **`dhis2_connection/`** -- connection check and server status artifact
+- **`dhis2_ou/`** -- org unit listing with markdown artifact
 
 **See:** [037 Flow Serve](flow-reference.md#037-flow-serve),
 [038 Schedules](flow-reference.md#038-schedules),
 [039 Work Pools](flow-reference.md#039-work-pools),
-[111 DHIS2 Deployment](flow-reference.md#111-dhis2-deployment)
+[Deployments directory](flow-reference.md#deployments-directory)
 
 ## Pydantic models for type-safe pipelines
 
@@ -1029,56 +1044,66 @@ merges overrides into default parameters.
 ## Custom blocks for API integration
 
 Subclass `Block` to create typed connection objects for external APIs. This is
-the Prefect equivalent of Airflow's `BaseHook.get_connection()`. Put methods
-directly on the block following the official integration pattern:
+the Prefect equivalent of Airflow's `BaseHook.get_connection()`. The credentials
+block stores connection details; `get_client()` returns a dedicated API client:
 
 ```python
 from prefect.blocks.core import Block
 from pydantic import Field, SecretStr
 
-class Dhis2Connection(Block):
-    _block_type_name = "dhis2-connection"
-    base_url: str = Field(default="https://play.im.dhis2.org/dev")
-    username: str = Field(default="admin")
-    password: SecretStr = Field(default=SecretStr("district"))
+class Dhis2Client:
+    """Authenticated DHIS2 API client."""
 
-    def get_client(self) -> httpx.Client:
-        return httpx.Client(
-            base_url=f"{self.base_url}/api",
-            auth=(self.username, self.password.get_secret_value()),
+    def __init__(self, base_url: str, username: str, password: str) -> None:
+        self._http = httpx.Client(
+            base_url=f"{base_url}/api",
+            auth=(username, password),
             timeout=60,
         )
 
     def get_server_info(self) -> dict:
-        with self.get_client() as client:
-            resp = client.get("/system/info")
-            resp.raise_for_status()
-            return resp.json()
+        resp = self._http.get("/system/info")
+        resp.raise_for_status()
+        return resp.json()
 
     def fetch_metadata(self, endpoint: str, fields: str = ":owner") -> list[dict]:
-        with self.get_client() as client:
-            resp = client.get(f"/{endpoint}", params={"paging": "false", "fields": fields})
-            resp.raise_for_status()
-            return resp.json()[endpoint]
+        resp = self._http.get(f"/{endpoint}", params={"paging": "false", "fields": fields})
+        resp.raise_for_status()
+        return resp.json()[endpoint]
+
+class Dhis2Credentials(Block):
+    _block_type_name = "dhis2-credentials"
+    base_url: str = Field(default="https://play.im.dhis2.org/dev")
+    username: str = Field(default="admin")
+    password: SecretStr = Field(default=SecretStr("district"))
+
+    def get_client(self) -> Dhis2Client:
+        return Dhis2Client(
+            self.base_url,
+            self.username,
+            self.password.get_secret_value(),
+        )
 
 # Load from server with fallback to inline defaults
-def get_dhis2_connection() -> Dhis2Connection:
+def get_dhis2_credentials() -> Dhis2Credentials:
     try:
-        return Dhis2Connection.load("dhis2")
+        return Dhis2Credentials.load("dhis2")
     except Exception:
-        return Dhis2Connection()
+        return Dhis2Credentials()
 ```
 
-Usage in flows is clean -- the block carries auth and exposes domain methods:
+Usage in flows is clean -- the block provides credentials, the client provides
+API methods:
 
 ```python
-conn = get_dhis2_connection()
-info = conn.get_server_info()            # authenticated API call
-units = conn.fetch_metadata("organisationUnits")  # returns list[dict]
+creds = get_dhis2_credentials()
+client = creds.get_client()
+info = client.get_server_info()            # authenticated API call
+units = client.fetch_metadata("organisationUnits")  # returns list[dict]
 ```
 
-Register a block once via the Prefect UI or `Dhis2Connection(...).save("dhis2")`.
-All flows that need the connection call `Dhis2Connection.load("dhis2")`.
+Register a block once via the Prefect UI or `Dhis2Credentials(...).save("dhis2")`.
+All flows that need the connection call `Dhis2Credentials.load("dhis2")`.
 
 For generic authenticated APIs, use a pluggable auth block:
 
@@ -1127,19 +1152,20 @@ The preferred pattern is `SecretStr` directly on the connection block. This
 keeps credentials co-located with the connection config they belong to:
 
 ```python
-conn = Dhis2Connection.load("dhis2")  # password included, encrypted at rest
-conn.fetch_metadata("organisationUnits")  # no separate password argument
+creds = Dhis2Credentials.load("dhis2")  # password included, encrypted at rest
+client = creds.get_client()
+client.fetch_metadata("organisationUnits")  # no separate password argument
 ```
 
 Always use graceful fallbacks so flows work in development (no server) and
 production (with server):
 
 ```python
-def get_dhis2_connection() -> Dhis2Connection:
+def get_dhis2_credentials() -> Dhis2Credentials:
     try:
-        return Dhis2Connection.load("dhis2")
+        return Dhis2Credentials.load("dhis2")
     except Exception:
-        return Dhis2Connection()  # uses inline defaults
+        return Dhis2Credentials()  # uses inline defaults
 ```
 
 **See:** [109 Env Config](flow-reference.md#109-environment-based-configuration),

@@ -14,7 +14,8 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["flow_108"] = _mod
 _spec.loader.exec_module(_mod)
 
-Dhis2Connection = _mod.Dhis2Connection
+Dhis2Client = _mod.Dhis2Client
+Dhis2Credentials = _mod.Dhis2Credentials
 Dhis2ApiResponse = _mod.Dhis2ApiResponse
 PipelineStage = _mod.PipelineStage
 QualityResult = _mod.QualityResult
@@ -40,45 +41,37 @@ SAMPLE_INDICATORS = [
 
 
 def _mock_client_with_side_effect() -> MagicMock:
-    """Create a mock client that dispatches based on the URL path."""
+    """Create a mock Dhis2Client that dispatches based on the endpoint."""
+    mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.get_server_info.return_value = SAMPLE_SYSTEM_INFO
 
-    def _get_side_effect(url: str, **kwargs: object) -> MagicMock:
-        resp = MagicMock()
-        resp.status_code = 200
-        resp.raise_for_status.return_value = None
-        if "system/info" in url:
-            resp.json.return_value = SAMPLE_SYSTEM_INFO
-        elif "organisationUnits" in url:
-            resp.json.return_value = {"organisationUnits": SAMPLE_ORG_UNITS}
-        elif "dataElements" in url:
-            resp.json.return_value = {"dataElements": SAMPLE_DATA_ELEMENTS}
-        elif "indicators" in url:
-            resp.json.return_value = {"indicators": SAMPLE_INDICATORS}
-        else:
-            resp.json.return_value = {}
-        return resp
+    def _fetch_side_effect(endpoint: str, **kwargs: object) -> list[dict]:
+        if "organisationUnits" in endpoint:
+            return SAMPLE_ORG_UNITS
+        elif "dataElements" in endpoint:
+            return SAMPLE_DATA_ELEMENTS
+        elif "indicators" in endpoint:
+            return SAMPLE_INDICATORS
+        return []
 
-    mock_cl = MagicMock()
-    mock_cl.__enter__ = MagicMock(return_value=mock_cl)
-    mock_cl.__exit__ = MagicMock(return_value=False)
-    mock_cl.get.side_effect = _get_side_effect
-    return mock_cl
+    mock_client.fetch_metadata.side_effect = _fetch_side_effect
+    return mock_client
 
 
-@patch.object(Dhis2Connection, "get_client")
+@patch.object(Dhis2Credentials, "get_client")
 def test_connect_and_verify(mock_get_client: MagicMock) -> None:
-    mock_get_client.return_value = _mock_client_with_side_effect()
-    conn = Dhis2Connection()
-    response = connect_and_verify.fn(conn)
+    mock_client = _mock_client_with_side_effect()
+    mock_get_client.return_value = mock_client
+    response = connect_and_verify.fn(mock_client, "https://play.im.dhis2.org/dev")
     assert isinstance(response, Dhis2ApiResponse)
     assert response.endpoint == "system/info"
 
 
-@patch.object(Dhis2Connection, "get_client")
+@patch.object(Dhis2Credentials, "get_client")
 def test_fetch_all_metadata(mock_get_client: MagicMock) -> None:
-    mock_get_client.return_value = _mock_client_with_side_effect()
-    conn = Dhis2Connection()
-    metadata = fetch_all_metadata.fn(conn)
+    mock_client = _mock_client_with_side_effect()
+    mock_get_client.return_value = mock_client
+    metadata = fetch_all_metadata.fn(mock_client)
     assert "organisationUnits" in metadata
     assert "dataElements" in metadata
     assert "indicators" in metadata
@@ -128,7 +121,7 @@ def test_build_dashboard() -> None:
     assert "fetch" in md
 
 
-@patch.object(Dhis2Connection, "get_client")
+@patch.object(Dhis2Credentials, "get_client")
 def test_pipeline_stages(mock_get_client: MagicMock) -> None:
     mock_get_client.return_value = _mock_client_with_side_effect()
     state = dhis2_pipeline_flow(return_state=True)
@@ -138,7 +131,7 @@ def test_pipeline_stages(mock_get_client: MagicMock) -> None:
     assert all(s.status == "completed" for s in result.stages)
 
 
-@patch.object(Dhis2Connection, "get_client")
+@patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(mock_get_client: MagicMock) -> None:
     mock_get_client.return_value = _mock_client_with_side_effect()
     state = dhis2_pipeline_flow(return_state=True)

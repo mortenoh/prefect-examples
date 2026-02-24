@@ -18,8 +18,8 @@ from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
-    Dhis2Connection,
-    get_dhis2_connection,
+    Dhis2Client,
+    get_dhis2_credentials,
 )
 
 # ---------------------------------------------------------------------------
@@ -88,17 +88,17 @@ def build_query(
 
 
 @task
-def fetch_analytics(conn: Dhis2Connection, query: AnalyticsQuery) -> dict[str, Any]:
+def fetch_analytics(client: Dhis2Client, query: AnalyticsQuery) -> dict[str, Any]:
     """Fetch analytics data from the DHIS2 API.
 
     Args:
-        conn: DHIS2 connection block.
+        client: Authenticated DHIS2 API client.
         query: Analytics query.
 
     Returns:
         Raw analytics response dict with "headers" and "rows".
     """
-    data = conn.fetch_analytics(query.dimension, query.filter_param)
+    data = client.fetch_analytics(query.dimension, query.filter_param)
     row_count = len(data.get("rows", []))
     print(f"Fetched analytics: {row_count} rows")
     return data
@@ -201,10 +201,10 @@ def dhis2_analytics_flow(output_dir: str | None = None) -> AnalyticsReport:
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    conn = get_dhis2_connection()
+    client = get_dhis2_credentials().get_client()
 
     query = build_query()
-    response = fetch_analytics(conn, query)
+    response = fetch_analytics(client, query)
     rows = parse_analytics(response)
     write_analytics_csv(rows, output_dir)
     report = analytics_report(rows, query)

@@ -18,8 +18,8 @@ from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
-    Dhis2Connection,
-    get_dhis2_connection,
+    Dhis2Client,
+    get_dhis2_credentials,
 )
 
 # ---------------------------------------------------------------------------
@@ -56,16 +56,16 @@ class DataElementReport(BaseModel):
 
 
 @task
-def fetch_data_elements(conn: Dhis2Connection) -> list[dict]:
+def fetch_data_elements(client: Dhis2Client) -> list[dict]:
     """Fetch all data elements from DHIS2.
 
     Args:
-        conn: DHIS2 connection block.
+        client: Authenticated DHIS2 API client.
 
     Returns:
         List of raw data element dicts.
     """
-    records = conn.fetch_metadata("dataElements")
+    records = client.fetch_metadata("dataElements")
     print(f"Fetched {len(records)} data elements")
     return records
 
@@ -173,9 +173,9 @@ def dhis2_data_elements_flow(output_dir: str | None = None) -> DataElementReport
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    conn = get_dhis2_connection()
+    client = get_dhis2_credentials().get_client()
 
-    raw = fetch_data_elements(conn)
+    raw = fetch_data_elements(client)
     flat = flatten_data_elements(raw)
     write_data_element_csv(flat, output_dir)
     report = data_element_report(flat)
