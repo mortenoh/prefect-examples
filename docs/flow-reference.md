@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 20 example flows, organised by category.
+Detailed walkthrough of all 40 example flows, organised by category.
 
 ---
 
@@ -467,6 +467,486 @@ def transform_stage(raw: list[dict]) -> list[dict]:
     return [future.result() for future in enriched]
 ```
 
-This is the capstone flow, demonstrating how subflows, mapped tasks, result
-passing, and post-pipeline notifications compose into a realistic data
+This is the capstone flow for Phase 1, demonstrating how subflows, mapped tasks,
+result passing, and post-pipeline notifications compose into a realistic data
 pipeline.
+
+---
+
+## Task-Level Configuration (021--024)
+
+### 021 -- Task Caching
+
+**What it demonstrates:** Task-level caching to avoid redundant computation.
+
+**Airflow equivalent:** Custom caching logic or external cache (Redis, etc.).
+
+```python
+from prefect.cache_policies import INPUTS, TASK_SOURCE
+
+@task(cache_policy=INPUTS, cache_expiration=300)
+def expensive_computation(x: int, y: int) -> int:
+    return x * y
+
+@task(cache_policy=TASK_SOURCE + INPUTS)
+def compound_cache_task(data: str) -> str:
+    return data.upper()
+
+@task(cache_key_fn=_category_cache_key, cache_expiration=600)
+def cached_lookup(category: str, item_id: int) -> dict:
+    return {"category": category, "item_id": item_id}
+```
+
+Three caching strategies: `INPUTS` (cache by arguments), `TASK_SOURCE + INPUTS`
+(invalidate when code or args change), and `cache_key_fn` for custom cache keys.
+Cache hits are only visible in Prefect runtime.
+
+---
+
+### 022 -- Task Timeouts
+
+**What it demonstrates:** Task-level and flow-level timeout configuration.
+
+**Airflow equivalent:** `execution_timeout` on operators.
+
+```python
+@task(timeout_seconds=3)
+def quick_task() -> str:
+    return "completed in time"
+
+@task(timeout_seconds=2)
+def slow_task() -> str:
+    time.sleep(10)  # Will be interrupted by timeout
+    return "completed"
+
+@flow(name="022_task_timeouts", log_prints=True, timeout_seconds=30)
+def task_timeouts_flow() -> None:
+    quick_task()
+    try:
+        slow_task()
+    except Exception:
+        cleanup_task(timed_out=True)
+```
+
+`timeout_seconds` on `@task` or `@flow` kills execution that exceeds the limit.
+The flow catches the timeout and runs cleanup. Note: `.fn()` bypasses timeouts.
+
+---
+
+### 023 -- Task Run Names
+
+**What it demonstrates:** Custom task run naming using templates and callables.
+
+**Airflow equivalent:** `task_id` / custom logging for operator identification.
+
+```python
+@task(task_run_name="fetch-{source}-page-{page}")
+def fetch_data(source: str, page: int) -> dict:
+    return {"source": source, "page": page, "records": page * 10}
+
+def generate_task_name() -> str:
+    params = task_run.parameters
+    return f"process-{params['region']}-batch-{params['batch_id']}"
+
+@task(task_run_name=generate_task_name)
+def process_batch(region: str, batch_id: int) -> str:
+    return f"Processed batch {batch_id} for region {region}"
+```
+
+Template strings use parameter names in braces. Callables access
+`prefect.runtime.task_run.parameters` for dynamic naming.
+
+---
+
+### 024 -- Advanced Retries
+
+**What it demonstrates:** Advanced retry configuration: backoff, jitter, and
+conditional retry logic.
+
+**Airflow equivalent:** Custom retry logic, `exponential_backoff`.
+
+```python
+@task(retries=3, retry_delay_seconds=[1, 2, 4])
+def backoff_task(fail_count: int = 2) -> str: ...
+
+@task(retries=2, retry_delay_seconds=1, retry_jitter_factor=0.5)
+def jittery_task(fail_count: int = 1) -> str: ...
+
+def retry_on_value_error(task, task_run, state) -> bool:
+    return isinstance(state.result(raise_on_failure=False), ValueError)
+
+@task(retries=2, retry_condition_fn=retry_on_value_error)
+def conditional_retry_task(error_type: str) -> str: ...
+```
+
+`retry_delay_seconds` accepts a list for escalating delays. `retry_jitter_factor`
+adds randomness to prevent thundering herd. `retry_condition_fn` controls which
+errors trigger retries.
+
+---
+
+## Flow-Level Configuration (025--028)
+
+### 025 -- Structured Logging
+
+**What it demonstrates:** Prefect's structured logging with `get_run_logger()`,
+print capture, and extra context fields.
+
+**Airflow equivalent:** Python logging in operators, task instance logger.
+
+```python
+from prefect import get_run_logger
+
+@task
+def task_with_logger(item: str) -> str:
+    logger = get_run_logger()
+    logger.info("Processing %s", item)
+    return f"processed:{item}"
+
+@task
+def task_with_extra_context(user: str, action: str) -> str:
+    logger = get_run_logger()
+    logger.info("Action performed", extra={"user": user, "action": action})
+    return f"User {user} performed {action}"
+```
+
+`get_run_logger()` returns a logger bound to the current run. Outside Prefect
+runtime it falls back to stdlib logging. With `log_prints=True`, `print()`
+output is captured as INFO-level log entries.
+
+---
+
+### 026 -- Tags
+
+**What it demonstrates:** Tagging tasks and flows for organisation and filtering.
+
+**Airflow equivalent:** DAG/task tags for filtering in the UI.
+
+```python
+from prefect import flow, tags, task
+
+@task(tags=["etl", "extract"])
+def extract_sales() -> list[dict]: ...
+
+@flow(name="026_tags", log_prints=True, tags=["examples", "phase-2"])
+def tags_flow() -> None:
+    extract_sales()
+    with tags("ad-hoc", "debug"):
+        generic_task("debug-data")
+```
+
+Static tags are set on decorators. The `tags()` context manager adds runtime
+tags to all tasks within its scope. Tags are visible in the Prefect UI and can
+be used for filtering and automation rules.
+
+---
+
+### 027 -- Flow Run Names
+
+**What it demonstrates:** Custom flow run naming using templates and callables.
+
+**Airflow equivalent:** Custom DAG `run_id` / `dag_run` naming.
+
+```python
+@flow(flow_run_name="report-{env}-{date_str}", log_prints=True)
+def template_named_flow(env: str, date_str: str) -> str: ...
+
+def generate_flow_name() -> str:
+    ts = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d-%H%M%S")
+    return f"dynamic-{ts}"
+
+@flow(flow_run_name=generate_flow_name, log_prints=True)
+def callable_named_flow() -> str: ...
+```
+
+Works like task run names but on `@flow`. Template strings and callables are
+both supported.
+
+---
+
+### 028 -- Result Persistence
+
+**What it demonstrates:** Persisting task and flow results for durability.
+
+**Airflow equivalent:** XCom backend configuration, custom result backends.
+
+```python
+@task(persist_result=True)
+def compute_metrics(data: list[int]) -> dict:
+    return {"total": sum(data), "mean": statistics.mean(data)}
+
+@task(persist_result=True, result_storage_key="latest-summary-{parameters[label]}")
+def build_summary(metrics: dict, label: str) -> str:
+    return f"[{label}] Total: {metrics['total']}"
+```
+
+`persist_result=True` stores results beyond the flow run lifetime.
+`result_storage_key` provides a stable key for retrieval. Persistence behaviour
+requires a Prefect server; tests verify logic only.
+
+---
+
+## Artifacts and Blocks (029--032)
+
+### 029 -- Markdown Artifacts
+
+**What it demonstrates:** Creating markdown artifacts for rich reporting.
+
+**Airflow equivalent:** Custom HTML in XCom or external reporting tools.
+
+```python
+from prefect.artifacts import create_markdown_artifact
+
+@task
+def publish_report(results: list[dict]) -> str:
+    markdown = "# Report\n| Name | Score |\n|---|---|\n"
+    markdown += "\n".join(f"| {r['name']} | {r['score']} |" for r in results)
+    create_markdown_artifact(key="report", markdown=markdown, description="Weekly report")
+    return markdown
+```
+
+`create_markdown_artifact()` publishes formatted content visible in the Prefect
+UI. Without a server, it silently no-ops — tests pass locally.
+
+---
+
+### 030 -- Table and Link Artifacts
+
+**What it demonstrates:** Table and link artifacts for structured data display.
+
+**Airflow equivalent:** Custom UI plugins, external dashboards.
+
+```python
+from prefect.artifacts import create_link_artifact, create_table_artifact
+
+@task
+def publish_table(inventory: list[dict]) -> None:
+    create_table_artifact(key="inventory", table=inventory, description="Inventory levels")
+
+@task
+def publish_links() -> None:
+    create_link_artifact(key="dashboard", link="https://example.com/dashboard",
+                         description="Live dashboard")
+```
+
+Table artifacts render as formatted tables. Link artifacts provide quick access
+to related resources from the flow run page.
+
+---
+
+### 031 -- Secret Block
+
+**What it demonstrates:** Secure credential management with Prefect's Secret block.
+
+**Airflow equivalent:** Connections / Variables with `is_encrypted`.
+
+```python
+from prefect.blocks.system import Secret
+
+@task
+def get_api_key() -> str:
+    try:
+        secret = Secret.load("example-api-key")
+        return secret.get()
+    except ValueError:
+        return "dev-fallback-key-12345"
+```
+
+`Secret.load()` retrieves encrypted values from the Prefect server. The fallback
+pattern ensures local development works without a configured server.
+
+---
+
+### 032 -- Custom Blocks
+
+**What it demonstrates:** Defining custom Block classes for typed configuration.
+
+**Airflow equivalent:** Custom connection types, configuration classes.
+
+```python
+from prefect.blocks.core import Block
+
+class DatabaseConfig(Block):
+    host: str = "localhost"
+    port: int = 5432
+    database: str = "mydb"
+    username: str = "admin"
+
+@task
+def connect_database(config: DatabaseConfig) -> str:
+    return f"Connected to {config.host}:{config.port}/{config.database}"
+```
+
+Custom blocks provide typed, validated configuration. In production, save with
+`block.save("name")` and load with `Block.load("name")`. Here blocks are
+constructed directly for local testability.
+
+---
+
+## Async Patterns (033--036)
+
+### 033 -- Async Tasks
+
+**What it demonstrates:** Async task and flow definitions with sequential awaiting.
+
+**Airflow equivalent:** Deferrable operators (async sensor pattern).
+
+```python
+@task
+async def async_fetch(url: str) -> dict:
+    await asyncio.sleep(0.1)
+    return {"url": url, "status": 200}
+
+@flow(name="033_async_tasks", log_prints=True)
+async def async_tasks_flow() -> None:
+    response = await async_fetch("https://api.example.com/users")
+    await async_process(response)
+```
+
+Async tasks and flows are defined with `async def` and awaited. The `__main__`
+block uses `asyncio.run()`.
+
+---
+
+### 034 -- Concurrent Async
+
+**What it demonstrates:** Concurrent task execution with `asyncio.gather()`.
+
+**Airflow equivalent:** Multiple deferrable operators running in parallel.
+
+```python
+@flow(name="034_concurrent_async", log_prints=True)
+async def concurrent_async_flow() -> None:
+    results = await asyncio.gather(
+        fetch_endpoint("users", delay=0.3),
+        fetch_endpoint("orders", delay=0.5),
+        fetch_endpoint("products", delay=0.2),
+    )
+    await aggregate_results(list(results))
+```
+
+`asyncio.gather()` runs all fetches concurrently. Total wall-clock time is
+approximately `max(delays)`, not `sum(delays)`.
+
+---
+
+### 035 -- Async Flow Patterns
+
+**What it demonstrates:** Mixing sync and async tasks in an async flow.
+
+**Airflow equivalent:** Mix of standard and deferrable operators.
+
+```python
+@flow(name="035_async_flow_patterns", log_prints=True)
+async def async_flow_patterns_flow() -> None:
+    raw = sync_extract()              # sync task
+    enriched = await enrich_subflow(raw)  # async subflow with gather
+    sync_load(enriched)               # sync task
+```
+
+Sync tasks are called normally inside async flows. Async subflows use
+`asyncio.gather()` for concurrent fan-out over records.
+
+---
+
+### 036 -- Async Map and Submit
+
+**What it demonstrates:** `.map()` and `.submit()` with async tasks.
+
+**Airflow equivalent:** Dynamic task mapping with deferrable operators.
+
+```python
+@flow(name="036_async_map_and_submit", log_prints=True)
+async def async_map_and_submit_flow() -> None:
+    transform_futures = async_transform.map(items)
+    transformed = [f.result() for f in transform_futures]
+
+    validate_futures = [async_validate.submit(item) for item in transformed]
+    validations = [f.result() for f in validate_futures]
+```
+
+`.map()` and `.submit()` work with async tasks for parallel fan-out within
+an async flow.
+
+---
+
+## Deployment and Scheduling (037--040)
+
+### 037 -- Flow Serve
+
+**What it demonstrates:** The simplest deployment method: `flow.serve()`.
+
+**Airflow equivalent:** DAG placed in `dags/` folder, picked up by scheduler.
+
+```python
+@flow(name="037_flow_serve", log_prints=True)
+def flow_serve_flow() -> None:
+    raw = extract_data()
+    transformed = transform_data(raw)
+    load_data(transformed)
+
+# Deploy with: flow_serve_flow.serve(name="037-flow-serve", cron="*/5 * * * *")
+```
+
+`flow.serve()` creates a lightweight deployment that runs locally. Pass `cron=`
+or `interval=` for scheduling. For production infrastructure isolation, use
+`flow.deploy()` with work pools.
+
+---
+
+### 038 -- Schedules
+
+**What it demonstrates:** Schedule types for Prefect deployments.
+
+**Airflow equivalent:** DAG `schedule_interval` (cron, timedelta, timetable).
+
+```python
+# CronSchedule: daily_report_flow.serve(name="daily", cron="0 6 * * *")
+# IntervalSchedule: interval_check_flow.serve(name="interval", interval=900)
+# RRuleSchedule: custom_flow.serve(name="custom", rrule="FREQ=WEEKLY;BYDAY=MO,WE,FR")
+```
+
+Three schedule types: `CronSchedule` for cron expressions, `IntervalSchedule`
+for fixed intervals, and `RRuleSchedule` for complex recurrence rules. All can
+be passed to `flow.serve(schedule=...)` or `flow.deploy(schedule=...)`.
+
+---
+
+### 039 -- Work Pools
+
+**What it demonstrates:** Work pool concepts for production deployments.
+
+**Airflow equivalent:** Executors (Local, Celery, Kubernetes).
+
+```python
+# Deploy to a work pool:
+# work_pools_flow.deploy(name="039-work-pool", work_pool_name="my-pool")
+# Start a worker:
+# prefect worker start --pool "my-pool"
+```
+
+Work pools define WHERE work runs. Types include `process`, `docker`, and
+`kubernetes`. `flow.deploy()` targets a named pool. Workers are long-running
+processes that poll a work pool for scheduled runs.
+
+---
+
+### 040 -- Production Pipeline
+
+**What it demonstrates:** Capstone flow combining all Phase 2 concepts.
+
+**Airflow equivalent:** Production DAG with sensors, retries, SLAs, callbacks.
+
+```python
+@flow(name="040_production_pipeline", log_prints=True)
+def production_pipeline() -> None:
+    with tags("production", "phase-2"):
+        raw = extract_stage()           # tagged subflow
+        transformed = transform_stage(raw)  # retries + caching
+        summary = load_stage(transformed)   # persist_result
+        notify(summary)                     # markdown artifact
+```
+
+This is the capstone flow for Phase 2, combining task caching (`INPUTS` policy),
+retries, markdown artifacts, tags, result persistence, and structured logging
+into a production-ready pipeline.

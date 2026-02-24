@@ -72,8 +72,91 @@ A **deployment** packages a flow for remote execution on a schedule or via API
 triggers. Deployments are defined in code or YAML and registered with the
 Prefect server.
 
-This project focuses on local execution, but any flow can be promoted to a
-deployment without changing the flow code itself.
+Two deployment methods:
+
+- **`flow.serve()`** — simplest approach, runs in-process. Good for development
+  and simple production use.
+- **`flow.deploy()`** — sends runs to a work pool for infrastructure-level
+  isolation. Requires a running worker.
+
+```python
+# Simple: run locally with cron schedule
+my_flow.serve(name="my-flow", cron="0 6 * * *")
+
+# Production: deploy to a work pool
+my_flow.deploy(name="my-flow", work_pool_name="my-pool")
+```
+
+## Artifacts
+
+**Artifacts** publish rich content (markdown, tables, links) to the Prefect UI.
+Use them for reports, dashboards, and reference links.
+
+```python
+from prefect.artifacts import create_markdown_artifact, create_table_artifact
+
+create_markdown_artifact(key="report", markdown="# Report\n...")
+create_table_artifact(key="data", table=[{"col": "value"}])
+```
+
+Without a Prefect server, artifact functions silently no-op.
+
+## Blocks
+
+**Blocks** are typed, reusable configuration objects. Built-in blocks include
+`Secret`, `JSON`, and others. Custom blocks subclass `Block`:
+
+```python
+from prefect.blocks.core import Block
+
+class DatabaseConfig(Block):
+    host: str = "localhost"
+    port: int = 5432
+
+# Use directly or save/load from server
+config = DatabaseConfig(host="db.prod.com")
+```
+
+The `Secret` block handles encrypted credentials:
+
+```python
+from prefect.blocks.system import Secret
+api_key = Secret.load("my-key").get()
+```
+
+## Async Flows
+
+Prefect natively supports `async def` tasks and flows. Use `asyncio.gather()`
+for concurrent I/O-bound work:
+
+```python
+@task
+async def fetch(url: str) -> dict:
+    await asyncio.sleep(0.5)
+    return {"url": url}
+
+@flow
+async def pipeline() -> None:
+    results = await asyncio.gather(fetch("a"), fetch("b"), fetch("c"))
+```
+
+Sync and async tasks can be mixed in an async flow. Async flows use
+`asyncio.run()` in `__main__`.
+
+## Deployment and Scheduling
+
+Prefect supports three schedule types:
+
+- **CronSchedule** — standard cron expressions (`"0 6 * * *"`)
+- **IntervalSchedule** — fixed intervals (`interval=900` seconds)
+- **RRuleSchedule** — RFC 5545 recurrence rules (`"FREQ=WEEKLY;BYDAY=MO,WE,FR"`)
+
+Schedules are passed to `flow.serve()` or `flow.deploy()`:
+
+```python
+my_flow.serve(name="daily", cron="0 6 * * *")
+my_flow.serve(name="every-15m", interval=900)
+```
 
 ## Airflow to Prefect comparison
 
@@ -99,3 +182,23 @@ deployment without changing the flow code itself.
 | ShortCircuitOperator | Python `return` | 018 |
 | `@setup` / `@teardown` | Context managers, `try/finally` | 019 |
 | Complex DAG | Subflows + `.map()` + hooks | 020 |
+| Custom caching / Redis | `cache_policy`, `cache_key_fn` | 021 |
+| `execution_timeout` | `timeout_seconds` | 022 |
+| Custom `task_id` | `task_run_name` | 023 |
+| `exponential_backoff` | `retry_delay_seconds` list, `retry_jitter_factor` | 024 |
+| Task instance logger | `get_run_logger()` | 025 |
+| DAG/task tags | `tags=`, `tags()` context manager | 026 |
+| Custom `run_id` | `flow_run_name` | 027 |
+| XCom backend config | `persist_result`, `result_storage_key` | 028 |
+| Custom HTML / reports | `create_markdown_artifact()` | 029 |
+| UI plugins | `create_table_artifact()`, `create_link_artifact()` | 030 |
+| Connections (encrypted) | `Secret` block | 031 |
+| Custom connection types | Custom `Block` subclass | 032 |
+| Deferrable operators | `async def` tasks and flows | 033 |
+| Parallel deferrable ops | `asyncio.gather()` | 034 |
+| Mixed operator types | Sync + async tasks in async flow | 035 |
+| Dynamic mapping + async | `.map()` / `.submit()` with async tasks | 036 |
+| DAG in `dags/` folder | `flow.serve()` | 037 |
+| `schedule_interval` | `CronSchedule`, `IntervalSchedule`, `RRuleSchedule` | 038 |
+| Executors (Celery, K8s) | Work pools + workers | 039 |
+| Production DAG | Caching + retries + artifacts + tags | 040 |

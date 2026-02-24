@@ -43,6 +43,26 @@ make docs                                  # serve documentation locally
 | 018 | Early Return | Short-circuit with `return` |
 | 019 | Context Managers | `try/finally`, resource setup/teardown |
 | 020 | Complex Pipeline | Subflows, `.map()`, notifications, end-to-end |
+| 021 | Task Caching | `cache_policy`, `INPUTS`, `TASK_SOURCE`, `cache_key_fn` |
+| 022 | Task Timeouts | `timeout_seconds` on tasks and flows |
+| 023 | Task Run Names | `task_run_name` template strings and callables |
+| 024 | Advanced Retries | `retry_delay_seconds` list, `retry_jitter_factor`, `retry_condition_fn` |
+| 025 | Structured Logging | `get_run_logger()`, `log_prints`, extra context |
+| 026 | Tags | `tags=` on decorators, `tags()` context manager |
+| 027 | Flow Run Names | `flow_run_name` template strings and callables |
+| 028 | Result Persistence | `persist_result`, `result_storage_key` |
+| 029 | Markdown Artifacts | `create_markdown_artifact()` |
+| 030 | Table and Link Artifacts | `create_table_artifact()`, `create_link_artifact()` |
+| 031 | Secret Block | `Secret.load()`, graceful fallback |
+| 032 | Custom Blocks | Subclass `Block` for typed configuration |
+| 033 | Async Tasks | `async def` tasks and flows, `await` |
+| 034 | Concurrent Async | `asyncio.gather()` for parallel async tasks |
+| 035 | Async Flow Patterns | Mixing sync/async tasks, async subflows |
+| 036 | Async Map and Submit | `.map()` and `.submit()` with async tasks |
+| 037 | Flow Serve | `flow.serve()`, cron/interval schedules |
+| 038 | Schedules | `CronSchedule`, `IntervalSchedule`, `RRuleSchedule` |
+| 039 | Work Pools | `flow.deploy()`, work pools, workers |
+| 040 | Production Pipeline | Capstone: caching, retries, artifacts, tags, persistence |
 
 ## Documentation
 
