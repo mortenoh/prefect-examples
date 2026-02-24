@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help sync lint fmt test clean run server start docs docs-build
+.PHONY: help sync lint fmt test clean run server start docker-build deploy docs docs-build
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -31,7 +31,14 @@ server: ## Start Prefect UI server (http://127.0.0.1:4200)
 	PREFECT_SERVER_ANALYTICS_ENABLED=false PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT=false uv run prefect server start
 
 start: ## Start Prefect stack (PostgreSQL + Server + Worker + RustFS)
-	docker compose up
+	docker compose up --build
+
+docker-build: ## Clean rebuild of the entire Docker stack
+	docker compose down -v && docker compose build --no-cache && docker compose up --remove-orphans
+
+deploy: ## Register flow deployments with Prefect server
+	PREFECT_API_URL=http://localhost:4200/api uv run python deployments/dhis2_connection/deploy.py
+	PREFECT_API_URL=http://localhost:4200/api uv run python deployments/dhis2_ou/deploy.py
 
 docs: ## Serve docs locally
 	uv run mkdocs serve
