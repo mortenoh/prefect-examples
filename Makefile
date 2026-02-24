@@ -37,8 +37,8 @@ docker-build: ## Clean rebuild of the entire Docker stack
 	docker compose down -v && docker compose build --no-cache
 
 deploy: ## Register flow deployments with Prefect server
-	PREFECT_API_URL=http://localhost:4200/api uv run python deployments/dhis2_connection/deploy.py
-	PREFECT_API_URL=http://localhost:4200/api uv run python deployments/dhis2_ou/deploy.py
+	cd deployments/dhis2_connection && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
+	cd deployments/dhis2_ou && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
 
 docs: ## Serve docs locally
 	uv run mkdocs serve
