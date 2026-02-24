@@ -33,7 +33,7 @@ class Dhis2Connection(Block):
 
     base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
-    api_version: str = "40"
+    api_version: str = "43"
 
 
 # ---------------------------------------------------------------------------

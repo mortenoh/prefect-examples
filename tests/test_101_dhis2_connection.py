@@ -33,10 +33,10 @@ def _mock_response(json_data: dict, status_code: int = 200) -> MagicMock:
 
 
 def test_connection_construction() -> None:
-    conn = Dhis2Connection(base_url="https://test.dhis2.org", username="user", api_version="40")
+    conn = Dhis2Connection(base_url="https://test.dhis2.org", username="user", api_version="43")
     assert conn.base_url == "https://test.dhis2.org"
     assert conn.username == "user"
-    assert conn.api_version == "40"
+    assert conn.api_version == "43"
 
 
 def test_connection_defaults() -> None:
@@ -60,7 +60,7 @@ def test_short_password_masking() -> None:
 
 @patch("httpx.get")
 def test_verify_response(mock_get: MagicMock) -> None:
-    mock_get.return_value = _mock_response({"version": "2.40.0"})
+    mock_get.return_value = _mock_response({"version": "2.43-SNAPSHOT"})
     conn = Dhis2Connection()
     response = verify_connection.fn(conn, "district")
     assert isinstance(response, Dhis2ApiResponse)

@@ -119,7 +119,7 @@ def from_json_config(config_json: str | None = None) -> ConfigSource:
         ConfigSource.
     """
     if config_json is None:
-        config_json = json.dumps({"base_url": "https://play.im.dhis2.org/dev", "api_version": "40"})
+        config_json = json.dumps({"base_url": "https://play.im.dhis2.org/dev", "api_version": "43"})
     config = json.loads(config_json)
     value = config.get("base_url", "")
     source = ConfigSource(

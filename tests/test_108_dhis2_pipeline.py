@@ -25,7 +25,7 @@ validate_metadata = _mod.validate_metadata
 build_dashboard = _mod.build_dashboard
 dhis2_pipeline_flow = _mod.dhis2_pipeline_flow
 
-SAMPLE_SYSTEM_INFO = {"version": "2.40.0", "revision": "abc123"}
+SAMPLE_SYSTEM_INFO = {"version": "2.43-SNAPSHOT", "revision": "abc123"}
 SAMPLE_ORG_UNITS = [
     {"id": "OU1", "name": "National", "level": 1, "parent": None},
     {"id": "OU2", "name": "Region", "level": 2, "parent": {"id": "OU1"}},

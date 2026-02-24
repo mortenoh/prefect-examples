@@ -819,7 +819,7 @@ class Dhis2Connection(Block):
     _block_type_name = "dhis2-connection"
     base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
-    api_version: str = "40"
+    api_version: str = "43"
 
 # Load from server with fallback to inline defaults
 def get_dhis2_connection() -> Dhis2Connection:

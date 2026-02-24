@@ -261,7 +261,7 @@ from prefect.blocks.core import Block
 class Dhis2Connection(Block):
     base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
-    api_version: str = "40"
+    api_version: str = "43"
 
 # Register once:
 Dhis2Connection(base_url="https://dhis2.example.org").save("dhis2")

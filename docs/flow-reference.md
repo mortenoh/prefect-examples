@@ -2380,7 +2380,7 @@ block for password management, connection verification.
 class Dhis2Connection(Block):
     base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
-    api_version: str = "40"
+    api_version: str = "43"
 
 conn = get_dhis2_connection()    # Block.load() with fallback
 password = get_dhis2_password()  # Secret.load() with fallback
