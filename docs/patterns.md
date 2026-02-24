@@ -463,7 +463,7 @@ deployments:
       name: default
 
   - name: etl-every-5m
-    entrypoint: flows/037_flow_serve.py:flow_serve_flow
+    entrypoint: flows/core/core_flow_serve.py:flow_serve_flow
     schedules:
       - cron: "*/5 * * * *"
     work_pool:

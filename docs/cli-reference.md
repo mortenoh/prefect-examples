@@ -277,7 +277,7 @@ The project `Makefile` wraps common commands:
 | `make fmt` | `uv run ruff format . && uv run ruff check --fix .` | Auto-format code |
 | `make test` | `uv run pytest` | Run the test suite |
 | `make clean` | `rm -rf ...` | Remove build artifacts |
-| `make run` | `uv run python flows/001_hello_world.py` | Run the hello-world flow |
+| `make run` | `uv run python flows/basics/basics_hello_world.py` | Run the hello-world flow |
 | `make server` | `uv run prefect server start` | Start a local Prefect server |
 | `make start` | `docker compose up --build` | Start the full Docker stack |
 | `make restart` | `docker compose down -v && ... up` | Tear down and rebuild the stack |

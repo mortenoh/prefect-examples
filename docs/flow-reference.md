@@ -4,9 +4,9 @@ Detailed walkthrough of all 111 example flows, organised by category.
 
 ---
 
-## Basics (001--005)
+## Basics 
 
-### 001 -- Hello World
+### Hello World
 
 **What it demonstrates:** The simplest possible Prefect flow -- two tasks
 executed sequentially.
@@ -20,7 +20,7 @@ def say_hello() -> str:
     print(msg)
     return msg
 
-@flow(name="001_hello_world", log_prints=True)
+@flow(name="basics_hello_world", log_prints=True)
 def hello_world() -> None:
     say_hello()
     print_date()
@@ -31,7 +31,7 @@ everything automatically.
 
 ---
 
-### 002 -- Python Tasks
+### Python Tasks
 
 **What it demonstrates:** Tasks with typed parameters and return values.
 
@@ -56,14 +56,14 @@ docstrings all work as expected.
 
 ---
 
-### 003 -- Task Dependencies
+### Task Dependencies
 
 **What it demonstrates:** Parallel fan-out with `.submit()` and a join step.
 
 **Airflow equivalent:** `>>` operator / `set_downstream`.
 
 ```python
-@flow(name="003_task_dependencies", log_prints=True)
+@flow(name="basics_task_dependencies", log_prints=True)
 def task_dependencies_flow() -> None:
     initial = start()
 
@@ -79,7 +79,7 @@ outputs before passing them downstream.
 
 ---
 
-### 004 -- Taskflow ETL
+### Taskflow ETL
 
 **What it demonstrates:** Classic extract-transform-load wired through return
 values.
@@ -87,7 +87,7 @@ values.
 **Airflow equivalent:** TaskFlow API (`@task`).
 
 ```python
-@flow(name="004_taskflow_etl", log_prints=True)
+@flow(name="basics_taskflow_etl", log_prints=True)
 def taskflow_etl_flow() -> None:
     raw = extract()
     transformed = transform(raw)
@@ -99,7 +99,7 @@ receives it -- no XCom needed.
 
 ---
 
-### 005 -- Task Results
+### Task Results
 
 **What it demonstrates:** Passing structured data (dicts, lists) between tasks.
 
@@ -121,16 +121,16 @@ object between tasks.
 
 ---
 
-## Control Flow (006--008)
+## Control Flow 
 
-### 006 -- Conditional Logic
+### Conditional Logic
 
 **What it demonstrates:** Branching with plain Python `if/elif/else`.
 
 **Airflow equivalent:** BranchPythonOperator.
 
 ```python
-@flow(name="006_conditional_logic", log_prints=True)
+@flow(name="basics_conditional_logic", log_prints=True)
 def conditional_logic_flow() -> None:
     branch = check_condition()
 
@@ -146,7 +146,7 @@ No special operators needed. Python control flow works directly inside flows.
 
 ---
 
-### 007 -- State Handlers
+### State Handlers
 
 **What it demonstrates:** Reacting to task/flow state changes with hook
 functions, and continuing past failures with `allow_failure`.
@@ -158,7 +158,7 @@ functions, and continuing past failures with `allow_failure`.
 def fail_task():
     raise ValueError("Intentional failure for demonstration")
 
-@flow(name="007_state_handlers", log_prints=True, on_completion=[on_flow_completion])
+@flow(name="basics_state_handlers", log_prints=True, on_completion=[on_flow_completion])
 def state_handlers_flow() -> None:
     succeed_task()
     failing_future = fail_task.submit()
@@ -171,14 +171,14 @@ fail.
 
 ---
 
-### 008 -- Parameterized Flows
+### Parameterized Flows
 
 **What it demonstrates:** Runtime parameters with typed defaults.
 
 **Airflow equivalent:** Jinja2 templating / params dict.
 
 ```python
-@flow(name="008_parameterized_flows", log_prints=True)
+@flow(name="basics_parameterized_flows", log_prints=True)
 def parameterized_flow(
     name: str = "World",
     date_str: str | None = None,
@@ -194,9 +194,9 @@ are preserved in the Prefect UI when the flow is deployed.
 
 ---
 
-## Composition (009--010)
+## Composition 
 
-### 009 -- Subflows
+### Subflows
 
 **What it demonstrates:** Composing larger pipelines from smaller, reusable
 flows.
@@ -204,7 +204,7 @@ flows.
 **Airflow equivalent:** TaskGroup / SubDagOperator.
 
 ```python
-@flow(name="009_subflows", log_prints=True)
+@flow(name="basics_subflows", log_prints=True)
 def pipeline_flow() -> None:
     raw = extract_flow()
     transformed = transform_flow(raw)
@@ -216,14 +216,14 @@ flow run in the Prefect UI with its own state tracking.
 
 ---
 
-### 010 -- Dynamic Tasks
+### Dynamic Tasks
 
 **What it demonstrates:** Dynamic fan-out over a list of items with `.map()`.
 
 **Airflow equivalent:** Dynamic task mapping (`expand()`).
 
 ```python
-@flow(name="010_dynamic_tasks", log_prints=True)
+@flow(name="basics_dynamic_tasks", log_prints=True)
 def dynamic_tasks_flow() -> None:
     items = generate_items()
     processed = process_item.map(items)
@@ -235,9 +235,9 @@ runtime -- no DAG rewrite required.
 
 ---
 
-## Operational (011--012)
+## Operational 
 
-### 011 -- Polling Tasks
+### Polling Tasks
 
 **What it demonstrates:** Waiting for an external condition with a polling
 loop.
@@ -263,7 +263,7 @@ task accomplishes the same thing.
 
 ---
 
-### 012 -- Retries and Hooks
+### Retries and Hooks
 
 **What it demonstrates:** Automatic retries and lifecycle hooks on tasks and
 flows.
@@ -286,9 +286,9 @@ state transitions for logging or alerting.
 
 ---
 
-## Reuse and Events (013--014)
+## Reuse and Events 
 
-### 013 -- Reusable Tasks
+### Reusable Tasks
 
 **What it demonstrates:** Importing shared tasks from a project task library.
 
@@ -297,7 +297,7 @@ state transitions for logging or alerting.
 ```python
 from prefect_examples.tasks import print_message, square_number
 
-@flow(name="013_reusable_tasks", log_prints=True)
+@flow(name="basics_reusable_tasks", log_prints=True)
 def reusable_tasks_flow() -> None:
     print_message("Hello from reusable tasks!")
     result = square_number(7)
@@ -308,7 +308,7 @@ in any flow. The shared library lives in `src/prefect_examples/tasks.py`.
 
 ---
 
-### 014 -- Events
+### Events
 
 **What it demonstrates:** Emitting custom Prefect events for observability and
 automation triggers.
@@ -330,16 +330,16 @@ trigger automations, dashboards, or downstream workflows.
 
 ---
 
-## Advanced (015--020)
+## Advanced 
 
-### 015 -- Flow of Flows
+### Flow of Flows
 
 **What it demonstrates:** Orchestrating multiple flows from a parent flow.
 
 **Airflow equivalent:** TriggerDagRunOperator.
 
 ```python
-@flow(name="015_flow_of_flows", log_prints=True)
+@flow(name="basics_flow_of_flows", log_prints=True)
 def orchestrator() -> None:
     raw = ingest_flow()
     processed = transform_flow(raw)
@@ -353,7 +353,7 @@ subflow is independently testable and reusable. For deployed flows, use
 
 ---
 
-### 016 -- Concurrency Limits
+### Concurrency Limits
 
 **What it demonstrates:** Throttling parallel task execution with named limits.
 
@@ -374,7 +374,7 @@ many tasks can enter a critical section simultaneously. The limit name
 
 ---
 
-### 017 -- Variables and Params
+### Variables and Params
 
 **What it demonstrates:** Storing and retrieving runtime configuration.
 
@@ -394,14 +394,14 @@ backend. Combine with typed flow parameters for full runtime configuration.
 
 ---
 
-### 018 -- Early Return
+### Early Return
 
 **What it demonstrates:** Short-circuiting a flow with a plain `return`.
 
 **Airflow equivalent:** ShortCircuitOperator.
 
 ```python
-@flow(name="018_early_return", log_prints=True)
+@flow(name="basics_early_return", log_prints=True)
 def early_return_flow(skip: bool = False) -> None:
     if skip:
         print("Skip flag is set — returning early")
@@ -420,14 +420,14 @@ marks it as `Completed`.
 
 ---
 
-### 019 -- Context Managers
+### Context Managers
 
 **What it demonstrates:** Resource setup and teardown with `try/finally`.
 
 **Airflow equivalent:** `@setup` / `@teardown` decorators.
 
 ```python
-@flow(name="019_context_managers", log_prints=True)
+@flow(name="basics_context_managers", log_prints=True)
 def context_managers_flow() -> None:
     resource = setup_resource()
     try:
@@ -441,7 +441,7 @@ work inside flows and guarantee teardown even on failure.
 
 ---
 
-### 020 -- Complex Pipeline
+### Complex Pipeline
 
 **What it demonstrates:** End-to-end pipeline combining subflows, mapped tasks,
 and notifications.
@@ -449,7 +449,7 @@ and notifications.
 **Airflow equivalent:** Complex DAG with branching, sensors, callbacks.
 
 ```python
-@flow(name="020_complex_pipeline", log_prints=True)
+@flow(name="basics_complex_pipeline", log_prints=True)
 def complex_pipeline() -> None:
     raw = extract_stage()
     transformed = transform_stage(raw)
@@ -460,7 +460,7 @@ def complex_pipeline() -> None:
 The transform stage uses chained `.map()` calls:
 
 ```python
-@flow(name="020_transform", log_prints=True)
+@flow(name="basics_transform", log_prints=True)
 def transform_stage(raw: list[dict]) -> list[dict]:
     validated = validate_record.map(raw)
     enriched = enrich_record.map(validated)
@@ -475,7 +475,7 @@ pipeline.
 
 ## Task-Level Configuration (021--024)
 
-### 021 -- Task Caching
+### Task Caching
 
 **What it demonstrates:** Task-level caching to avoid redundant computation.
 
@@ -503,7 +503,7 @@ Cache hits are only visible in Prefect runtime.
 
 ---
 
-### 022 -- Task Timeouts
+### Task Timeouts
 
 **What it demonstrates:** Task-level and flow-level timeout configuration.
 
@@ -519,7 +519,7 @@ def slow_task() -> str:
     time.sleep(10)  # Will be interrupted by timeout
     return "completed"
 
-@flow(name="022_task_timeouts", log_prints=True, timeout_seconds=30)
+@flow(name="core_task_timeouts", log_prints=True, timeout_seconds=30)
 def task_timeouts_flow() -> None:
     quick_task()
     try:
@@ -533,7 +533,7 @@ The flow catches the timeout and runs cleanup. Note: `.fn()` bypasses timeouts.
 
 ---
 
-### 023 -- Task Run Names
+### Task Run Names
 
 **What it demonstrates:** Custom task run naming using templates and callables.
 
@@ -558,7 +558,7 @@ Template strings use parameter names in braces. Callables access
 
 ---
 
-### 024 -- Advanced Retries
+### Advanced Retries
 
 **What it demonstrates:** Advanced retry configuration: backoff, jitter, and
 conditional retry logic.
@@ -587,7 +587,7 @@ errors trigger retries.
 
 ## Flow-Level Configuration (025--028)
 
-### 025 -- Structured Logging
+### Structured Logging
 
 **What it demonstrates:** Prefect's structured logging with `get_run_logger()`,
 print capture, and extra context fields.
@@ -616,7 +616,7 @@ output is captured as INFO-level log entries.
 
 ---
 
-### 026 -- Tags
+### Tags
 
 **What it demonstrates:** Tagging tasks and flows for organisation and filtering.
 
@@ -628,7 +628,7 @@ from prefect import flow, tags, task
 @task(tags=["etl", "extract"])
 def extract_sales() -> list[dict]: ...
 
-@flow(name="026_tags", log_prints=True, tags=["examples", "phase-2"])
+@flow(name="core_tags", log_prints=True, tags=["examples", "phase-2"])
 def tags_flow() -> None:
     extract_sales()
     with tags("ad-hoc", "debug"):
@@ -641,7 +641,7 @@ be used for filtering and automation rules.
 
 ---
 
-### 027 -- Flow Run Names
+### Flow Run Names
 
 **What it demonstrates:** Custom flow run naming using templates and callables.
 
@@ -664,7 +664,7 @@ both supported.
 
 ---
 
-### 028 -- Result Persistence
+### Result Persistence
 
 **What it demonstrates:** Persisting task and flow results for durability.
 
@@ -686,9 +686,9 @@ requires a Prefect server; tests verify logic only.
 
 ---
 
-## Artifacts and Blocks (029--032)
+## Artifacts and Blocks 
 
-### 029 -- Markdown Artifacts
+### Markdown Artifacts
 
 **What it demonstrates:** Creating markdown artifacts for rich reporting.
 
@@ -710,7 +710,7 @@ UI. Without a server, it silently no-ops — tests pass locally.
 
 ---
 
-### 030 -- Table and Link Artifacts
+### Table and Link Artifacts
 
 **What it demonstrates:** Table and link artifacts for structured data display.
 
@@ -734,7 +734,7 @@ to related resources from the flow run page.
 
 ---
 
-### 031 -- Secret Block
+### Secret Block
 
 **What it demonstrates:** Secure credential management with Prefect's Secret block.
 
@@ -757,7 +757,7 @@ pattern ensures local development works without a configured server.
 
 ---
 
-### 032 -- Custom Blocks
+### Custom Blocks
 
 **What it demonstrates:** Defining custom Block classes for typed configuration.
 
@@ -783,9 +783,9 @@ constructed directly for local testability.
 
 ---
 
-## Async Patterns (033--036)
+## Async Patterns 
 
-### 033 -- Async Tasks
+### Async Tasks
 
 **What it demonstrates:** Async task and flow definitions with sequential awaiting.
 
@@ -797,7 +797,7 @@ async def async_fetch(url: str) -> dict:
     await asyncio.sleep(0.1)
     return {"url": url, "status": 200}
 
-@flow(name="033_async_tasks", log_prints=True)
+@flow(name="core_async_tasks", log_prints=True)
 async def async_tasks_flow() -> None:
     response = await async_fetch("https://api.example.com/users")
     await async_process(response)
@@ -808,14 +808,14 @@ block uses `asyncio.run()`.
 
 ---
 
-### 034 -- Concurrent Async
+### Concurrent Async
 
 **What it demonstrates:** Concurrent task execution with `asyncio.gather()`.
 
 **Airflow equivalent:** Multiple deferrable operators running in parallel.
 
 ```python
-@flow(name="034_concurrent_async", log_prints=True)
+@flow(name="core_concurrent_async", log_prints=True)
 async def concurrent_async_flow() -> None:
     results = await asyncio.gather(
         fetch_endpoint("users", delay=0.3),
@@ -830,14 +830,14 @@ approximately `max(delays)`, not `sum(delays)`.
 
 ---
 
-### 035 -- Async Flow Patterns
+### Async Flow Patterns
 
 **What it demonstrates:** Mixing sync and async tasks in an async flow.
 
 **Airflow equivalent:** Mix of standard and deferrable operators.
 
 ```python
-@flow(name="035_async_flow_patterns", log_prints=True)
+@flow(name="core_async_flow_patterns", log_prints=True)
 async def async_flow_patterns_flow() -> None:
     raw = sync_extract()              # sync task
     enriched = await enrich_subflow(raw)  # async subflow with gather
@@ -849,14 +849,14 @@ Sync tasks are called normally inside async flows. Async subflows use
 
 ---
 
-### 036 -- Async Map and Submit
+### Async Map and Submit
 
 **What it demonstrates:** `.map()` and `.submit()` with async tasks.
 
 **Airflow equivalent:** Dynamic task mapping with deferrable operators.
 
 ```python
-@flow(name="036_async_map_and_submit", log_prints=True)
+@flow(name="core_async_map_and_submit", log_prints=True)
 async def async_map_and_submit_flow() -> None:
     transform_futures = async_transform.map(items)
     transformed = [f.result() for f in transform_futures]
@@ -870,16 +870,16 @@ an async flow.
 
 ---
 
-## Deployment and Scheduling (037--040)
+## Deployment and Scheduling 
 
-### 037 -- Flow Serve
+### Flow Serve
 
 **What it demonstrates:** The simplest deployment method: `flow.serve()`.
 
 **Airflow equivalent:** DAG placed in `dags/` folder, picked up by scheduler.
 
 ```python
-@flow(name="037_flow_serve", log_prints=True)
+@flow(name="core_flow_serve", log_prints=True)
 def flow_serve_flow() -> None:
     raw = extract_data()
     transformed = transform_data(raw)
@@ -894,7 +894,7 @@ or `interval=` for scheduling. For production infrastructure isolation, use
 
 ---
 
-### 038 -- Schedules
+### Schedules
 
 **What it demonstrates:** Schedule types for Prefect deployments.
 
@@ -912,7 +912,7 @@ be passed to `flow.serve(schedule=...)` or `flow.deploy(schedule=...)`.
 
 ---
 
-### 039 -- Work Pools
+### Work Pools
 
 **What it demonstrates:** Work pool concepts for production deployments.
 
@@ -931,14 +931,14 @@ processes that poll a work pool for scheduled runs.
 
 ---
 
-### 040 -- Production Pipeline
+### Production Pipeline
 
 **What it demonstrates:** Capstone flow combining all Phase 2 concepts.
 
 **Airflow equivalent:** Production DAG with sensors, retries, SLAs, callbacks.
 
 ```python
-@flow(name="040_production_pipeline", log_prints=True)
+@flow(name="core_production_pipeline", log_prints=True)
 def production_pipeline() -> None:
     with tags("production", "phase-2"):
         raw = extract_stage()           # tagged subflow
@@ -953,9 +953,9 @@ into a production-ready pipeline.
 
 ---
 
-## Pydantic and Data Patterns (041--044)
+## Pydantic and Data Patterns 
 
-### 041 -- Pydantic Models
+### Pydantic Models
 
 **What it demonstrates:** Using Pydantic `BaseModel` as task parameters and return types for automatic validation and type safety.
 
@@ -979,7 +979,7 @@ Pydantic models flow naturally between tasks -- no XCom serialisation pain. Vali
 
 ---
 
-### 042 -- Shell Tasks
+### Shell Tasks
 
 **What it demonstrates:** Running shell commands and scripts from Prefect tasks using `subprocess`.
 
@@ -996,7 +996,7 @@ Prefect has no BashOperator. `subprocess.run()` inside a `@task` is the direct e
 
 ---
 
-### 043 -- HTTP Tasks
+### HTTP Tasks
 
 **What it demonstrates:** Making HTTP requests from tasks using `httpx`.
 
@@ -1014,7 +1014,7 @@ No special operator needed. `httpx` (a Prefect transitive dependency) in a `@tas
 
 ---
 
-### 044 -- Task Factories
+### Task Factories
 
 **What it demonstrates:** Creating reusable tasks dynamically with factory functions.
 
@@ -1035,9 +1035,9 @@ Factory functions generate `@task`-decorated callables for consistent behaviour 
 
 ---
 
-## Advanced Mapping and Error Handling (045--048)
+## Advanced Mapping and Error Handling 
 
-### 045 -- Advanced Map Patterns
+### Advanced Map Patterns
 
 **What it demonstrates:** Multi-argument `.map()`, chained maps, and result collection.
 
@@ -1056,7 +1056,7 @@ Unpack list-of-dicts into parallel `.map()` calls by passing separate lists for 
 
 ---
 
-### 046 -- Error Handling ETL
+### Error Handling ETL
 
 **What it demonstrates:** The quarantine pattern -- good rows pass through, bad rows are captured with error reasons.
 
@@ -1085,7 +1085,7 @@ Pydantic models make quarantine results structured and type-safe.
 
 ---
 
-### 047 -- Pydantic Validation
+### Pydantic Validation
 
 **What it demonstrates:** Using Pydantic `field_validator` for data quality enforcement.
 
@@ -1109,7 +1109,7 @@ class WeatherReading(BaseModel):
 
 ---
 
-### 048 -- SLA Monitoring
+### SLA Monitoring
 
 **What it demonstrates:** Tracking task durations and comparing against SLA thresholds.
 
@@ -1128,9 +1128,9 @@ Use `time.monotonic()` for accurate timing and compare against configurable thre
 
 ---
 
-## Notifications and Observability (049--052)
+## Notifications and Observability 
 
-### 049 -- Webhook Notifications
+### Webhook Notifications
 
 **What it demonstrates:** Sending webhook notifications on pipeline events.
 
@@ -1138,7 +1138,7 @@ Use `time.monotonic()` for accurate timing and compare against configurable thre
 
 ```python
 @flow(
-    name="049_webhook_notifications",
+    name="patterns_webhook_notifications",
     on_completion=[on_flow_completion],
     on_failure=[on_flow_failure],
 )
@@ -1152,7 +1152,7 @@ Flow hooks (`on_completion`, `on_failure`) trigger automatically. In production,
 
 ---
 
-### 050 -- Failure Escalation
+### Failure Escalation
 
 **What it demonstrates:** Progressive retry with escalation hooks at each failure.
 
@@ -1168,7 +1168,7 @@ The `on_failure` hook fires on each retry failure, allowing escalation logging. 
 
 ---
 
-### 051 -- Testable Flow Patterns
+### Testable Flow Patterns
 
 **What it demonstrates:** Separating business logic from Prefect wiring for maximum testability.
 
@@ -1191,7 +1191,7 @@ Test pure functions directly (fast, no Prefect overhead) and task wrappers via `
 
 ---
 
-### 052 -- Reusable Utilities
+### Reusable Utilities
 
 **What it demonstrates:** Custom task utility decorators for consistent behaviour.
 
@@ -1217,9 +1217,9 @@ Build a task utility library for timing, validation, and other cross-cutting con
 
 ---
 
-## Composition and Scheduling (053--056)
+## Composition and Scheduling 
 
-### 053 -- Advanced State Handling
+### Advanced State Handling
 
 **What it demonstrates:** Using `allow_failure` and state inspection for mixed-outcome workflows.
 
@@ -1236,14 +1236,14 @@ skip_task(wait_for=[allow_failure(fail_future)])
 
 ---
 
-### 054 -- Nested Subflows
+### Nested Subflows
 
 **What it demonstrates:** Organising complex pipelines with hierarchical subflow groups.
 
 **Airflow equivalent:** TaskGroups and nested groups.
 
 ```python
-@flow(name="054_nested_subflows", log_prints=True)
+@flow(name="patterns_nested_subflows", log_prints=True)
 def nested_subflows_flow() -> None:
     raw = extract_group()       # subflow with multiple tasks
     transformed = transform_group(raw)  # subflow with clean + enrich
@@ -1254,14 +1254,14 @@ Each subflow appears as a nested flow run in the Prefect UI with independent sta
 
 ---
 
-### 055 -- Backfill Patterns
+### Backfill Patterns
 
 **What it demonstrates:** Parameterised pipelines for date-range processing with gap detection.
 
 **Airflow equivalent:** Backfill awareness, parameterised pipelines.
 
 ```python
-@flow(name="055_backfill_patterns", log_prints=True)
+@flow(name="patterns_backfill_patterns", log_prints=True)
 def backfill_patterns_flow(start_date: str = "2024-01-01", end_date: str = "2024-01-05"):
     initial_results = process_date.map(initial_dates)
     gaps = detect_gaps(initial_dates, start_date, end_date)
@@ -1272,7 +1272,7 @@ Flow parameters replace Airflow's `logical_date`. Gap detection identifies missi
 
 ---
 
-### 056 -- Runtime Context
+### Runtime Context
 
 **What it demonstrates:** Accessing flow and task run metadata at runtime.
 
@@ -1293,9 +1293,9 @@ def get_flow_info() -> dict:
 
 ---
 
-## Advanced Features and Capstone (057--060)
+## Advanced Features and Capstone 
 
-### 057 -- Transactions
+### Transactions
 
 **What it demonstrates:** Atomic task groups with rollback on failure using Prefect transactions.
 
@@ -1304,7 +1304,7 @@ def get_flow_info() -> dict:
 ```python
 from prefect.transactions import transaction
 
-@flow(name="057_transactions", log_prints=True)
+@flow(name="patterns_transactions", log_prints=True)
 def transactions_flow() -> None:
     with transaction():
         a = step_a()
@@ -1317,14 +1317,14 @@ The `transaction()` context manager groups tasks atomically. This is a unique Pr
 
 ---
 
-### 058 -- Interactive Flows
+### Interactive Flows
 
 **What it demonstrates:** Human-in-the-loop approval patterns.
 
 **Airflow equivalent:** Human-in-the-loop operators.
 
 ```python
-@flow(name="058_interactive_flows", log_prints=True)
+@flow(name="patterns_interactive_flows", log_prints=True)
 def interactive_flows_flow() -> None:
     data = prepare_data()
     approved = mock_approval(data)  # In production: pause_flow_run()
@@ -1338,7 +1338,7 @@ In production, use `pause_flow_run()` to pause and wait for human input via the 
 
 ---
 
-### 059 -- Task Runners
+### Task Runners
 
 **What it demonstrates:** Comparing thread pool and default task runners for different workloads.
 
@@ -1357,14 +1357,14 @@ def threaded_io_flow() -> str:
 
 ---
 
-### 060 -- Production Pipeline v2
+### Production Pipeline v2
 
 **What it demonstrates:** Capstone flow combining all Phase 3 features into a production-ready pipeline.
 
 **Airflow equivalent:** Full ETL SCD capstone.
 
 ```python
-@flow(name="060_production_pipeline_v2", log_prints=True, on_completion=[on_pipeline_completion])
+@flow(name="patterns_production_pipeline_v2", log_prints=True, on_completion=[on_pipeline_completion])
 def production_pipeline_v2_flow() -> None:
     with tags("production", "phase-3"):
         source_records = extract_stage()
@@ -1379,9 +1379,9 @@ This capstone combines Pydantic models with field validators, transactions, retr
 
 ---
 
-## File I/O Patterns (061--064)
+## File I/O Patterns 
 
-### 061 -- CSV File Processing
+### CSV File Processing
 
 **What it demonstrates:** File-based ETL pipeline using the stdlib `csv` module
 with generate, read, validate, transform, write, and archive steps.
@@ -1403,7 +1403,7 @@ def validate_csv_row(row: dict, row_number: int, required_columns: list[str]) ->
 
 ---
 
-### 062 -- JSON Event Ingestion
+### JSON Event Ingestion
 
 **What it demonstrates:** Recursive nested JSON flattening into dot-separated
 keys with NDJSON (newline-delimited JSON) output.
@@ -1428,7 +1428,7 @@ writes one JSON object per line for streaming consumption.
 
 ---
 
-### 063 -- Multi-File Batch Processing
+### Multi-File Batch Processing
 
 **What it demonstrates:** Mixed CSV+JSON batch processing with file-type
 dispatch, column harmonisation, and hash-based deduplication.
@@ -1451,7 +1451,7 @@ to a unified format. Hash dedup uses `hashlib.sha256` on key fields.
 
 ---
 
-### 064 -- Incremental Processing
+### Incremental Processing
 
 **What it demonstrates:** Manifest-based incremental file processing. A JSON
 manifest tracks which files have been processed; re-runs skip them.
@@ -1469,9 +1469,9 @@ already records them. This is the foundation for idempotent file pipelines.
 
 ---
 
-## Data Quality Framework (065--068)
+## Data Quality Framework 
 
-### 065 -- Quality Rules Engine
+### Quality Rules Engine
 
 **What it demonstrates:** Configuration-driven data quality rules with a
 registry pattern and traffic-light scoring (green/amber/red).
@@ -1492,7 +1492,7 @@ to check functions. The overall score determines the traffic light.
 
 ---
 
-### 066 -- Cross-Dataset Validation
+### Cross-Dataset Validation
 
 **What it demonstrates:** Referential integrity checks between related datasets
 (orders, customers, products) with orphan detection.
@@ -1512,7 +1512,7 @@ includes orphan records to demonstrate detection.
 
 ---
 
-### 067 -- Data Profiling
+### Data Profiling
 
 **What it demonstrates:** Statistical data profiling using the stdlib
 `statistics` module (mean, stdev, median) with column-level type inference.
@@ -1536,7 +1536,7 @@ string columns get length and uniqueness counts.
 
 ---
 
-### 068 -- Pipeline Health Monitor
+### Pipeline Health Monitor
 
 **What it demonstrates:** Meta-monitoring / watchdog pattern. A flow checks
 the health of other pipelines' outputs via file existence, freshness, row
@@ -1560,9 +1560,9 @@ pipeline.
 
 ---
 
-## API Orchestration Patterns (069--072)
+## API Orchestration Patterns 
 
-### 069 -- Multi-Source Forecast
+### Multi-Source Forecast
 
 **What it demonstrates:** Chained `.map()` calls: geocode cities, then fetch
 forecasts using the resulting coordinates.
@@ -1581,7 +1581,7 @@ simulations for offline testing.
 
 ---
 
-### 070 -- API Pagination
+### API Pagination
 
 **What it demonstrates:** Paginated API consumption with chunked parallel
 processing using `.map()`.
@@ -1603,7 +1603,7 @@ are chunked and processed in parallel via `.map()`.
 
 ---
 
-### 071 -- Cross-Source Enrichment
+### Cross-Source Enrichment
 
 **What it demonstrates:** Joining data from three simulated API sources with
 graceful degradation on partial enrichment failure.
@@ -1623,7 +1623,7 @@ data. Completeness is tracked per-record and summarised in the report.
 
 ---
 
-### 072 -- Response Caching
+### Response Caching
 
 **What it demonstrates:** Application-level response cache with TTL expiry,
 hashlib-based keys, and hit/miss tracking.
@@ -1646,9 +1646,9 @@ Duplicate requests hit the cache. TTL-based expiry prevents stale data.
 
 ---
 
-## Configuration and Orchestration Patterns (073--076)
+## Configuration and Orchestration Patterns 
 
-### 073 -- Config-Driven Pipeline
+### Config-Driven Pipeline
 
 **What it demonstrates:** Pipeline behaviour controlled entirely by a config
 dict: stage selection, parameter overrides, conditional execution.
@@ -1669,7 +1669,7 @@ Disabled stages are skipped automatically.
 
 ---
 
-### 074 -- Producer-Consumer
+### Producer-Consumer
 
 **What it demonstrates:** Cross-flow communication via file-based data contracts.
 Separate producer and consumer flows connected through data packages.
@@ -1677,7 +1677,7 @@ Separate producer and consumer flows connected through data packages.
 **Airflow equivalent:** Asset + XCom producer/consumer (DAG 112).
 
 ```python
-@flow(name="074_producer_consumer", log_prints=True)
+@flow(name="data_engineering_producer_consumer", log_prints=True)
 def producer_consumer_flow(work_dir=None):
     producer_flow(data_dir, producer_id="alpha", records=8)
     producer_flow(data_dir, producer_id="beta", records=12)
@@ -1689,7 +1689,7 @@ them. Each is independently testable.
 
 ---
 
-### 075 -- Circuit Breaker
+### Circuit Breaker
 
 **What it demonstrates:** Circuit breaker state machine (closed -> open ->
 half_open -> closed). After N consecutive failures, the circuit opens.
@@ -1709,7 +1709,7 @@ testable and reproducible.
 
 ---
 
-### 076 -- Discriminated Unions
+### Discriminated Unions
 
 **What it demonstrates:** Pydantic discriminated unions for type-safe
 polymorphic event dispatch.
@@ -1730,9 +1730,9 @@ raw dicts into the correct typed model automatically.
 
 ---
 
-## Production Patterns and Capstone (077--080)
+## Production Patterns and Capstone 
 
-### 077 -- Streaming Batch Processor
+### Streaming Batch Processor
 
 **What it demonstrates:** Windowed batch processing with anomaly detection
 (values > 3 stdev from window mean) and trend analysis between windows.
@@ -1753,7 +1753,7 @@ reproducible test data.
 
 ---
 
-### 078 -- Idempotent Operations
+### Idempotent Operations
 
 **What it demonstrates:** Hash-based idempotency registry. Operations check
 the registry before executing, making them safe to re-run.
@@ -1777,7 +1777,7 @@ prevents re-execution.
 
 ---
 
-### 079 -- Error Recovery
+### Error Recovery
 
 **What it demonstrates:** Checkpoint-based stage recovery. The flow saves
 progress after each stage; re-runs skip completed stages.
@@ -1801,7 +1801,7 @@ Fail at stage X, re-run, and stages before X are automatically skipped.
 
 ---
 
-### 080 -- Production Pipeline v3
+### Production Pipeline v3
 
 **What it demonstrates:** Phase 4 capstone combining file I/O, data profiling,
 quality rules, enrichment with caching, deduplication, and checkpointing.
@@ -1809,7 +1809,7 @@ quality rules, enrichment with caching, deduplication, and checkpointing.
 **Airflow equivalent:** Quality framework + dashboard capstone (DAGs 099, 098).
 
 ```python
-@flow(name="080_production_pipeline_v3", log_prints=True)
+@flow(name="data_engineering_production_pipeline_v3", log_prints=True)
 def production_pipeline_v3_flow(work_dir=None):
     records = ingest_csv(input_path)
     profile = profile_data(records)
@@ -1827,9 +1827,9 @@ artifact.
 
 ---
 
-## Environmental and Risk Analysis (081--084)
+## Environmental and Risk Analysis 
 
-### 081 -- Air Quality Index
+### Air Quality Index
 
 **What it demonstrates:** Threshold-based AQI classification against WHO
 air quality standards, health advisory generation, and severity ordering.
@@ -1865,7 +1865,7 @@ are checked separately for exceedance counting.
 
 ---
 
-### 082 -- Composite Risk Assessment
+### Composite Risk Assessment
 
 **What it demonstrates:** Multi-source weighted risk scoring combining marine
 and flood data into a composite index.
@@ -1894,7 +1894,7 @@ classified into low/moderate/high/critical categories.
 
 ---
 
-### 083 -- Daylight Analysis
+### Daylight Analysis
 
 **What it demonstrates:** Datetime arithmetic for seasonal daylight profiles
 and Pearson correlation between latitude and daylight amplitude.
@@ -1920,7 +1920,7 @@ relationship between absolute latitude and seasonal daylight variation.
 
 ---
 
-### 084 -- Statistical Aggregation
+### Statistical Aggregation
 
 **What it demonstrates:** Fan-out aggregation: one dataset, three independent
 aggregations (by station, by date, cross-tabulation) running in parallel.
@@ -1943,9 +1943,9 @@ builds a station-by-day matrix of mean temperatures using `statistics.mean()`.
 
 ---
 
-## Economic and Demographic Analysis (085--088)
+## Economic and Demographic Analysis 
 
-### 085 -- Demographic Analysis
+### Demographic Analysis
 
 **What it demonstrates:** Nested JSON normalization into relational tables,
 bridge tables for multi-valued fields, and border graph edge construction.
@@ -1969,7 +1969,7 @@ edges. Countries are ranked by population and density.
 
 ---
 
-### 086 -- Multi-Indicator Correlation
+### Multi-Indicator Correlation
 
 **What it demonstrates:** Multi-indicator join on (country, year), forward-fill
 for missing values, and pairwise Pearson correlation matrix.
@@ -1992,7 +1992,7 @@ Year-over-year growth rates are also computed.
 
 ---
 
-### 087 -- Financial Time Series
+### Financial Time Series
 
 **What it demonstrates:** Log returns, rolling window volatility (annualized),
 cross-currency correlation matrix, and anomaly detection via z-score.
@@ -2015,7 +2015,7 @@ multiplying by sqrt(252). Anomalies are returns exceeding 2 standard deviations.
 
 ---
 
-### 088 -- Hypothesis Testing
+### Hypothesis Testing
 
 **What it demonstrates:** Educational null-hypothesis pattern: align seismic
 and weather datasets, test for correlation, and interpret the (expected near-zero)
@@ -2040,9 +2040,9 @@ of correlation is itself a valid finding.
 
 ---
 
-## Advanced Analytics (089--092)
+## Advanced Analytics 
 
-### 089 -- Regression Analysis
+### Regression Analysis
 
 **What it demonstrates:** Manual OLS linear regression with log transformation,
 R-squared computation, and residual-based efficiency ranking.
@@ -2070,7 +2070,7 @@ are ranked by residual: negative residual means lower mortality than predicted
 
 ---
 
-### 090 -- Star Schema
+### Star Schema
 
 **What it demonstrates:** Dimensional modeling with fact and dimension tables,
 surrogate keys, min-max normalization, and weighted composite index ranking.
@@ -2092,7 +2092,7 @@ weighted to produce a composite country ranking.
 
 ---
 
-### 091 -- Staged ETL Pipeline
+### Staged ETL Pipeline
 
 **What it demonstrates:** Three-layer ETL pipeline: staging (raw load with
 timestamp), production (validated + transformed), and summary (grouped stats).
@@ -2119,7 +2119,7 @@ records are retained but flagged. The summary layer computes grouped statistics
 
 ---
 
-### 092 -- Data Transfer
+### Data Transfer
 
 **What it demonstrates:** Cross-system data synchronization with computed
 categorical columns and transfer verification via row count and checksum.
@@ -2144,9 +2144,9 @@ checks both row counts and SHA-256 checksums to ensure data integrity.
 
 ---
 
-## Domain API Processing (093--096)
+## Domain API Processing 
 
-### 093 -- Hierarchical Data Processing
+### Hierarchical Data Processing
 
 **What it demonstrates:** Tree-structured org unit hierarchy with path-based
 depth computation, parent field flattening, and root/leaf identification.
@@ -2173,7 +2173,7 @@ identified by comparing parent and child ID sets.
 
 ---
 
-### 094 -- Expression Complexity Scoring
+### Expression Complexity Scoring
 
 **What it demonstrates:** Regex-based expression parsing for operand counting,
 operator counting, complexity scoring, and binning.
@@ -2206,7 +2206,7 @@ character scan counts operators. The combined score determines a complexity bin
 
 ---
 
-### 095 -- Spatial Data Construction
+### Spatial Data Construction
 
 **What it demonstrates:** Manual GeoJSON-like feature collection construction,
 bounding box computation from point geometries, and geometry type filtering.
@@ -2231,7 +2231,7 @@ max_lon, max_lat].
 
 ---
 
-### 096 -- Parallel Multi-Endpoint Export
+### Parallel Multi-Endpoint Export
 
 **What it demonstrates:** Parallel independent endpoint processing with
 heterogeneous output formats (CSV + JSON) and fan-in summary.
@@ -2257,9 +2257,9 @@ distribution.
 
 ---
 
-## Advanced Patterns and Grand Capstone (097--100)
+## Advanced Patterns and Grand Capstone 
 
-### 097 -- Data Lineage Tracking
+### Data Lineage Tracking
 
 **What it demonstrates:** Hash-based provenance tracking through pipeline
 stages, building a lineage graph from ingest through filter, enrich, and dedup.
@@ -2287,7 +2287,7 @@ and counts data-modifying operations (where input_hash differs from output_hash)
 
 ---
 
-### 098 -- Pipeline Template Factory
+### Pipeline Template Factory
 
 **What it demonstrates:** Reusable pipeline templates with ordered stage slots,
 instantiated with different configurations via the factory pattern.
@@ -2311,7 +2311,7 @@ on the configuration, demonstrating code reuse without duplication.
 
 ---
 
-### 099 -- Multi-Pipeline Orchestrator
+### Multi-Pipeline Orchestrator
 
 **What it demonstrates:** Orchestration of multiple independent mini-pipelines
 with status collection and overall health rollup.
@@ -2338,7 +2338,7 @@ on majority voting and produces a markdown report.
 
 ---
 
-### 100 -- Grand Capstone
+### Grand Capstone
 
 **What it demonstrates:** End-to-end analytics pipeline combining patterns from
 all 5 phases: CSV I/O, profiling, quality checks, enrichment, deduplication,
@@ -2347,7 +2347,7 @@ regression, dimensional modeling, lineage tracking, and a dashboard artifact.
 **Airflow equivalent:** None (combines patterns from all 5 phases).
 
 ```python
-@flow(name="100_grand_capstone", log_prints=True)
+@flow(name="analytics_grand_capstone", log_prints=True)
 def grand_capstone_flow(work_dir: str | None = None) -> CapstoneResult:
     records = ingest_data(input_path)
     profile_data(records)
@@ -2369,7 +2369,7 @@ lineage tracking, and a rich markdown dashboard artifact.
 
 ## DHIS2 Integration (101--108)
 
-### 101 -- DHIS2 Connection Block
+### DHIS2 Connection Block
 
 **What it demonstrates:** Custom Prefect block with methods for DHIS2 API
 operations, `SecretStr` for password management, connection verification.
@@ -2401,7 +2401,7 @@ that handles API calls -- callers never touch the password directly.
 
 ---
 
-### 102 -- DHIS2 Org Units API
+### DHIS2 Org Units API
 
 **What it demonstrates:** Block-authenticated metadata fetch, nested JSON
 flattening with Pydantic, derived columns (hierarchy depth, translation count).
@@ -2423,7 +2423,7 @@ columns. Hierarchy depth is computed from path segment count.
 
 ---
 
-### 103 -- DHIS2 Data Elements API
+### DHIS2 Data Elements API
 
 **What it demonstrates:** Metadata categorization with block auth, boolean
 derived columns, valueType/aggregationType grouping.
@@ -2445,7 +2445,7 @@ Each data element is categorized by value type and aggregation type. Boolean
 
 ---
 
-### 104 -- DHIS2 Indicators API
+### DHIS2 Indicators API
 
 **What it demonstrates:** Expression parsing with regex, operand counting,
 complexity scoring and binning.
@@ -2467,7 +2467,7 @@ trivial/simple/moderate/complex.
 
 ---
 
-### 105 -- DHIS2 Org Unit Geometry
+### DHIS2 Org Unit Geometry
 
 **What it demonstrates:** GeoJSON construction with block auth, geometry
 filtering, bounding box computation.
@@ -2487,7 +2487,7 @@ with bounding box is built and written to `.geojson`.
 
 ---
 
-### 106 -- DHIS2 Combined Export
+### DHIS2 Combined Export
 
 **What it demonstrates:** Parallel multi-endpoint fetch with shared block,
 fan-in summary across heterogeneous outputs.
@@ -2510,7 +2510,7 @@ and format distribution (CSV vs JSON).
 
 ---
 
-### 107 -- DHIS2 Analytics Query
+### DHIS2 Analytics Query
 
 **What it demonstrates:** Analytics API with dimension parameters, headers+rows
 response parsing, query parameter construction.
@@ -2532,7 +2532,7 @@ records.
 
 ---
 
-### 108 -- DHIS2 Full Pipeline
+### DHIS2 Full Pipeline
 
 **What it demonstrates:** End-to-end DHIS2 pipeline with block config, quality
 checks, timing, and markdown dashboard.
@@ -2540,7 +2540,7 @@ checks, timing, and markdown dashboard.
 **Airflow equivalent:** None (capstone combining all DHIS2 patterns).
 
 ```python
-@flow(name="108_dhis2_pipeline", log_prints=True)
+@flow(name="dhis2_pipeline", log_prints=True)
 def dhis2_pipeline_flow() -> Dhis2PipelineResult:
     creds = get_dhis2_credentials()
     client = creds.get_client()
@@ -2556,9 +2556,9 @@ quality scoring, and a markdown dashboard artifact. This is the DHIS2 capstone.
 
 ---
 
-## Connection Patterns (109--110)
+## Connection Patterns 
 
-### 109 -- Environment-Based Configuration
+### Environment-Based Configuration
 
 **What it demonstrates:** Four configuration strategies: inline blocks, Secret
 blocks, environment variables, JSON config. Compares all approaches in a
@@ -2579,7 +2579,7 @@ which strategies are available in the current environment.
 
 ---
 
-### 110 -- Authenticated API Pipeline
+### Authenticated API Pipeline
 
 **What it demonstrates:** Reusable pattern for any authenticated API: API key,
 bearer token, and basic auth. Generic API client block with pluggable auth.
@@ -2609,7 +2609,7 @@ pattern is reusable for any authenticated HTTP service.
 
 ## Cloud Storage (111)
 
-### 111 -- S3 Parquet Export
+### S3 Parquet Export
 
 **What it demonstrates:** Generate sample data as Pydantic models, transform
 with pandas, and write parquet to S3-compatible storage (RustFS/MinIO) using

@@ -20,7 +20,7 @@ virtual environment.
 ## Run your first flow
 
 ```bash
-uv run python flows/001_hello_world.py
+uv run python flows/basics/basics_hello_world.py
 ```
 
 You should see output like:
@@ -34,8 +34,8 @@ Every flow file is self-contained with an `if __name__ == "__main__"` block, so
 you can run any of them the same way:
 
 ```bash
-uv run python flows/004_taskflow_etl.py
-uv run python flows/010_dynamic_tasks.py
+uv run python flows/basics/basics_taskflow_etl.py
+uv run python flows/basics/basics_dynamic_tasks.py
 ```
 
 ## Run the tests
@@ -77,7 +77,7 @@ See [Infrastructure](infrastructure.md) for full details on the Docker stack.
 
 ```
 prefect-examples/
-    flows/              # All 110+ example flows (001-110)
+    flows/              # 111 example flows in topic subdirectories
     deployments/        # Production deployment examples
         dhis2_connection/   # Connection check deployment
         dhis2_ou/           # Org unit listing deployment

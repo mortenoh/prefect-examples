@@ -1,0 +1,245 @@
+"""DHIS2 Org Unit Geometry API.
+
+Fetches org units with geometry from the DHIS2 play server, builds a
+GeoJSON FeatureCollection, computes bounding box, and writes to disk.
+
+Airflow equivalent: DHIS2 org unit geometry export (DAG 061).
+Prefect approach:    Block methods for auth, GeoJSON feature collection, bbox.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from prefect import flow, task
+from prefect.artifacts import create_markdown_artifact
+from pydantic import BaseModel
+
+from prefect_examples.dhis2 import (
+    Dhis2Client,
+    get_dhis2_credentials,
+)
+
+# ---------------------------------------------------------------------------
+# Models
+# ---------------------------------------------------------------------------
+
+
+class GeoFeature(BaseModel):
+    """A GeoJSON Feature."""
+
+    type: str = "Feature"
+    geometry: dict[str, object]
+    properties: dict[str, object]
+
+
+class GeoCollection(BaseModel):
+    """A GeoJSON FeatureCollection with bounding box."""
+
+    type: str = "FeatureCollection"
+    features: list[GeoFeature]
+    bbox: list[float]
+
+
+class GeometryReport(BaseModel):
+    """Summary report for geometry export."""
+
+    feature_count: int
+    type_counts: dict[str, int]
+    bounding_box: list[float]
+
+
+# ---------------------------------------------------------------------------
+# Tasks
+# ---------------------------------------------------------------------------
+
+
+@task
+def fetch_with_geometry(client: Dhis2Client) -> list[dict]:
+    """Fetch org units with geometry from DHIS2.
+
+    Args:
+        client: Authenticated DHIS2 API client.
+
+    Returns:
+        List of raw org unit dicts including geometry.
+    """
+    records = client.fetch_metadata(
+        "organisationUnits",
+        fields="id,name,shortName,level,parent,geometry",
+    )
+    with_geom = [r for r in records if r.get("geometry")]
+    print(f"Fetched {len(records)} org units, {len(with_geom)} with geometry")
+    return records
+
+
+@task
+def build_features(raw: list[dict]) -> list[GeoFeature]:
+    """Build GeoJSON features from org units that have geometry.
+
+    Args:
+        raw: Raw org unit dicts from the API.
+
+    Returns:
+        List of GeoFeature (only units with geometry).
+    """
+    features: list[GeoFeature] = []
+    for r in raw:
+        geom = r.get("geometry")
+        if not geom:
+            continue
+        parent = r.get("parent")
+        parent_id = parent["id"] if isinstance(parent, dict) else None
+        features.append(
+            GeoFeature(
+                geometry=geom,
+                properties={
+                    "id": r["id"],
+                    "name": r.get("name", ""),
+                    "shortName": r.get("shortName", ""),
+                    "level": r.get("level"),
+                    "parent_id": parent_id,
+                },
+            )
+        )
+    print(f"Built {len(features)} geo features")
+    return features
+
+
+def _extract_coords(geometry: dict[str, object]) -> list[tuple[float, float]]:
+    """Extract all (lon, lat) pairs from a geometry object."""
+    geom_type = geometry.get("type", "")
+    coords = geometry.get("coordinates", [])
+    points: list[tuple[float, float]] = []
+    if geom_type == "Point":
+        c = coords  # type: ignore[assignment]
+        if isinstance(c, list) and len(c) >= 2:
+            points.append((float(c[0]), float(c[1])))
+    elif geom_type == "Polygon":
+        for ring in coords:  # type: ignore[union-attr]
+            if isinstance(ring, list):
+                for pt in ring:
+                    if isinstance(pt, list) and len(pt) >= 2:
+                        points.append((float(pt[0]), float(pt[1])))
+    elif geom_type == "MultiPolygon":
+        for polygon in coords:  # type: ignore[union-attr]
+            if isinstance(polygon, list):
+                for ring in polygon:
+                    if isinstance(ring, list):
+                        for pt in ring:
+                            if isinstance(pt, list) and len(pt) >= 2:
+                                points.append((float(pt[0]), float(pt[1])))
+    return points
+
+
+@task
+def build_collection(features: list[GeoFeature]) -> GeoCollection:
+    """Build a GeoJSON FeatureCollection with bounding box.
+
+    Args:
+        features: GeoJSON features.
+
+    Returns:
+        GeoCollection with computed bbox.
+    """
+    all_points: list[tuple[float, float]] = []
+    for f in features:
+        all_points.extend(_extract_coords(f.geometry))
+
+    if all_points:
+        lons = [p[0] for p in all_points]
+        lats = [p[1] for p in all_points]
+        bbox = [min(lons), min(lats), max(lons), max(lats)]
+    else:
+        bbox = [0.0, 0.0, 0.0, 0.0]
+
+    collection = GeoCollection(features=features, bbox=bbox)
+    print(f"Built collection with {len(features)} features, bbox={[round(b, 4) for b in bbox]}")
+    return collection
+
+
+@task
+def write_geojson(collection: GeoCollection, output_dir: str) -> Path:
+    """Write GeoJSON FeatureCollection to file.
+
+    Args:
+        collection: GeoJSON collection.
+        output_dir: Output directory path.
+
+    Returns:
+        Path to the GeoJSON file.
+    """
+    path = Path(output_dir) / "org_units.geojson"
+    path.write_text(json.dumps(collection.model_dump(), indent=2))
+    size_mb = path.stat().st_size / (1024 * 1024)
+    print(f"Wrote GeoJSON to {path} ({size_mb:.2f} MB)")
+    return path
+
+
+@task
+def geometry_report(collection: GeoCollection) -> GeometryReport:
+    """Build a summary report for geometry export.
+
+    Args:
+        collection: GeoJSON collection.
+
+    Returns:
+        GeometryReport.
+    """
+    type_counts: dict[str, int] = {}
+    for f in collection.features:
+        gtype = str(f.geometry.get("type", "unknown"))
+        type_counts[gtype] = type_counts.get(gtype, 0) + 1
+    return GeometryReport(
+        feature_count=len(collection.features),
+        type_counts=type_counts,
+        bounding_box=collection.bbox,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Flow
+# ---------------------------------------------------------------------------
+
+
+@flow(name="dhis2_geometry", log_prints=True)
+def dhis2_geometry_flow(output_dir: str | None = None) -> GeometryReport:
+    """Fetch org unit geometry and build a GeoJSON export.
+
+    Args:
+        output_dir: Output directory. Uses temp dir if not provided.
+
+    Returns:
+        GeometryReport.
+    """
+    if output_dir is None:
+        import tempfile
+
+        output_dir = tempfile.mkdtemp(prefix="dhis2_geometry_")
+
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    client = get_dhis2_credentials().get_client()
+
+    raw = fetch_with_geometry(client)
+    features = build_features(raw)
+    collection = build_collection(features)
+    write_geojson(collection, output_dir)
+    report = geometry_report(collection)
+
+    create_markdown_artifact(
+        key="dhis2-geometry-report",
+        markdown=(
+            f"## Geometry Report\n\n"
+            f"- Features: {report.feature_count}\n"
+            f"- Types: {report.type_counts}\n"
+            f"- BBox: {report.bounding_box}\n"
+        ),
+    )
+    print(f"Geometry report: {report.feature_count} features")
+    return report
+
+
+if __name__ == "__main__":
+    dhis2_geometry_flow()

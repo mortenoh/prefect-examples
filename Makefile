@@ -24,8 +24,8 @@ clean: ## Remove build artifacts
 	rm -rf __pycache__ .mypy_cache .pytest_cache .ruff_cache dist build *.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
-run: ## Run flow 001
-	uv run python flows/001_hello_world.py
+run: ## Run flow basics_hello_world
+	uv run python flows/basics/basics_hello_world.py
 
 server: ## Start Prefect UI server (http://127.0.0.1:4200)
 	PREFECT_SERVER_ANALYTICS_ENABLED=false PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT=false uv run prefect server start
