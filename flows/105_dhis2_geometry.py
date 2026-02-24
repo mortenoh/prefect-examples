@@ -4,7 +4,7 @@ Fetches org units with geometry from the DHIS2 play server, builds a
 GeoJSON FeatureCollection, computes bounding box, and writes to disk.
 
 Airflow equivalent: DHIS2 org unit geometry export (DAG 061).
-Prefect approach:    Custom block auth, GeoJSON feature collection, bbox.
+Prefect approach:    Block methods for auth, GeoJSON feature collection, bbox.
 """
 
 from __future__ import annotations
@@ -18,9 +18,7 @@ from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
     Dhis2Connection,
-    fetch_metadata,
     get_dhis2_connection,
-    get_dhis2_password,
 )
 
 # ---------------------------------------------------------------------------
@@ -58,20 +56,17 @@ class GeometryReport(BaseModel):
 
 
 @task
-def fetch_with_geometry(conn: Dhis2Connection, password: str) -> list[dict]:
+def fetch_with_geometry(conn: Dhis2Connection) -> list[dict]:
     """Fetch org units with geometry from DHIS2.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
 
     Returns:
         List of raw org unit dicts including geometry.
     """
-    records = fetch_metadata(
-        conn,
+    records = conn.fetch_metadata(
         "organisationUnits",
-        password,
         fields="id,name,shortName,level,parent,geometry",
     )
     with_geom = [r for r in records if r.get("geometry")]
@@ -226,9 +221,8 @@ def dhis2_geometry_flow(output_dir: str | None = None) -> GeometryReport:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     conn = get_dhis2_connection()
-    password = get_dhis2_password()
 
-    raw = fetch_with_geometry(conn, password)
+    raw = fetch_with_geometry(conn)
     features = build_features(raw)
     collection = build_collection(features)
     write_geojson(collection, output_dir)

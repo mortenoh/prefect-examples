@@ -5,7 +5,7 @@ JSON (parent.id, createdBy.username), computes hierarchy depth from path,
 and writes a CSV export.
 
 Airflow equivalent: DHIS2 org unit fetch (DAG 058).
-Prefect approach:    Custom block auth, Pydantic flattening, CSV export.
+Prefect approach:    Block methods for auth, Pydantic flattening, CSV export.
 """
 
 from __future__ import annotations
@@ -19,9 +19,7 @@ from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
     Dhis2Connection,
-    fetch_metadata,
     get_dhis2_connection,
-    get_dhis2_password,
 )
 
 # ---------------------------------------------------------------------------
@@ -57,17 +55,16 @@ class OrgUnitReport(BaseModel):
 
 
 @task
-def fetch_org_units(conn: Dhis2Connection, password: str) -> list[dict]:
+def fetch_org_units(conn: Dhis2Connection) -> list[dict]:
     """Fetch all organisation units from DHIS2.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
 
     Returns:
         List of raw org unit dicts.
     """
-    records = fetch_metadata(conn, "organisationUnits", password)
+    records = conn.fetch_metadata("organisationUnits")
     print(f"Fetched {len(records)} org units")
     return records
 
@@ -179,9 +176,8 @@ def dhis2_org_units_flow(output_dir: str | None = None) -> OrgUnitReport:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     conn = get_dhis2_connection()
-    password = get_dhis2_password()
 
-    raw = fetch_org_units(conn, password)
+    raw = fetch_org_units(conn)
     flat = flatten_org_units(raw)
     write_org_unit_csv(flat, output_dir)
     report = org_unit_report(flat)

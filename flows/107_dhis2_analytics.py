@@ -4,7 +4,7 @@ Fetches analytics data from the DHIS2 play server using dimension
 parameters, parses the headers+rows response format, and writes CSV.
 
 Airflow equivalent: DHIS2 data values / analytics (DAG 111).
-Prefect approach:    Custom block auth, dimension query builder, tabular parsing.
+Prefect approach:    Block methods for auth, dimension query builder, tabular parsing.
 """
 
 from __future__ import annotations
@@ -20,10 +20,6 @@ from pydantic import BaseModel
 from prefect_examples.dhis2 import (
     Dhis2Connection,
     get_dhis2_connection,
-    get_dhis2_password,
-)
-from prefect_examples.dhis2 import (
-    fetch_analytics as fetch_analytics_api,
 )
 
 # ---------------------------------------------------------------------------
@@ -92,18 +88,17 @@ def build_query(
 
 
 @task
-def fetch_analytics(conn: Dhis2Connection, password: str, query: AnalyticsQuery) -> dict[str, Any]:
+def fetch_analytics(conn: Dhis2Connection, query: AnalyticsQuery) -> dict[str, Any]:
     """Fetch analytics data from the DHIS2 API.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
         query: Analytics query.
 
     Returns:
         Raw analytics response dict with "headers" and "rows".
     """
-    data = fetch_analytics_api(conn, password, query.dimension, query.filter_param)
+    data = conn.fetch_analytics(query.dimension, query.filter_param)
     row_count = len(data.get("rows", []))
     print(f"Fetched analytics: {row_count} rows")
     return data
@@ -207,10 +202,9 @@ def dhis2_analytics_flow(output_dir: str | None = None) -> AnalyticsReport:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     conn = get_dhis2_connection()
-    password = get_dhis2_password()
 
     query = build_query()
-    response = fetch_analytics(conn, password, query)
+    response = fetch_analytics(conn, query)
     rows = parse_analytics(response)
     write_analytics_csv(rows, output_dir)
     report = analytics_report(rows, query)

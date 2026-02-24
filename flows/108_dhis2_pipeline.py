@@ -12,7 +12,6 @@ from __future__ import annotations
 import time
 from typing import Any
 
-import httpx
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -20,9 +19,7 @@ from pydantic import BaseModel
 from prefect_examples.dhis2 import (
     Dhis2ApiResponse,
     Dhis2Connection,
-    fetch_metadata,
     get_dhis2_connection,
-    get_dhis2_password,
 )
 
 # ---------------------------------------------------------------------------
@@ -63,41 +60,35 @@ class Dhis2PipelineResult(BaseModel):
 
 
 @task
-def connect_and_verify(conn: Dhis2Connection, password: str) -> Dhis2ApiResponse:
+def connect_and_verify(conn: Dhis2Connection) -> Dhis2ApiResponse:
     """Connect to DHIS2 and verify access via system/info.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
 
     Returns:
         Dhis2ApiResponse from verification.
     """
-    url = f"{conn.base_url}/api/system/info"
-    resp = httpx.get(url, auth=(conn.username, password), timeout=30)
-    resp.raise_for_status()
-    data: dict[str, Any] = resp.json()
+    data: dict[str, Any] = conn.get_server_info()
     print(f"Connected to {conn.base_url}, DHIS2 v{data.get('version', 'unknown')}")
-    return Dhis2ApiResponse(endpoint="system/info", record_count=1, status_code=resp.status_code)
+    return Dhis2ApiResponse(endpoint="system/info", record_count=1)
 
 
 @task
 def fetch_all_metadata(
     conn: Dhis2Connection,
-    password: str,
 ) -> dict[str, list[dict[str, Any]]]:
     """Fetch org units, data elements, and indicators from the DHIS2 API.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
 
     Returns:
         Dict mapping endpoint name to list of records.
     """
-    org_units = fetch_metadata(conn, "organisationUnits", password)
-    data_elements = fetch_metadata(conn, "dataElements", password)
-    indicators = fetch_metadata(conn, "indicators", password)
+    org_units = conn.fetch_metadata("organisationUnits")
+    data_elements = conn.fetch_metadata("dataElements")
+    indicators = conn.fetch_metadata("indicators")
     result: dict[str, list[dict[str, Any]]] = {
         "organisationUnits": org_units,
         "dataElements": data_elements,
@@ -216,16 +207,15 @@ def dhis2_pipeline_flow() -> Dhis2PipelineResult:
     stages: list[PipelineStage] = []
 
     conn = get_dhis2_connection()
-    password = get_dhis2_password()
 
     # Stage 1: Connect and verify
     t0 = time.monotonic()
-    connect_and_verify(conn, password)
+    connect_and_verify(conn)
     stages.append(PipelineStage(name="connect", status="completed", record_count=1, duration=time.monotonic() - t0))
 
     # Stage 2: Fetch all metadata
     t0 = time.monotonic()
-    metadata = fetch_all_metadata(conn, password)
+    metadata = fetch_all_metadata(conn)
     total_records = sum(len(v) for v in metadata.values())
     stages.append(
         PipelineStage(name="fetch", status="completed", record_count=total_records, duration=time.monotonic() - t0)

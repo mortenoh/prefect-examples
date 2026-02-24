@@ -5,7 +5,7 @@ denominator expressions with regex to count operands, and computes an
 expression complexity score with binning.
 
 Airflow equivalent: DHIS2 indicator fetch (DAG 060).
-Prefect approach:    Custom block auth, regex operand parsing, complexity bins.
+Prefect approach:    Block methods for auth, regex operand parsing, complexity bins.
 """
 
 from __future__ import annotations
@@ -21,9 +21,7 @@ from pydantic import BaseModel
 from prefect_examples.dhis2 import (
     OPERAND_PATTERN,
     Dhis2Connection,
-    fetch_metadata,
     get_dhis2_connection,
-    get_dhis2_password,
 )
 
 # ---------------------------------------------------------------------------
@@ -91,17 +89,16 @@ def _complexity_bin(score: int) -> str:
 
 
 @task
-def fetch_indicators(conn: Dhis2Connection, password: str) -> list[dict]:
+def fetch_indicators(conn: Dhis2Connection) -> list[dict]:
     """Fetch all indicators from DHIS2.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
 
     Returns:
         List of raw indicator dicts.
     """
-    records = fetch_metadata(conn, "indicators", password)
+    records = conn.fetch_metadata("indicators")
     print(f"Fetched {len(records)} indicators")
     return records
 
@@ -214,9 +211,8 @@ def dhis2_indicators_flow(output_dir: str | None = None) -> IndicatorReport:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     conn = get_dhis2_connection()
-    password = get_dhis2_password()
 
-    raw = fetch_indicators(conn, password)
+    raw = fetch_indicators(conn)
     flat = flatten_indicators(raw)
     write_indicator_csv(flat, output_dir)
     report = indicator_report(flat)

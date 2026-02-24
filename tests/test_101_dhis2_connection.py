@@ -24,19 +24,23 @@ display_connection = _mod.display_connection
 dhis2_connection_flow = _mod.dhis2_connection_flow
 
 
-def _mock_response(json_data: dict, status_code: int = 200) -> MagicMock:
-    resp = MagicMock()
-    resp.status_code = status_code
-    resp.json.return_value = json_data
-    resp.raise_for_status.return_value = None
-    return resp
+def _mock_client(json_data: dict) -> MagicMock:
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = json_data
+    mock_resp.raise_for_status.return_value = None
+
+    mock_cl = MagicMock()
+    mock_cl.__enter__ = MagicMock(return_value=mock_cl)
+    mock_cl.__exit__ = MagicMock(return_value=False)
+    mock_cl.get.return_value = mock_resp
+    return mock_cl
 
 
 def test_connection_construction() -> None:
-    conn = Dhis2Connection(base_url="https://test.dhis2.org", username="user", api_version="43")
+    conn = Dhis2Connection(base_url="https://test.dhis2.org", username="user")
     assert conn.base_url == "https://test.dhis2.org"
     assert conn.username == "user"
-    assert conn.api_version == "43"
 
 
 def test_connection_defaults() -> None:
@@ -45,48 +49,41 @@ def test_connection_defaults() -> None:
     assert conn.username == "admin"
 
 
-def test_password_masking() -> None:
+def test_connection_info() -> None:
     conn = Dhis2Connection()
-    info = get_connection_info.fn(conn, "district")
-    assert info.masked_password == "d******t"
-    assert "district" not in info.masked_password
+    info = get_connection_info.fn(conn)
+    assert info.has_password is True
+    assert info.username == "admin"
 
 
-def test_short_password_masking() -> None:
+@patch.object(Dhis2Connection, "get_client")
+def test_verify_response(mock_get_client: MagicMock) -> None:
+    mock_get_client.return_value = _mock_client({"version": "2.43-SNAPSHOT"})
     conn = Dhis2Connection()
-    info = get_connection_info.fn(conn, "ab")
-    assert info.masked_password == "***"
-
-
-@patch("httpx.get")
-def test_verify_response(mock_get: MagicMock) -> None:
-    mock_get.return_value = _mock_response({"version": "2.43-SNAPSHOT"})
-    conn = Dhis2Connection()
-    response = verify_connection.fn(conn, "district")
+    response = verify_connection.fn(conn)
     assert isinstance(response, Dhis2ApiResponse)
-    assert response.status_code == 200
     assert response.endpoint == "system/info"
 
 
-@patch("httpx.get")
-def test_fetch_org_unit_count(mock_get: MagicMock) -> None:
-    mock_get.return_value = _mock_response({"organisationUnits": [{"id": "a"}, {"id": "b"}]})
+@patch.object(Dhis2Connection, "get_client")
+def test_fetch_org_unit_count(mock_get_client: MagicMock) -> None:
+    mock_get_client.return_value = _mock_client({"organisationUnits": [{"id": "a"}, {"id": "b"}]})
     conn = Dhis2Connection()
-    count = fetch_org_unit_count.fn(conn, "district")
+    count = fetch_org_unit_count.fn(conn)
     assert count == 2
 
 
 def test_display_connection() -> None:
     conn = Dhis2Connection()
-    info = get_connection_info.fn(conn, "district")
+    info = get_connection_info.fn(conn)
     summary = display_connection.fn(info, 100)
     assert "admin" in summary
     assert "dhis2" in summary
     assert "100" in summary
 
 
-@patch("httpx.get")
-def test_flow_runs(mock_get: MagicMock) -> None:
-    mock_get.return_value = _mock_response({"version": "2.40.0", "organisationUnits": [{"id": "a"}, {"id": "b"}]})
+@patch.object(Dhis2Connection, "get_client")
+def test_flow_runs(mock_get_client: MagicMock) -> None:
+    mock_get_client.return_value = _mock_client({"version": "2.40.0", "organisationUnits": [{"id": "a"}, {"id": "b"}]})
     state = dhis2_connection_flow(return_state=True)
     assert state.is_completed()

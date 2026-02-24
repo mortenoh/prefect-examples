@@ -2371,8 +2371,8 @@ lineage tracking, and a rich markdown dashboard artifact.
 
 ### 101 -- DHIS2 Connection Block
 
-**What it demonstrates:** Custom Prefect block for DHIS2 credentials, Secret
-block for password management, connection verification.
+**What it demonstrates:** Custom Prefect block with methods for DHIS2 API
+operations, `SecretStr` for password management, connection verification.
 
 **Airflow equivalent:** `BaseHook.get_connection("dhis2_default")` (DAG 110).
 
@@ -2380,17 +2380,21 @@ block for password management, connection verification.
 class Dhis2Connection(Block):
     base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
-    api_version: str = "43"
+    password: SecretStr = Field(default=SecretStr("district"))
 
-conn = get_dhis2_connection()    # Block.load() with fallback
-password = get_dhis2_password()  # Secret.load() with fallback
-info = get_connection_info(conn, password)
-verify_connection(conn, password)
+    def get_client(self) -> httpx.Client: ...
+    def get_server_info(self) -> dict: ...
+    def fetch_metadata(self, endpoint: str) -> list[dict]: ...
+
+conn = get_dhis2_connection()       # Block.load() with fallback
+info = get_connection_info(conn)    # SecretStr handles masking
+verify_connection(conn)             # uses conn.get_server_info()
 ```
 
 The Airflow pattern `BaseHook.get_connection()` maps to `Block.load()` in
-Prefect. Passwords are stored separately in `Secret` blocks. Both use graceful
-fallbacks so flows work without a running Prefect server.
+Prefect. Password is stored as `SecretStr` directly on the block (encrypted
+at rest when saved to the server). Methods on the block handle authentication
+internally -- callers never touch the password directly.
 
 ---
 

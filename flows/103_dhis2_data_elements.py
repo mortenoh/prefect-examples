@@ -5,7 +5,7 @@ categoryCombo.id, derives boolean has_code and name_length columns,
 and groups by valueType/aggregationType.
 
 Airflow equivalent: DHIS2 data element fetch (DAG 059).
-Prefect approach:    Custom block auth, Pydantic flattening, category stats.
+Prefect approach:    Block methods for auth, Pydantic flattening, category stats.
 """
 
 from __future__ import annotations
@@ -19,9 +19,7 @@ from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
     Dhis2Connection,
-    fetch_metadata,
     get_dhis2_connection,
-    get_dhis2_password,
 )
 
 # ---------------------------------------------------------------------------
@@ -58,17 +56,16 @@ class DataElementReport(BaseModel):
 
 
 @task
-def fetch_data_elements(conn: Dhis2Connection, password: str) -> list[dict]:
+def fetch_data_elements(conn: Dhis2Connection) -> list[dict]:
     """Fetch all data elements from DHIS2.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
 
     Returns:
         List of raw data element dicts.
     """
-    records = fetch_metadata(conn, "dataElements", password)
+    records = conn.fetch_metadata("dataElements")
     print(f"Fetched {len(records)} data elements")
     return records
 
@@ -177,9 +174,8 @@ def dhis2_data_elements_flow(output_dir: str | None = None) -> DataElementReport
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     conn = get_dhis2_connection()
-    password = get_dhis2_password()
 
-    raw = fetch_data_elements(conn, password)
+    raw = fetch_data_elements(conn)
     flat = flatten_data_elements(raw)
     write_data_element_csv(flat, output_dir)
     report = data_element_report(flat)

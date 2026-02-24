@@ -41,12 +41,17 @@ SAMPLE_ANALYTICS_RESPONSE = {
 }
 
 
-def _mock_response(json_data: dict, status_code: int = 200) -> MagicMock:
-    resp = MagicMock()
-    resp.status_code = status_code
-    resp.json.return_value = json_data
-    resp.raise_for_status.return_value = None
-    return resp
+def _mock_client(json_data: dict) -> MagicMock:
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = json_data
+    mock_resp.raise_for_status.return_value = None
+
+    mock_cl = MagicMock()
+    mock_cl.__enter__ = MagicMock(return_value=mock_cl)
+    mock_cl.__exit__ = MagicMock(return_value=False)
+    mock_cl.get.return_value = mock_resp
+    return mock_cl
 
 
 def test_build_query_defaults() -> None:
@@ -64,12 +69,12 @@ def test_build_query_custom() -> None:
     assert query.filter_param == "pe:2024Q1"
 
 
-@patch("httpx.get")
-def test_fetch_analytics(mock_get: MagicMock) -> None:
-    mock_get.return_value = _mock_response(SAMPLE_ANALYTICS_RESPONSE)
+@patch.object(Dhis2Connection, "get_client")
+def test_fetch_analytics(mock_get_client: MagicMock) -> None:
+    mock_get_client.return_value = _mock_client(SAMPLE_ANALYTICS_RESPONSE)
     conn = Dhis2Connection()
     query = build_query.fn()
-    response = fetch_analytics.fn(conn, "district", query)
+    response = fetch_analytics.fn(conn, query)
     assert "headers" in response
     assert "rows" in response
     assert len(response["rows"]) == 4
@@ -107,8 +112,8 @@ def test_write_csv(tmp_path: Path) -> None:
     assert path.name == "analytics.csv"
 
 
-@patch("httpx.get")
-def test_flow_runs(mock_get: MagicMock, tmp_path: Path) -> None:
-    mock_get.return_value = _mock_response(SAMPLE_ANALYTICS_RESPONSE)
+@patch.object(Dhis2Connection, "get_client")
+def test_flow_runs(mock_get_client: MagicMock, tmp_path: Path) -> None:
+    mock_get_client.return_value = _mock_client(SAMPLE_ANALYTICS_RESPONSE)
     state = dhis2_analytics_flow(output_dir=str(tmp_path), return_state=True)
     assert state.is_completed()

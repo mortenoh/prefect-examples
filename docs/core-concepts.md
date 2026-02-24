@@ -124,6 +124,82 @@ from prefect.blocks.system import Secret
 api_key = Secret.load("my-key").get()
 ```
 
+### Block lifecycle
+
+1. **Define** -- subclass `Block` with typed fields
+2. **Instantiate** -- create with values: `MyBlock(field="value")`
+3. **Save** -- persist to the Prefect server: `block.save("my-block")`
+4. **Load** -- retrieve in any flow: `MyBlock.load("my-block")`
+
+Blocks saved to a Prefect server have their `SecretStr` fields encrypted at
+rest.  Without a server, blocks work as plain Python objects with inline
+defaults.
+
+### When to use Block vs Secret vs JSON
+
+| Type | Use for | Example |
+|---|---|---|
+| Custom `Block` | Typed connection config with methods | `Dhis2Connection` |
+| `Secret` | Single credential value | API key, token |
+| `JSON` | Unstructured config | Feature flags, thresholds |
+
+### SecretStr for credentials
+
+Use Pydantic `SecretStr` for password and token fields on blocks. SecretStr
+prevents accidental exposure in logs, repr, and serialization:
+
+```python
+from pydantic import Field, SecretStr
+
+class MyConnection(Block):
+    username: str = "admin"
+    password: SecretStr = Field(default=SecretStr("changeme"))
+
+conn = MyConnection()
+conn.password                       # SecretStr('**********')
+conn.password.get_secret_value()    # 'changeme'
+```
+
+### Adding methods to blocks (the integration pattern)
+
+Official Prefect integrations (prefect-aws, prefect-gcp, prefect-slack) put
+methods directly on blocks. A credentials block exposes `get_client()` returning
+an authenticated SDK client; a resource block exposes domain methods like
+`fetch()` or `read_path()`.
+
+```python
+class Dhis2Connection(Block):
+    base_url: str = "https://play.im.dhis2.org/dev"
+    username: str = "admin"
+    password: SecretStr = Field(default=SecretStr("district"))
+
+    def get_client(self) -> httpx.Client:
+        return httpx.Client(
+            base_url=f"{self.base_url}/api",
+            auth=(self.username, self.password.get_secret_value()),
+            timeout=60,
+        )
+
+    def fetch_metadata(self, endpoint: str) -> list[dict]:
+        with self.get_client() as client:
+            resp = client.get(f"/{endpoint}", params={"paging": "false"})
+            resp.raise_for_status()
+            return resp.json()[endpoint]
+```
+
+This pattern keeps authentication and API logic together on the block, rather
+than scattered across standalone helper functions.
+
+### Airflow Connections vs Prefect Blocks
+
+| Airflow | Prefect |
+|---|---|
+| `Connection` (host, login, password, extras) | Custom `Block` with typed fields |
+| `BaseHook.get_connection("conn_id")` | `MyBlock.load("block-name")` |
+| Fernet-encrypted in metadata DB | Encrypted at rest in Prefect server |
+| Password as plain string | `SecretStr` prevents accidental logging |
+| Hook classes with methods | Block classes with methods |
+
 ## Pydantic Models
 
 Prefect works natively with **Pydantic models** as task parameters and return
@@ -253,39 +329,50 @@ stdlib modules alone, making flows lightweight and dependency-free.
 
 In Airflow, external system credentials are stored as **Connections** and
 accessed via `BaseHook.get_connection("conn_id")`. In Prefect, the equivalent
-is a custom **Block** -- a typed, serializable configuration object:
+is a custom **Block** -- a typed, serializable configuration object with
+methods for common operations:
 
 ```python
 from prefect.blocks.core import Block
+from pydantic import Field, SecretStr
 
 class Dhis2Connection(Block):
     base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
-    api_version: str = "43"
+    password: SecretStr = Field(default=SecretStr("district"))
+
+    def get_client(self) -> httpx.Client:
+        return httpx.Client(
+            base_url=f"{self.base_url}/api",
+            auth=(self.username, self.password.get_secret_value()),
+        )
+
+    def fetch_metadata(self, endpoint: str) -> list[dict]:
+        with self.get_client() as client:
+            resp = client.get(f"/{endpoint}", params={"paging": "false"})
+            resp.raise_for_status()
+            return resp.json()[endpoint]
 
 # Register once:
 Dhis2Connection(base_url="https://dhis2.example.org").save("dhis2")
 
 # Load in any flow:
 conn = Dhis2Connection.load("dhis2")
+units = conn.fetch_metadata("organisationUnits")
 ```
 
-Passwords and tokens are stored separately in `Secret` blocks:
-
-```python
-from prefect.blocks.system import Secret
-
-password = Secret.load("dhis2-password").get()
-```
+Password is stored as `SecretStr` directly on the block. When saved to a
+Prefect server, `SecretStr` fields are encrypted at rest.
 
 Multiple configuration strategies can coexist -- inline defaults for
-development, Secret blocks for production, environment variables for CI:
+development, saved blocks for production, environment variables for CI:
 
 | Strategy | Best for | Example |
 |---|---|---|
 | Inline `Block()` | Development, testing | `Dhis2Connection()` |
 | `Block.load()` | Production with Prefect server | `Dhis2Connection.load("dhis2")` |
-| `Secret.load()` | Passwords, API keys | `Secret.load("dhis2-password")` |
+| `SecretStr` on Block | Credentials with config | `password: SecretStr` |
+| `Secret.load()` | Standalone passwords, API keys | `Secret.load("dhis2-password")` |
 | `os.environ` | CI/CD, containers | `os.environ["DHIS2_PASSWORD"]` |
 | `JSON.load()` | Structured config | `JSON.load("dhis2-config")` |
 
@@ -393,7 +480,7 @@ development, Secret blocks for production, environment variables for CI:
 | No equivalent | Pipeline template factory | 098 |
 | No equivalent | Multi-pipeline orchestrator | 099 |
 | Full analytics pipeline | Grand capstone: all Phase 5 patterns | 100 |
-| `BaseHook.get_connection()` | Custom `Block` subclass + `Secret` | 101 |
+| `BaseHook.get_connection()` | Custom `Block` with methods + `SecretStr` | 101 |
 | DHIS2 org unit fetch | Block auth + Pydantic flattening | 102 |
 | DHIS2 data element fetch | Block auth + categorization | 103 |
 | DHIS2 indicator fetch | Block auth + regex expression parsing | 104 |

@@ -19,9 +19,7 @@ from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
     Dhis2Connection,
-    fetch_metadata,
     get_dhis2_connection,
-    get_dhis2_password,
 )
 
 # ---------------------------------------------------------------------------
@@ -52,18 +50,17 @@ class CombinedExportReport(BaseModel):
 
 
 @task
-def export_org_units(conn: Dhis2Connection, password: str, output_dir: str) -> ExportResult:
+def export_org_units(conn: Dhis2Connection, output_dir: str) -> ExportResult:
     """Fetch org units and export to CSV.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
         output_dir: Output directory.
 
     Returns:
         ExportResult.
     """
-    records = fetch_metadata(conn, "organisationUnits", password)
+    records = conn.fetch_metadata("organisationUnits")
     path = Path(output_dir) / "org_units.csv"
     if records:
         fieldnames = list(records[0].keys())
@@ -78,18 +75,17 @@ def export_org_units(conn: Dhis2Connection, password: str, output_dir: str) -> E
 
 
 @task
-def export_data_elements(conn: Dhis2Connection, password: str, output_dir: str) -> ExportResult:
+def export_data_elements(conn: Dhis2Connection, output_dir: str) -> ExportResult:
     """Fetch data elements and export to JSON.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
         output_dir: Output directory.
 
     Returns:
         ExportResult.
     """
-    records = fetch_metadata(conn, "dataElements", password)
+    records = conn.fetch_metadata("dataElements")
     path = Path(output_dir) / "data_elements.json"
     path.write_text(json.dumps(records, indent=2, default=str))
     print(f"Exported {len(records)} data elements to JSON")
@@ -97,18 +93,17 @@ def export_data_elements(conn: Dhis2Connection, password: str, output_dir: str) 
 
 
 @task
-def export_indicators(conn: Dhis2Connection, password: str, output_dir: str) -> ExportResult:
+def export_indicators(conn: Dhis2Connection, output_dir: str) -> ExportResult:
     """Fetch indicators and export to CSV.
 
     Args:
         conn: DHIS2 connection block.
-        password: DHIS2 password.
         output_dir: Output directory.
 
     Returns:
         ExportResult.
     """
-    records = fetch_metadata(conn, "indicators", password)
+    records = conn.fetch_metadata("indicators")
     path = Path(output_dir) / "indicators.csv"
     if records:
         fieldnames = list(records[0].keys())
@@ -162,12 +157,11 @@ def dhis2_combined_export_flow(output_dir: str | None = None) -> CombinedExportR
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     conn = get_dhis2_connection()
-    password = get_dhis2_password()
 
     # Fan-out: 3 parallel endpoint exports
-    future_ou = export_org_units.submit(conn, password, output_dir)
-    future_de = export_data_elements.submit(conn, password, output_dir)
-    future_ind = export_indicators.submit(conn, password, output_dir)
+    future_ou = export_org_units.submit(conn, output_dir)
+    future_de = export_data_elements.submit(conn, output_dir)
+    future_ind = export_indicators.submit(conn, output_dir)
 
     result_ou = future_ou.result()
     result_de = future_de.result()
