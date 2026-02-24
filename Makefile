@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help sync lint fmt test clean run server start restart deploy docs docs-build
+.PHONY: help sync lint fmt test clean run server start restart deploy register-blocks docs docs-build
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -39,6 +39,9 @@ restart: ## Tear down, rebuild, and start the Docker stack from scratch
 deploy: ## Register flow deployments with Prefect server
 	cd deployments/dhis2_connection && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
 	cd deployments/dhis2_ou && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
+
+register-blocks: ## Register custom block types with Prefect server
+	PREFECT_API_URL=http://localhost:4200/api uv run prefect block register -m prefect_dhis2
 
 docs: ## Serve docs locally
 	uv run mkdocs serve
