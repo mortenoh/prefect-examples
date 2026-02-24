@@ -31,11 +31,18 @@ class Dhis2Client:
     """
 
     def __init__(self, base_url: str, username: str, password: str) -> None:
+        self._base_url = base_url
+        self._username = username
+        self._password = password
         self._http = httpx.Client(
             base_url=f"{base_url}/api",
             auth=(username, password),
             timeout=60,
         )
+
+    def __reduce__(self) -> tuple[type, tuple[str, str, str]]:
+        """Allow pickling so Prefect can hash this object for cache keys."""
+        return (Dhis2Client, (self._base_url, self._username, self._password))
 
     def __enter__(self) -> Dhis2Client:
         return self
