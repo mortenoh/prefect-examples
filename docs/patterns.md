@@ -463,3 +463,175 @@ def cpu_flow():
 API calls and file reads.
 
 **See:** [059 Task Runners](flow-reference.md#059-task-runners)
+
+## File I/O patterns
+
+Use stdlib `csv` and `json` for file-based pipelines. `tempfile.mkdtemp()`
+provides isolated working directories, and `pathlib.Path` keeps paths clean:
+
+```python
+@task
+def read_csv(path: Path) -> list[dict]:
+    with open(path, newline="") as f:
+        return list(csv.DictReader(f))
+
+@task
+def write_csv(directory: str, filename: str, rows: list[dict]) -> Path:
+    path = Path(directory) / filename
+    with open(path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+```
+
+For mixed file types, dispatch on suffix:
+
+```python
+@task
+def read_file(path: Path) -> list[dict]:
+    if path.suffix == ".csv":
+        return list(csv.DictReader(open(path, newline="")))
+    elif path.suffix == ".json":
+        return json.loads(path.read_text())
+```
+
+**See:** [061 CSV File Processing](flow-reference.md#061-csv-file-processing),
+[062 JSON Event Ingestion](flow-reference.md#062-json-event-ingestion),
+[063 Multi-File Batch](flow-reference.md#063-multi-file-batch-processing)
+
+## Data quality rules engine
+
+Define quality rules as configuration and dispatch them to check functions:
+
+```python
+class QualityRule(BaseModel):
+    name: str
+    rule_type: str
+    column: str = ""
+    params: dict = {}
+
+@task
+def execute_rule(data: list[dict], rule: QualityRule) -> RuleResult:
+    if rule.rule_type == "not_null":
+        return run_not_null_check.fn(data, rule.column)
+    elif rule.rule_type == "range":
+        return run_range_check.fn(data, rule.column, ...)
+```
+
+Compute an overall score and classify as green (>= 0.9), amber (>= 0.7),
+or red (< 0.7).
+
+**See:** [065 Quality Rules Engine](flow-reference.md#065-quality-rules-engine),
+[066 Cross-Dataset Validation](flow-reference.md#066-cross-dataset-validation)
+
+## Configuration-driven pipelines
+
+Control pipeline behaviour entirely through configuration dicts:
+
+```python
+class PipelineConfig(BaseModel):
+    name: str
+    stages: list[StageConfig]
+    fail_fast: bool = True
+
+@flow
+def pipeline(raw_config: dict):
+    config = parse_config(raw_config)
+    for stage in config.stages:
+        if stage.enabled:
+            dispatch_stage(stage, context)
+```
+
+Different configs produce different pipeline runs through the same flow code.
+Disabled stages are skipped automatically.
+
+**See:** [073 Config-Driven Pipeline](flow-reference.md#073-config-driven-pipeline)
+
+## Producer-consumer pattern
+
+Decouple data production from consumption using file-based data contracts:
+
+```python
+@flow
+def producer_consumer_flow():
+    producer_flow(data_dir, producer_id="alpha")
+    producer_flow(data_dir, producer_id="beta")
+    results = consumer_flow(data_dir, consumer_id="main")
+```
+
+Producers write JSON data + metadata files. Consumers discover packages by
+scanning for metadata files. Each flow is independently testable.
+
+**See:** [074 Producer-Consumer](flow-reference.md#074-producer-consumer)
+
+## Circuit breaker pattern
+
+Prevent cascading failures by opening a circuit after consecutive failures:
+
+```python
+@task
+def call_with_circuit(circuit: CircuitState, should_succeed: bool):
+    if circuit.state == "open":
+        circuit = circuit.model_copy(update={"state": "half_open"})
+    # Execute call, track failures, trip if threshold reached
+```
+
+States: closed (normal) -> open (fail-fast) -> half_open (probe) -> closed
+(recovery). Deterministic boolean outcomes make testing straightforward.
+
+**See:** [075 Circuit Breaker](flow-reference.md#075-circuit-breaker)
+
+## Incremental processing with manifests
+
+Track processed files in a JSON manifest to avoid reprocessing:
+
+```python
+@task
+def identify_new_files(all_files: list[Path], manifest: ProcessingManifest) -> list[Path]:
+    return [f for f in all_files if f.name not in manifest.processed_files]
+```
+
+Run the flow twice: the second run processes zero files. This is the foundation
+for idempotent file pipelines.
+
+**See:** [064 Incremental Processing](flow-reference.md#064-incremental-processing),
+[078 Idempotent Operations](flow-reference.md#078-idempotent-operations)
+
+## Checkpoint-based recovery
+
+Save progress after each stage. On re-run, skip completed stages:
+
+```python
+for stage in stages:
+    if not should_run_stage.fn(store, stage):
+        recovered += 1
+        continue
+    result = execute_stage.fn(stage, context)
+    save_checkpoint.fn(store, stage, "completed", result, path)
+```
+
+Fail at stage X, fix the issue, re-run, and stages before X are automatically
+skipped.
+
+**See:** [079 Error Recovery](flow-reference.md#079-error-recovery)
+
+## Application-level API caching
+
+Cache API responses in a dict with hashlib-based keys and TTL expiry:
+
+```python
+@task
+def fetch_with_cache(endpoint, params, cache, ttl_seconds=300):
+    key = make_cache_key.fn(endpoint, params)
+    entry = check_cache.fn(cache, key, ttl_seconds)
+    if entry is not None:
+        return entry.value, True  # cache hit
+    data = simulate_api_call.fn(endpoint, params)
+    cache[key] = {"value": data, "cached_at": time.time()}
+    return data, False  # cache miss
+```
+
+Track hit/miss rates to measure cache effectiveness.
+
+**See:** [072 Response Caching](flow-reference.md#072-response-caching)

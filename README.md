@@ -83,6 +83,26 @@ make docs                                  # serve documentation locally
 | 058 | Interactive Flows | Human-in-the-loop approval pattern |
 | 059 | Task Runners | `ThreadPoolTaskRunner`, I/O vs CPU workloads |
 | 060 | Production Pipeline v2 | Capstone: Pydantic, transactions, artifacts, hooks, `.map()` |
+| 061 | CSV File Processing | stdlib `csv`, `DictReader`/`DictWriter`, file-based pipeline |
+| 062 | JSON Event Ingestion | Recursive JSON flattening, NDJSON output |
+| 063 | Multi-File Batch | File-type dispatch, column harmonisation, hash dedup |
+| 064 | Incremental Processing | Manifest-based processing, only-process-new pattern |
+| 065 | Quality Rules Engine | Config-driven quality rules, traffic-light scoring |
+| 066 | Cross-Dataset Validation | Referential integrity, foreign key checks |
+| 067 | Data Profiling | Statistical profiling with `statistics` module |
+| 068 | Pipeline Health Monitor | Meta-monitoring, file freshness, watchdog pattern |
+| 069 | Multi-Source Forecast | Chained `.map()`, simulated multi-step API |
+| 070 | API Pagination | Paginated API, chunked parallel processing |
+| 071 | Cross-Source Enrichment | Multi-source join, partial enrichment fallback |
+| 072 | Response Caching | Application-level cache, TTL, hit/miss tracking |
+| 073 | Config-Driven Pipeline | Dynamic stage selection, parameter overrides |
+| 074 | Producer-Consumer | File-based data contracts, separate producer/consumer |
+| 075 | Circuit Breaker | State machine: closed/open/half_open, fail-fast |
+| 076 | Discriminated Unions | Pydantic discriminated unions, polymorphic dispatch |
+| 077 | Streaming Batch | Windowed processing, anomaly detection, trend analysis |
+| 078 | Idempotent Operations | Hash-based idempotency registry, safe re-runs |
+| 079 | Error Recovery | Checkpoint-based stage recovery, resume from failure |
+| 080 | Production Pipeline v3 | Capstone: file I/O, profiling, quality, caching, checkpoints |
 
 ## Documentation
 

@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 60 example flows, organised by category.
+Detailed walkthrough of all 80 example flows, organised by category.
 
 ---
 
@@ -1376,3 +1376,451 @@ def production_pipeline_v2_flow() -> None:
 ```
 
 This capstone combines Pydantic models with field validators, transactions, retries, markdown artifacts, tags, state hooks, and `.map()` into a realistic production pipeline.
+
+---
+
+## File I/O Patterns (061--064)
+
+### 061 -- CSV File Processing
+
+**What it demonstrates:** File-based ETL pipeline using the stdlib `csv` module
+with generate, read, validate, transform, write, and archive steps.
+
+**Airflow equivalent:** CSV landing zone pipeline (DAG 063).
+
+```python
+@task
+def validate_csv_row(row: dict, row_number: int, required_columns: list[str]) -> CsvRecord:
+    errors = []
+    for col in required_columns:
+        if col not in row or not row[col].strip():
+            errors.append(f"Missing or empty required column: {col}")
+    return CsvRecord(row_number=row_number, data=row, valid=len(errors) == 0, errors=errors)
+```
+
+`csv.DictReader` and `csv.DictWriter` replace external CSV libraries.
+`tempfile.mkdtemp()` provides isolated working directories.
+
+---
+
+### 062 -- JSON Event Ingestion
+
+**What it demonstrates:** Recursive nested JSON flattening into dot-separated
+keys with NDJSON (newline-delimited JSON) output.
+
+**Airflow equivalent:** JSON event stream to Parquet (DAG 064).
+
+```python
+@task
+def flatten_dict(data: dict, prefix: str = "", separator: str = ".") -> dict:
+    items = {}
+    for key, value in data.items():
+        new_key = f"{prefix}{separator}{key}" if prefix else key
+        if isinstance(value, dict):
+            items.update(flatten_dict.fn(value, new_key, separator))
+        else:
+            items[new_key] = value
+    return items
+```
+
+Recursive flattening handles arbitrarily nested structures. NDJSON output
+writes one JSON object per line for streaming consumption.
+
+---
+
+### 063 -- Multi-File Batch Processing
+
+**What it demonstrates:** Mixed CSV+JSON batch processing with file-type
+dispatch, column harmonisation, and hash-based deduplication.
+
+**Airflow equivalent:** Mixed CSV+JSON batch processing (DAG 065).
+
+```python
+@task
+def read_file(path: Path) -> list[dict]:
+    suffix = path.suffix.lower()
+    if suffix == ".csv":
+        with open(path, newline="") as f:
+            return list(csv.DictReader(f))
+    elif suffix == ".json":
+        return json.loads(path.read_text())
+```
+
+File suffix determines the reader. Column harmonisation maps different schemas
+to a unified format. Hash dedup uses `hashlib.sha256` on key fields.
+
+---
+
+### 064 -- Incremental Processing
+
+**What it demonstrates:** Manifest-based incremental file processing. A JSON
+manifest tracks which files have been processed; re-runs skip them.
+
+**Airflow equivalent:** Manifest-based incremental file processing (DAG 067).
+
+```python
+@task
+def identify_new_files(all_files: list[Path], manifest: ProcessingManifest) -> list[Path]:
+    return [f for f in all_files if f.name not in manifest.processed_files]
+```
+
+Run the flow twice: the second run processes zero files because the manifest
+already records them. This is the foundation for idempotent file pipelines.
+
+---
+
+## Data Quality Framework (065--068)
+
+### 065 -- Quality Rules Engine
+
+**What it demonstrates:** Configuration-driven data quality rules with a
+registry pattern and traffic-light scoring (green/amber/red).
+
+**Airflow equivalent:** Freshness and completeness checks (DAG 070).
+
+```python
+@task
+def execute_rule(data: list[dict], rule: QualityRule) -> RuleResult:
+    if rule.rule_type == "not_null":
+        return run_not_null_check.fn(data, rule.column)
+    elif rule.rule_type == "range":
+        return run_range_check.fn(data, rule.column, ...)
+```
+
+Rules are defined as config dicts, parsed into Pydantic models, and dispatched
+to check functions. The overall score determines the traffic light.
+
+---
+
+### 066 -- Cross-Dataset Validation
+
+**What it demonstrates:** Referential integrity checks between related datasets
+(orders, customers, products) with orphan detection.
+
+**Airflow equivalent:** Referential integrity checks (DAG 071).
+
+```python
+@task
+def check_referential_integrity(child_data, parent_data, child_key, parent_key, check_name):
+    parent_values = {row[parent_key] for row in parent_data}
+    orphan_keys = [row[child_key] for row in child_data if row[child_key] not in parent_values]
+    return IntegrityResult(orphan_count=len(orphan_keys), passed=len(orphan_keys) == 0, ...)
+```
+
+Foreign key validation is a pure Python set operation. The test data deliberately
+includes orphan records to demonstrate detection.
+
+---
+
+### 067 -- Data Profiling
+
+**What it demonstrates:** Statistical data profiling using the stdlib
+`statistics` module (mean, stdev, median) with column-level type inference.
+
+**Airflow equivalent:** Consolidated quality dashboard (DAG 072).
+
+```python
+@task
+def profile_numeric_column(name: str, values: list) -> ColumnProfile:
+    non_null = [float(v) for v in values if v is not None]
+    return ColumnProfile(
+        name=name, dtype="numeric",
+        mean=round(statistics.mean(non_null), 4),
+        stdev=round(statistics.stdev(non_null), 4),
+        median=round(statistics.median(non_null), 4), ...
+    )
+```
+
+Column type is inferred from values. Numeric columns get statistical profiles;
+string columns get length and uniqueness counts.
+
+---
+
+### 068 -- Pipeline Health Monitor
+
+**What it demonstrates:** Meta-monitoring / watchdog pattern. A flow checks
+the health of other pipelines' outputs via file existence, freshness, row
+counts, and value range checks.
+
+**Airflow equivalent:** Pipeline health check (DAG 076).
+
+```python
+@task
+def aggregate_health(pipeline_name: str, results: list[HealthCheckResult]) -> PipelineHealthReport:
+    if any(r.status == "critical" for r in results):
+        overall = "critical"
+    elif any(r.status == "degraded" for r in results):
+        overall = "degraded"
+    else:
+        overall = "healthy"
+```
+
+Worst-status-wins aggregation ensures a single failing check flags the entire
+pipeline.
+
+---
+
+## API Orchestration Patterns (069--072)
+
+### 069 -- Multi-Source Forecast
+
+**What it demonstrates:** Chained `.map()` calls: geocode cities, then fetch
+forecasts using the resulting coordinates.
+
+**Airflow equivalent:** Multi-city forecast, geocoding (DAGs 081, 086).
+
+```python
+coord_futures = geocode_city.map(cities)
+coords = [f.result() for f in coord_futures]
+forecast_futures = fetch_forecast.map(coords)
+forecasts = [f.result() for f in forecast_futures]
+```
+
+The output of one `.map()` feeds into the next. All API calls are deterministic
+simulations for offline testing.
+
+---
+
+### 070 -- API Pagination
+
+**What it demonstrates:** Paginated API consumption with chunked parallel
+processing using `.map()`.
+
+**Airflow equivalent:** Chunked API fetching (DAG 094).
+
+```python
+@task
+def simulate_api_page(page: int, page_size: int, total_records: int) -> PageResponse:
+    total_pages = (total_records + page_size - 1) // page_size
+    start = (page - 1) * page_size
+    end = min(start + page_size, total_records)
+    records = [{"id": i + 1, "value": ...} for i in range(start, end)]
+    return PageResponse(page=page, records=records, has_next=page < total_pages, ...)
+```
+
+Pages are fetched sequentially (next page depends on `has_next`), then records
+are chunked and processed in parallel via `.map()`.
+
+---
+
+### 071 -- Cross-Source Enrichment
+
+**What it demonstrates:** Joining data from three simulated API sources with
+graceful degradation on partial enrichment failure.
+
+**Airflow equivalent:** Cross-API enrichment (DAGs 090, 092).
+
+```python
+@task
+def merge_enrichments(base, demo, fin, geo) -> EnrichedRecord:
+    sources_available = sum(1 for s in [demo, fin, geo] if s is not None)
+    completeness = sources_available / 3.0
+    return EnrichedRecord(..., enrichment_completeness=round(completeness, 2))
+```
+
+When an enrichment source returns `None`, the record continues with partial
+data. Completeness is tracked per-record and summarised in the report.
+
+---
+
+### 072 -- Response Caching
+
+**What it demonstrates:** Application-level response cache with TTL expiry,
+hashlib-based keys, and hit/miss tracking.
+
+**Airflow equivalent:** Forecast accuracy / cached vs fresh comparison (DAG 082).
+
+```python
+@task
+def fetch_with_cache(endpoint, params, cache, ttl_seconds=300):
+    key = make_cache_key.fn(endpoint, params)
+    entry = check_cache.fn(cache, key, ttl_seconds)
+    if entry is not None:
+        return entry.value, True  # cache hit
+    data = simulate_api_call.fn(endpoint, params)
+    cache[key] = {"value": data, "cached_at": time.time()}
+    return data, False  # cache miss
+```
+
+Duplicate requests hit the cache. TTL-based expiry prevents stale data.
+
+---
+
+## Configuration and Orchestration Patterns (073--076)
+
+### 073 -- Config-Driven Pipeline
+
+**What it demonstrates:** Pipeline behaviour controlled entirely by a config
+dict: stage selection, parameter overrides, conditional execution.
+
+**Airflow equivalent:** API-triggered scheduling with config payload (DAG 109).
+
+```python
+@task
+def dispatch_stage(stage: StageConfig, context: dict) -> StageResult:
+    handlers = {"extract": execute_extract, "validate": execute_validate, ...}
+    handler = handlers.get(stage.task_type)
+    result = handler.fn(stage.params, context)
+    return StageResult(stage_name=stage.name, status="completed", ...)
+```
+
+Different configs produce different pipeline runs through the same flow.
+Disabled stages are skipped automatically.
+
+---
+
+### 074 -- Producer-Consumer
+
+**What it demonstrates:** Cross-flow communication via file-based data contracts.
+Separate producer and consumer flows connected through data packages.
+
+**Airflow equivalent:** Asset + XCom producer/consumer (DAG 112).
+
+```python
+@flow(name="074_producer_consumer", log_prints=True)
+def producer_consumer_flow(work_dir=None):
+    producer_flow(data_dir, producer_id="alpha", records=8)
+    producer_flow(data_dir, producer_id="beta", records=12)
+    results = consumer_flow(data_dir, consumer_id="main_consumer")
+```
+
+Producers write JSON data + metadata files. Consumers discover and process
+them. Each is independently testable.
+
+---
+
+### 075 -- Circuit Breaker
+
+**What it demonstrates:** Circuit breaker state machine (closed -> open ->
+half_open -> closed). After N consecutive failures, the circuit opens.
+
+**Airflow equivalent:** None (Prefect-native resilience pattern).
+
+```python
+@task
+def call_with_circuit(circuit: CircuitState, should_succeed: bool):
+    if circuit.state == "open":
+        circuit = circuit.model_copy(update={"state": "half_open"})
+    # ... execute call, track failures, trip if threshold reached
+```
+
+Outcomes are a deterministic list of booleans, making the simulation fully
+testable and reproducible.
+
+---
+
+### 076 -- Discriminated Unions
+
+**What it demonstrates:** Pydantic discriminated unions for type-safe
+polymorphic event dispatch.
+
+**Airflow equivalent:** Multi-API dashboard with heterogeneous sources (DAG 098).
+
+```python
+class EmailEvent(BaseModel):
+    event_type: Literal["email"] = "email"
+    sender: str
+    recipient: str
+
+Event = Annotated[Union[EmailEvent, WebhookEvent, ScheduleEvent], Field(discriminator="event_type")]
+```
+
+The `event_type` literal field acts as a discriminator. `TypeAdapter` parses
+raw dicts into the correct typed model automatically.
+
+---
+
+## Production Patterns and Capstone (077--080)
+
+### 077 -- Streaming Batch Processor
+
+**What it demonstrates:** Windowed batch processing with anomaly detection
+(values > 3 stdev from window mean) and trend analysis between windows.
+
+**Airflow equivalent:** GeoJSON parsing, OData pivoting (DAGs 091, 095).
+
+```python
+@task
+def process_window(data: list[dict], window: BatchWindow) -> WindowResult:
+    values = [r["value"] for r in data[window.start_index:window.end_index]]
+    mean = statistics.mean(values)
+    stdev = statistics.stdev(values)
+    anomalies = [r for r in records if abs(r["value"] - mean) > 3 * stdev]
+```
+
+Windows are processed in parallel via `.map()`. Seeded random ensures
+reproducible test data.
+
+---
+
+### 078 -- Idempotent Operations
+
+**What it demonstrates:** Hash-based idempotency registry. Operations check
+the registry before executing, making them safe to re-run.
+
+**Airflow equivalent:** None (production resilience pattern).
+
+```python
+@task
+def idempotent_execute(registry, name, inputs):
+    op_id = compute_operation_id.fn(name, inputs)
+    existing = check_registry.fn(registry, op_id)
+    if existing is not None:
+        return registry, existing.result, True  # skipped
+    result = execute_operation.fn(name, inputs)
+    registry = register_operation.fn(registry, op_id, name, op_id, result)
+    return registry, result, False  # executed
+```
+
+Duplicate operations are detected by hashing name + inputs. The registry
+prevents re-execution.
+
+---
+
+### 079 -- Error Recovery
+
+**What it demonstrates:** Checkpoint-based stage recovery. The flow saves
+progress after each stage; re-runs skip completed stages.
+
+**Airflow equivalent:** None (production resilience combining manifest and
+checkpoint ideas).
+
+```python
+@task
+def run_with_checkpoints(stages, store_path, fail_on=None):
+    store = load_checkpoints.fn(store_path)
+    for stage in stages:
+        if not should_run_stage.fn(store, stage):
+            recovered += 1
+            continue
+        result = execute_stage.fn(stage, context, fail_on)
+        store = save_checkpoint.fn(store, stage, "completed", result, store_path)
+```
+
+Fail at stage X, re-run, and stages before X are automatically skipped.
+
+---
+
+### 080 -- Production Pipeline v3
+
+**What it demonstrates:** Phase 4 capstone combining file I/O, data profiling,
+quality rules, enrichment with caching, deduplication, and checkpointing.
+
+**Airflow equivalent:** Quality framework + dashboard capstone (DAGs 099, 098).
+
+```python
+@flow(name="080_production_pipeline_v3", log_prints=True)
+def production_pipeline_v3_flow(work_dir=None):
+    records = ingest_csv(input_path)
+    profile = profile_data(records)
+    quality = run_quality_checks(records, rules)
+    enriched, cache_stats = enrich_records(records, cache)
+    deduped = deduplicate_records(enriched, ["id", "name"])
+    write_output(deduped, output_path)
+    build_dashboard(result)
+```
+
+This capstone combines all Phase 4 patterns: CSV file I/O, statistical
+profiling, quality rule checks with traffic-light scoring, application-level
+caching, hash-based deduplication, checkpoint saving, and a markdown dashboard
+artifact.

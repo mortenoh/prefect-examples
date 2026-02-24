@@ -200,6 +200,40 @@ my_flow.serve(name="daily", cron="0 6 * * *")
 my_flow.serve(name="every-15m", interval=900)
 ```
 
+## File I/O
+
+Prefect flows handle file I/O with stdlib modules (`csv`, `json`, `pathlib`,
+`tempfile`). Each file operation is a `@task` for observability:
+
+```python
+@task
+def read_csv(path: Path) -> list[dict]:
+    with open(path, newline="") as f:
+        return list(csv.DictReader(f))
+```
+
+Use `tempfile.mkdtemp()` for isolated working directories in flows, and
+`tmp_path` in tests. For mixed file types, dispatch on path suffix. Track
+processed files in a JSON manifest for incremental processing.
+
+## Data Quality
+
+Define quality rules as configuration and execute them against data:
+
+```python
+@task
+def execute_rule(data: list[dict], rule: QualityRule) -> RuleResult:
+    if rule.rule_type == "not_null":
+        return run_not_null_check.fn(data, rule.column)
+```
+
+Score rules individually, then compute an overall quality score with
+traffic-light classification (green/amber/red). For cross-dataset validation,
+check referential integrity between related datasets.
+
+Statistical profiling uses the stdlib `statistics` module (mean, stdev, median)
+to profile columns by inferred type (numeric vs string).
+
 ## Airflow to Prefect comparison
 
 | Airflow concept | Prefect equivalent | Example |
@@ -264,3 +298,23 @@ my_flow.serve(name="every-15m", interval=900)
 | Human-in-the-loop ops | `pause_flow_run()` / approval pattern | 058 |
 | Executors | Task runners (`ThreadPoolTaskRunner`) | 059 |
 | Full ETL SCD pipeline | Capstone: all Phase 3 features | 060 |
+| CSV landing zone | stdlib `csv` in `@task` | 061 |
+| JSON event ingestion | Recursive flatten, NDJSON output | 062 |
+| Multi-file batch | File-type dispatch, hash dedup | 063 |
+| Incremental file processing | JSON manifest tracking | 064 |
+| Freshness/completeness checks | Config-driven quality rules | 065 |
+| Referential integrity | FK checks between datasets | 066 |
+| Quality dashboard | Statistical profiling (`statistics`) | 067 |
+| Pipeline health check | Meta-monitoring / watchdog | 068 |
+| Multi-city forecast | Chained `.map()` calls | 069 |
+| Paginated API fetch | Offset/limit simulation, chunked `.map()` | 070 |
+| Cross-API enrichment | Multi-source join, partial fallback | 071 |
+| Cached API comparison | Application-level cache with TTL | 072 |
+| API-triggered config | Config-driven stage dispatch | 073 |
+| Asset producer/consumer | File-based data contracts | 074 |
+| No equivalent | Circuit breaker state machine | 075 |
+| Multi-API dashboard | Pydantic discriminated unions | 076 |
+| GeoJSON / OData pivot | Windowed batch, anomaly detection | 077 |
+| No equivalent | Hash-based idempotency registry | 078 |
+| No equivalent | Checkpoint-based stage recovery | 079 |
+| Quality framework + dashboard | Capstone: all Phase 4 features | 080 |
