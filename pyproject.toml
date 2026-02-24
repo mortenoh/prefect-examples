@@ -4,11 +4,14 @@ version = "0.1.0"
 description = "Progressive Prefect 3 examples — from hello-world to production patterns."
 requires-python = ">=3.12"
 dependencies = [
-    "prefect>=3",
+    "prefect>=3.6",
 ]
 
 [dependency-groups]
 dev = [
+    "mkdocs<2",
+    "mkdocs-material",
+    "mkdocstrings[python]",
     "mypy>=1",
     "pytest>=8",
     "ruff>=0.9",

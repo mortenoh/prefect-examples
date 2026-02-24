@@ -20,6 +20,7 @@ ENV/
 .coverage
 htmlcov/
 target/
+site/
 
 # IDE
 .idea/

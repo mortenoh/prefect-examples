@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help sync lint fmt test clean run
+.PHONY: help sync lint fmt test clean run server docs docs-build
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -26,3 +26,12 @@ clean: ## Remove build artifacts
 
 run: ## Run flow 001
 	uv run python flows/001_hello_world.py
+
+server: ## Start Prefect UI server (http://127.0.0.1:4200)
+	uv run prefect server start
+
+docs: ## Serve docs locally
+	uv run mkdocs serve
+
+docs-build: ## Build static docs site
+	uv run mkdocs build
