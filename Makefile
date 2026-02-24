@@ -28,7 +28,7 @@ run: ## Run flow 001
 	uv run python flows/001_hello_world.py
 
 server: ## Start Prefect UI server (http://127.0.0.1:4200)
-	PREFECT_SERVER_ANALYTICS_ENABLED=false uv run prefect server start
+	PREFECT_SERVER_ANALYTICS_ENABLED=false PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT=false uv run prefect server start
 
 docs: ## Serve docs locally
 	uv run mkdocs serve
