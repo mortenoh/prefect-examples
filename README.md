@@ -123,6 +123,16 @@ make docs                                  # serve documentation locally
 | 098 | Pipeline Template | Reusable templates, factory pattern, config overrides |
 | 099 | Multi-Pipeline Orchestrator | Independent pipeline orchestration, status rollup |
 | 100 | Grand Capstone | End-to-end analytics: all Phase 5 patterns combined |
+| 101 | DHIS2 Connection | Custom `Block` for DHIS2 credentials, `Secret` for password |
+| 102 | DHIS2 Org Units | Block-authenticated metadata fetch, nested JSON flattening |
+| 103 | DHIS2 Data Elements | Data element fetch with categorization, code coverage |
+| 104 | DHIS2 Indicators | Expression parsing with regex, complexity scoring, binning |
+| 105 | DHIS2 Geometry | GeoJSON construction, geometry filtering, bounding box |
+| 106 | DHIS2 Combined Export | Parallel multi-endpoint export with shared block |
+| 107 | DHIS2 Analytics | Analytics API query, dimension parameters, headers+rows parsing |
+| 108 | DHIS2 Pipeline | End-to-end DHIS2 pipeline with quality checks and dashboard |
+| 109 | DHIS2 Env Config | Environment-based configuration strategies |
+| 110 | DHIS2 Authenticated API | Reusable authenticated API pattern (api_key, bearer, basic) |
 
 ## Documentation
 

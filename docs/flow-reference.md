@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 100 example flows, organised by category.
+Detailed walkthrough of all 110 example flows, organised by category.
 
 ---
 
@@ -2364,3 +2364,231 @@ This final flow ties together every major concept from Phase 1 through Phase 5:
 file ingestion, statistical profiling, quality rule checking, hash-based
 deduplication, OLS regression, dimensional modeling with composite ranking,
 lineage tracking, and a rich markdown dashboard artifact.
+
+---
+
+## DHIS2 Integration (101--108)
+
+### 101 -- DHIS2 Connection Block
+
+**What it demonstrates:** Custom Prefect block for DHIS2 credentials, Secret
+block for password management, connection verification.
+
+**Airflow equivalent:** `BaseHook.get_connection("dhis2_default")` (DAG 110).
+
+```python
+class Dhis2Connection(Block):
+    base_url: str = "https://play.dhis2.org/40"
+    username: str = "admin"
+    api_version: str = "40"
+
+conn = get_dhis2_connection()    # Block.load() with fallback
+password = get_dhis2_password()  # Secret.load() with fallback
+info = get_connection_info(conn, password)
+verify_connection(conn, password)
+```
+
+The Airflow pattern `BaseHook.get_connection()` maps to `Block.load()` in
+Prefect. Passwords are stored separately in `Secret` blocks. Both use graceful
+fallbacks so flows work without a running Prefect server.
+
+---
+
+### 102 -- DHIS2 Org Units API
+
+**What it demonstrates:** Block-authenticated metadata fetch, nested JSON
+flattening with Pydantic, derived columns (hierarchy depth, translation count).
+
+**Airflow equivalent:** DHIS2 org unit fetch (DAG 058).
+
+```python
+@task
+def flatten_org_units(raw: list[RawOrgUnit]) -> list[FlatOrgUnit]:
+    for r in raw:
+        parent_id = r.parent["id"] if r.parent else ""
+        depth = len([s for s in r.path.split("/") if s])
+        flat.append(FlatOrgUnit(id=r.id, level=r.level,
+                                parent_id=parent_id, hierarchy_depth=depth, ...))
+```
+
+Nested DHIS2 JSON (parent.id, createdBy.username) is extracted into flat
+columns. Hierarchy depth is computed from path segment count.
+
+---
+
+### 103 -- DHIS2 Data Elements API
+
+**What it demonstrates:** Metadata categorization with block auth, boolean
+derived columns, valueType/aggregationType grouping.
+
+**Airflow equivalent:** DHIS2 data element fetch (DAG 059).
+
+```python
+@task
+def flatten_data_elements(raw: list[RawDataElement]) -> list[FlatDataElement]:
+    cc_id = r.categoryCombo["id"] if r.categoryCombo else ""
+    flat.append(FlatDataElement(
+        category_combo_id=cc_id,
+        has_code=r.code is not None,
+        name_length=len(r.name), ...))
+```
+
+Each data element is categorized by value type and aggregation type. Boolean
+`has_code` and numeric `name_length` are derived columns.
+
+---
+
+### 104 -- DHIS2 Indicators API
+
+**What it demonstrates:** Expression parsing with regex, operand counting,
+complexity scoring and binning.
+
+**Airflow equivalent:** DHIS2 indicator fetch (DAG 060).
+
+```python
+OPERAND_PATTERN = re.compile(r"#\{[^}]+\}")
+
+num_ops = len(OPERAND_PATTERN.findall(expression))
+num_operators = sum(1 for c in expression if c in "+-*/")
+complexity = num_ops + den_ops + num_operators
+complexity_bin = "trivial" if complexity <= 1 else ...
+```
+
+DHIS2 indicator expressions use `#{uid.uid}` operands. The regex counts them,
+operators are counted separately, and a combined score is binned into
+trivial/simple/moderate/complex.
+
+---
+
+### 105 -- DHIS2 Org Unit Geometry
+
+**What it demonstrates:** GeoJSON construction with block auth, geometry
+filtering, bounding box computation.
+
+**Airflow equivalent:** DHIS2 org unit geometry export (DAG 061).
+
+```python
+@task
+def build_collection(features: list[GeoFeature]) -> GeoCollection:
+    all_points = [_extract_coords(f.geometry) for f in features]
+    bbox = [min(lons), min(lats), max(lons), max(lats)]
+    return GeoCollection(features=features, bbox=bbox)
+```
+
+Org units with geometry are converted to GeoJSON Features. A FeatureCollection
+with bounding box is built and written to `.geojson`.
+
+---
+
+### 106 -- DHIS2 Combined Export
+
+**What it demonstrates:** Parallel multi-endpoint fetch with shared block,
+fan-in summary across heterogeneous outputs.
+
+**Airflow equivalent:** DHIS2 combined parallel export (DAG 062).
+
+```python
+future_ou = export_org_units.submit(conn, password, output_dir)
+future_de = export_data_elements.submit(conn, password, output_dir)
+future_ind = export_indicators.submit(conn, password, output_dir)
+
+report = combined_report([future_ou.result(), future_de.result(),
+                          future_ind.result()])
+```
+
+Three endpoints are exported in parallel via `.submit()`. The combined report
+tracks total records and format distribution (CSV vs JSON).
+
+---
+
+### 107 -- DHIS2 Analytics Query
+
+**What it demonstrates:** Analytics API with dimension parameters, headers+rows
+response parsing, query parameter construction.
+
+**Airflow equivalent:** DHIS2 data values / analytics (DAG 111).
+
+```python
+@task
+def parse_analytics(response: RawAnalyticsResponse) -> list[AnalyticsRow]:
+    header_names = [h["name"] for h in response.headers]
+    for row_data in response.rows:
+        record = dict(zip(header_names, row_data, strict=True))
+        rows.append(AnalyticsRow(dx=record["dx"], ou=record["ou"], ...))
+```
+
+The DHIS2 analytics API returns headers and rows separately. This flow builds
+dimension queries, fetches results, and parses the tabular response into typed
+records.
+
+---
+
+### 108 -- DHIS2 Full Pipeline
+
+**What it demonstrates:** End-to-end DHIS2 pipeline with block config, quality
+checks, timing, and markdown dashboard.
+
+**Airflow equivalent:** None (capstone combining all DHIS2 patterns).
+
+```python
+@flow(name="108_dhis2_pipeline", log_prints=True)
+def dhis2_pipeline_flow() -> Dhis2PipelineResult:
+    connect_and_verify(conn, password)
+    metadata = fetch_all_metadata(conn, password)
+    quality = validate_metadata(metadata)
+    build_dashboard(result)
+```
+
+A three-stage pipeline (connect, fetch, validate) with per-stage timing,
+quality scoring, and a markdown dashboard artifact. This is the DHIS2 capstone.
+
+---
+
+## Connection Patterns (109--110)
+
+### 109 -- Environment-Based Configuration
+
+**What it demonstrates:** Four configuration strategies: inline blocks, Secret
+blocks, environment variables, JSON config. Compares all approaches in a
+single flow.
+
+**Airflow equivalent:** None (Prefect-native pattern).
+
+```python
+sources.append(from_inline_block())    # Dhis2Connection()
+sources.append(from_secret_block())    # Secret.load()
+sources.append(from_env_var("KEY"))    # os.environ.get()
+sources.append(from_json_config())     # JSON.load()
+report = compare_strategies(sources)
+```
+
+Each strategy is loaded with graceful fallback. The comparison report shows
+which strategies are available in the current environment.
+
+---
+
+### 110 -- Authenticated API Pipeline
+
+**What it demonstrates:** Reusable pattern for any authenticated API: API key,
+bearer token, and basic auth. Generic API client block with pluggable auth.
+
+**Airflow equivalent:** None (general pattern).
+
+```python
+class ApiAuthConfig(Block):
+    auth_type: str  # "api_key", "bearer", "basic"
+    base_url: str
+
+@task
+def build_auth_header(config: ApiAuthConfig, credentials: str) -> AuthHeader:
+    if config.auth_type == "api_key":
+        return AuthHeader(header_name="X-API-Key", ...)
+    elif config.auth_type == "bearer":
+        return AuthHeader(header_name="Authorization", header_value=f"Bearer ...")
+    elif config.auth_type == "basic":
+        encoded = base64.b64encode(credentials.encode()).decode()
+        return AuthHeader(header_name="Authorization", header_value=f"Basic ...")
+```
+
+Three authentication strategies are tested against a simulated API. The block
+pattern is reusable for any authenticated HTTP service.

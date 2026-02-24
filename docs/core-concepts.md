@@ -249,6 +249,46 @@ Phase 5 introduces statistical analysis and modeling patterns:
 These patterns demonstrate that analytics pipelines can be built with
 stdlib modules alone, making flows lightweight and dependency-free.
 
+## Blocks and Connections
+
+In Airflow, external system credentials are stored as **Connections** and
+accessed via `BaseHook.get_connection("conn_id")`. In Prefect, the equivalent
+is a custom **Block** -- a typed, serializable configuration object:
+
+```python
+from prefect.blocks.core import Block
+
+class Dhis2Connection(Block):
+    base_url: str = "https://play.dhis2.org/40"
+    username: str = "admin"
+    api_version: str = "40"
+
+# Register once:
+Dhis2Connection(base_url="https://dhis2.example.org").save("dhis2")
+
+# Load in any flow:
+conn = Dhis2Connection.load("dhis2")
+```
+
+Passwords and tokens are stored separately in `Secret` blocks:
+
+```python
+from prefect.blocks.system import Secret
+
+password = Secret.load("dhis2-password").get()
+```
+
+Multiple configuration strategies can coexist -- inline defaults for
+development, Secret blocks for production, environment variables for CI:
+
+| Strategy | Best for | Example |
+|---|---|---|
+| Inline `Block()` | Development, testing | `Dhis2Connection()` |
+| `Block.load()` | Production with Prefect server | `Dhis2Connection.load("dhis2")` |
+| `Secret.load()` | Passwords, API keys | `Secret.load("dhis2-password")` |
+| `os.environ` | CI/CD, containers | `os.environ["DHIS2_PASSWORD"]` |
+| `JSON.load()` | Structured config | `JSON.load("dhis2-config")` |
+
 ## Airflow to Prefect comparison
 
 | Airflow concept | Prefect equivalent | Example |
@@ -353,3 +393,13 @@ stdlib modules alone, making flows lightweight and dependency-free.
 | No equivalent | Pipeline template factory | 098 |
 | No equivalent | Multi-pipeline orchestrator | 099 |
 | Full analytics pipeline | Grand capstone: all Phase 5 patterns | 100 |
+| `BaseHook.get_connection()` | Custom `Block` subclass + `Secret` | 101 |
+| DHIS2 org unit fetch | Block auth + Pydantic flattening | 102 |
+| DHIS2 data element fetch | Block auth + categorization | 103 |
+| DHIS2 indicator fetch | Block auth + regex expression parsing | 104 |
+| DHIS2 geometry export | Block auth + GeoJSON construction | 105 |
+| DHIS2 combined export | Parallel `.submit()` + shared block | 106 |
+| DHIS2 analytics query | Dimension query + headers/rows parsing | 107 |
+| Full DHIS2 pipeline | Multi-stage pipeline + quality + dashboard | 108 |
+| Connection/Variable config | Multiple config strategies (Block, Secret, env) | 109 |
+| Authenticated API pattern | Pluggable auth block (api_key, bearer, basic) | 110 |

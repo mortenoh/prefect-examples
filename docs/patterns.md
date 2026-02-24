@@ -806,3 +806,83 @@ Define a template once, instantiate with different overrides. Stage execution
 merges overrides into default parameters.
 
 **See:** [098 Pipeline Template](flow-reference.md#098-pipeline-template-factory)
+
+## Custom blocks for API integration
+
+Subclass `Block` to create typed connection objects for external APIs. This is
+the Prefect equivalent of Airflow's `BaseHook.get_connection()`:
+
+```python
+from prefect.blocks.core import Block
+
+class Dhis2Connection(Block):
+    _block_type_name = "dhis2-connection"
+    base_url: str = "https://play.dhis2.org/40"
+    username: str = "admin"
+    api_version: str = "40"
+
+# Load from server with fallback to inline defaults
+def get_dhis2_connection() -> Dhis2Connection:
+    try:
+        return Dhis2Connection.load("dhis2")
+    except Exception:
+        return Dhis2Connection()
+```
+
+Register a block once via the Prefect UI or `Dhis2Connection(...).save("dhis2")`.
+All flows that need the connection call `Dhis2Connection.load("dhis2")`.
+
+For generic authenticated APIs, use a pluggable auth block:
+
+```python
+class ApiAuthConfig(Block):
+    auth_type: str  # "api_key", "bearer", "basic"
+    base_url: str
+
+def build_auth_header(config: ApiAuthConfig, credentials: str) -> AuthHeader:
+    if config.auth_type == "api_key":
+        return AuthHeader(header_name="X-API-Key", header_value=credentials)
+    elif config.auth_type == "bearer":
+        return AuthHeader(header_name="Authorization",
+                          header_value=f"Bearer {credentials}")
+    ...
+```
+
+**See:** [101 DHIS2 Connection](flow-reference.md#101-dhis2-connection-block),
+[110 Authenticated API](flow-reference.md#110-authenticated-api-pipeline)
+
+## Secret management strategies
+
+Prefect provides multiple ways to manage secrets. Choose based on your
+environment:
+
+```python
+# 1. Secret block (recommended for production)
+from prefect.blocks.system import Secret
+password = Secret.load("dhis2-password").get()
+
+# 2. Environment variable (simple, works everywhere)
+import os
+password = os.environ.get("DHIS2_PASSWORD", "fallback")
+
+# 3. Inline default (development only)
+password = "district"
+
+# 4. JSON block (for structured config)
+from prefect.blocks.system import JSON
+config = JSON.load("dhis2-config").value
+```
+
+Always use graceful fallbacks so flows work in development (no server) and
+production (with server):
+
+```python
+def get_dhis2_password() -> str:
+    try:
+        return Secret.load("dhis2-password").get()
+    except Exception:
+        return "district"  # fallback for development
+```
+
+**See:** [109 Env Config](flow-reference.md#109-environment-based-configuration),
+[101 DHIS2 Connection](flow-reference.md#101-dhis2-connection-block)
