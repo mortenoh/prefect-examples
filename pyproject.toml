@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "prefect>=3.6",
     "prefect-aws",
+    "prefect-dhis2",
     "s3fs",
 ]
 
@@ -22,6 +23,12 @@ dev = [
 [build-system]
 requires = ["uv_build>=0.7"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+prefect-dhis2 = { workspace = true }
+
+[tool.uv.workspace]
+members = ["packages/*"]
 
 # ---------- Ruff ----------
 [tool.ruff]
