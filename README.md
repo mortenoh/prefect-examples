@@ -6,10 +6,16 @@ Each flow is self-contained, numbered for incremental learning, and runnable
 with a single command. If you are migrating from Airflow, every example notes
 the equivalent Airflow concept so you can map your existing knowledge.
 
+## Prerequisites
+
+- Python 3.13+
+- [uv](https://docs.astral.sh/uv/) package manager
+- Docker and Docker Compose (optional -- for the full server stack)
+
 ## Quick start
 
 ```bash
-git clone https://github.com/morteoh/prefect-examples.git
+git clone https://github.com/mortenoh/prefect-examples.git
 cd prefect-examples
 
 make sync                                  # install dependencies
@@ -19,7 +25,27 @@ make server                                # start Prefect UI (http://127.0.0.1:
 make docs                                  # serve documentation locally
 ```
 
+## Project structure
+
+```
+flows/                  110 numbered example flows
+src/prefect_examples/   Shared task library
+packages/prefect-dhis2/ DHIS2 integration package (workspace dependency)
+deployments/            Prefect deployment definitions
+tests/                  Test suite (one file per flow)
+docs/                   MkDocs documentation source
+compose.yml             Docker stack (PostgreSQL, Prefect server, worker)
+```
+
 ## Flows
+
+Flows are grouped into phases:
+
+- **001--040** -- Core Prefect concepts (tasks, flows, retries, caching, deployments)
+- **041--060** -- Intermediate patterns (Pydantic, factories, error handling, testing)
+- **061--080** -- Data engineering (file I/O, APIs, config-driven pipelines, idempotency)
+- **081--100** -- Analytics and capstone (statistics, dimensional modeling, lineage)
+- **101--110** -- DHIS2 integration (custom blocks, metadata, analytics API)
 
 | Flow | Name | Concepts |
 |------|------|----------|
@@ -134,6 +160,25 @@ make docs                                  # serve documentation locally
 | 109 | DHIS2 Env Config | Environment-based configuration strategies |
 | 110 | DHIS2 Authenticated API | Reusable authenticated API pattern (api_key, bearer, basic) |
 
+## Makefile targets
+
+| Target | Description |
+|---|---|
+| `make help` | Show all available targets |
+| `make sync` | Install dependencies (`uv sync`) |
+| `make lint` | Run ruff and mypy on `src/` and `packages/` |
+| `make fmt` | Auto-format with ruff |
+| `make test` | Run the test suite |
+| `make run` | Run the hello-world flow |
+| `make server` | Start a local Prefect server |
+| `make start` | Start the full Docker stack |
+| `make restart` | Tear down and rebuild the Docker stack |
+| `make deploy` | Register all deployments with the server |
+| `make register-blocks` | Register custom block types (DHIS2) |
+| `make docs` | Serve documentation locally |
+| `make docs-build` | Build static documentation site |
+| `make clean` | Remove build artifacts |
+
 ## Documentation
 
 Full documentation is available locally via MkDocs:
@@ -142,6 +187,9 @@ Full documentation is available locally via MkDocs:
 make docs        # http://127.0.0.1:8000
 make docs-build  # build static site
 ```
+
+Covers getting started, core concepts, flow reference, patterns,
+infrastructure, CLI reference, API reference, and testing.
 
 ## Links
 
