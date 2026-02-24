@@ -24,7 +24,7 @@ def read_config() -> dict:
     """
     Variable.set("example_config", '{"debug": true, "batch_size": 100}', overwrite=True)
     raw = Variable.get("example_config", default="{}")
-    config = json.loads(raw)
+    config = json.loads(str(raw))
     print(f"Loaded config: {config}")
     return config
 
