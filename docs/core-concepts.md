@@ -242,6 +242,81 @@ configured in the UI. Without a server, `emit_event()` silently no-ops.
 
 **See:** [014 Events](flow-reference.md#014-events)
 
+## Automations
+
+Automations are event-driven rules that pair a **trigger** with an **action**.
+When the trigger condition is met (e.g. a flow run fails, an event is emitted,
+or a work queue becomes unhealthy), Prefect executes the configured action
+automatically. Automations can be created in the UI, via the CLI, or with the
+Python SDK.
+
+### Python SDK
+
+Use the `Automation` and `EventTrigger` classes from `prefect.automations`:
+
+```python
+from prefect.automations import Automation
+from prefect.events.schemas.automations import EventTrigger
+
+# Send a notification when any flow run fails
+Automation(
+    name="notify-on-failure",
+    trigger=EventTrigger(
+        expect={"prefect.flow-run.Failed"},
+        match={"prefect.resource.id": "prefect.flow-run.*"},
+    ),
+    actions=[{"type": "send-notification", "block_document_id": "<notification-block-id>"}],
+).create()
+```
+
+```python
+# Circuit breaker: pause a deployment after 3 failures in 10 minutes
+from datetime import timedelta
+
+Automation(
+    name="circuit-breaker",
+    trigger=EventTrigger(
+        expect={"prefect.flow-run.Failed"},
+        match={"prefect.resource.id": "prefect.flow-run.*"},
+        for_each={"prefect.resource.id"},
+        threshold=3,
+        within=timedelta(minutes=10),
+    ),
+    actions=[{"type": "pause-deployment"}],
+).create()
+```
+
+### Common trigger/action patterns
+
+| Trigger | Action | Use case |
+|---|---|---|
+| Flow run enters `Failed` state | Send notification | Alert on-call engineer |
+| N failures within time window | Pause deployment | Circuit breaker |
+| Work queue becomes unhealthy | Send notification | Infrastructure monitoring |
+| Custom event emitted | Run deployment | Event-driven orchestration |
+| Flow run duration exceeds threshold | Cancel flow run | Timeout guard |
+
+### CLI
+
+```bash
+prefect automation ls                     # list automations
+prefect automation inspect <name>         # view automation details
+prefect automation pause <name>           # disable an automation
+prefect automation resume <name>          # re-enable an automation
+prefect automation delete <name>          # remove an automation
+```
+
+### Airflow comparison
+
+| Airflow | Prefect |
+|---|---|
+| SLA callbacks (`sla_miss_callback`) | Automation with duration trigger |
+| PagerDuty / Slack operators in `on_failure_callback` | Notification action on failure trigger |
+| Sensors polling for external events | `EventTrigger` reacting to emitted events |
+| No built-in circuit breaker | Threshold trigger + pause action |
+
+**See:** [Prefect Automations docs](https://docs.prefect.io/concepts/automations/)
+
 ## Custom Run Names
 
 Customise flow run and task run names for easier identification in the UI and

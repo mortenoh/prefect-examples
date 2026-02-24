@@ -253,6 +253,18 @@ prefect flow-run delete <id>            # delete a flow run
 
 ---
 
+## Automations
+
+```bash
+prefect automation ls                     # list automations
+prefect automation inspect <name>         # view automation details
+prefect automation delete <name>          # remove an automation
+prefect automation pause <name>           # disable an automation
+prefect automation resume <name>          # re-enable an automation
+```
+
+---
+
 ## Makefile shortcuts
 
 The project `Makefile` wraps common commands:
@@ -261,7 +273,7 @@ The project `Makefile` wraps common commands:
 |---|---|---|
 | `make help` | -- | Show all available targets |
 | `make sync` | `uv sync` | Install dependencies |
-| `make lint` | `uv run ruff check . && uv run mypy src/` | Run linter and type checker |
+| `make lint` | `uv run ruff check . && uv run mypy src/ packages/` | Run linter and type checker |
 | `make fmt` | `uv run ruff format . && uv run ruff check --fix .` | Auto-format code |
 | `make test` | `uv run pytest` | Run the test suite |
 | `make clean` | `rm -rf ...` | Remove build artifacts |
@@ -271,4 +283,5 @@ The project `Makefile` wraps common commands:
 | `make restart` | `docker compose down -v && ... up` | Tear down and rebuild the stack |
 | `make deploy` | `prefect deploy --all` (per deployment dir) | Register all deployments |
 | `make docs` | `uv run mkdocs serve` | Serve docs locally |
+| `make register-blocks` | `prefect block register -m prefect_dhis2` | Register custom block types with the server |
 | `make docs-build` | `uv run mkdocs build` | Build static docs site |

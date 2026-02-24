@@ -117,6 +117,7 @@ The worker additionally sets:
 | `make start` | `docker compose up --build` | Start all services (foreground) |
 | `make restart` | `docker compose down -v && docker compose build --no-cache && docker compose up` | Full teardown and rebuild |
 | `make deploy` | `prefect deploy --all` (per deployment dir) | Register deployments with the server |
+| `make register-blocks` | `prefect block register -m prefect_dhis2` | Register custom block types with the server |
 | `make server` | `uv run prefect server start` | Start a standalone server (no Docker) |
 
 To run services in the background, add `-d`:
