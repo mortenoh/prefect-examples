@@ -1,3 +1,7 @@
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /opt/prefect/deployments/dhis2_ou
+
 deployments:
   - name: dhis2-ou
     entrypoint: flow.py:dhis2_ou_flow
