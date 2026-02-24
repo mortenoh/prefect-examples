@@ -69,22 +69,116 @@ def pipeline():
 ## Deployments
 
 A **deployment** packages a flow for remote execution on a schedule or via API
-triggers. Deployments are defined in code or YAML and registered with the
-Prefect server.
+triggers. A flow is just a Python function; a deployment is the configuration
+that says *when*, *where*, and *with what parameters* that function should run.
 
-Two deployment methods:
+### Why you need a deployment
 
-- **`flow.serve()`** — simplest approach, runs in-process. Good for development
-  and simple production use.
-- **`flow.deploy()`** — sends runs to a work pool for infrastructure-level
-  isolation. Requires a running worker.
+Running `python my_flow.py` executes a flow once. A deployment lets you:
+
+- **Schedule** runs (cron, interval, or RRule)
+- **Trigger** runs from the UI, API, or CLI
+- **Parameterize** runs with different inputs
+- **Run on remote infrastructure** (Docker, Kubernetes, etc.)
+
+### `flow.serve()` vs `flow.deploy()`
+
+| | `flow.serve()` | `flow.deploy()` |
+|---|---|---|
+| Where it runs | Same process | Work pool (separate infra) |
+| Infra needed | None | Work pool + worker |
+| Scaling | Single process | Pool-level scaling |
+| Best for | Dev, simple cron jobs | Production, team use |
 
 ```python
-# Simple: run locally with cron schedule
+# flow.serve() -- simplest approach, runs in-process
 my_flow.serve(name="my-flow", cron="0 6 * * *")
 
-# Production: deploy to a work pool
-my_flow.deploy(name="my-flow", work_pool_name="my-pool")
+# flow.deploy() -- production, sends runs to a work pool
+my_flow.deploy(
+    name="my-flow",
+    work_pool_name="my-pool",
+    cron="0 6 * * *",
+)
+```
+
+Both methods accept `parameters=` to set default parameter values:
+
+```python
+my_flow.serve(
+    name="dhis2-daily",
+    cron="0 6 * * *",
+    parameters={"endpoints": ["organisationUnits", "dataElements"]},
+)
+```
+
+### `prefect.yaml` for declarative deployments
+
+For production, define deployments in a `prefect.yaml` file at the project
+root. This is the Prefect equivalent of Airflow's `dags/` folder:
+
+```yaml
+deployments:
+  - name: dhis2-daily-sync
+    entrypoint: flows/111_dhis2_deployment.py:dhis2_deployment_flow
+    parameters:
+      endpoints: [organisationUnits, dataElements, indicators]
+    schedules:
+      - cron: "0 6 * * *"
+        timezone: "UTC"
+    work_pool:
+      name: default
+```
+
+Deploy with `prefect deploy --all` or `prefect deploy -n dhis2-daily-sync`.
+
+### Work pools
+
+Work pools define *where* flow runs execute. Three common types:
+
+| Pool type | What it does | When to use |
+|---|---|---|
+| `process` | Runs flows as local subprocesses | Development, single-machine |
+| `docker` | Runs flows in Docker containers | Team use, isolation |
+| `kubernetes` | Runs flows as K8s jobs | Production, auto-scaling |
+
+Create a pool and start a worker:
+
+```bash
+prefect work-pool create my-pool --type process
+prefect worker start --pool my-pool
+```
+
+### Deployment lifecycle
+
+1. **Create** -- `prefect deploy` or `flow.serve()`/`flow.deploy()`
+2. **Schedule** -- runs are created automatically per schedule
+3. **Run** -- trigger manually via `prefect deployment run <name>`
+4. **Pause** -- `prefect deployment pause <name>` (stops scheduling)
+5. **Resume** -- `prefect deployment resume <name>`
+6. **Update** -- re-run `prefect deploy` or change schedule via CLI
+7. **Delete** -- `prefect deployment delete <name>`
+
+### Prefect CLI for deployments
+
+```bash
+# List and inspect
+prefect deployment ls                          # list all deployments
+prefect deployment inspect <flow/deployment>   # view deployment details
+
+# Trigger runs
+prefect deployment run <flow/deployment>                    # run with defaults
+prefect deployment run <flow/deployment> -p key=value       # run with params
+
+# Schedule management
+prefect deployment set-schedule <name> --cron "0 8 * * *"   # change schedule
+prefect deployment set-schedule <name> --interval 3600      # every hour
+prefect deployment clear-schedule <name>                    # remove schedule
+prefect deployment pause <name>                             # pause scheduling
+prefect deployment resume <name>                            # resume scheduling
+
+# Cleanup
+prefect deployment delete <name>
 ```
 
 ## Artifacts
@@ -265,16 +359,69 @@ Sync and async tasks can be mixed in an async flow. Async flows use
 
 Prefect supports three schedule types:
 
-- **CronSchedule** — standard cron expressions (`"0 6 * * *"`)
-- **IntervalSchedule** — fixed intervals (`interval=900` seconds)
-- **RRuleSchedule** — RFC 5545 recurrence rules (`"FREQ=WEEKLY;BYDAY=MO,WE,FR"`)
+- **CronSchedule** -- standard cron expressions (`"0 6 * * *"`)
+- **IntervalSchedule** -- fixed intervals (`interval=900` seconds)
+- **RRuleSchedule** -- RFC 5545 recurrence rules (`"FREQ=WEEKLY;BYDAY=MO,WE,FR"`)
 
 Schedules are passed to `flow.serve()` or `flow.deploy()`:
 
 ```python
 my_flow.serve(name="daily", cron="0 6 * * *")
 my_flow.serve(name="every-15m", interval=900)
+my_flow.serve(name="weekdays", rrule="FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR")
 ```
+
+In `prefect.yaml`, schedules are declared per deployment:
+
+```yaml
+schedules:
+  - cron: "0 6 * * *"
+    timezone: "UTC"
+```
+
+### Passing parameters to deployments
+
+Deployments can override a flow's default parameters. Parameters are passed
+at deployment creation and can be overridden per run:
+
+```python
+# At deployment time (default parameters for all runs)
+my_flow.serve(
+    name="dhis2-sync",
+    parameters={"endpoints": ["organisationUnits"]},
+)
+
+# Override at run time via CLI
+# prefect deployment run my-flow/dhis2-sync -p endpoints='["dataElements"]'
+```
+
+### Deployment-aware flows with `prefect.runtime`
+
+Use `prefect.runtime` to access deployment context inside a running flow:
+
+```python
+from prefect.runtime import deployment, flow_run
+
+deployment_name = deployment.name            # None for local runs
+flow_run_name = flow_run.name                # auto-generated name
+scheduled_start = flow_run.scheduled_start_time
+```
+
+This lets flows adapt their behaviour depending on whether they are running
+locally or inside a deployment.
+
+### Changing schedules after deployment
+
+Use the CLI to update schedules without redeploying:
+
+```bash
+prefect deployment set-schedule <name> --cron "0 8 * * *"
+prefect deployment set-schedule <name> --interval 1800
+prefect deployment set-schedule <name> --rrule "FREQ=DAILY;BYDAY=MO,WE,FR"
+prefect deployment clear-schedule <name>
+```
+
+Or re-run `prefect deploy` after updating `prefect.yaml`.
 
 ## File I/O
 
@@ -490,3 +637,4 @@ development, saved blocks for production, environment variables for CI:
 | Full DHIS2 pipeline | Multi-stage pipeline + quality + dashboard | 108 |
 | Connection/Variable config | Multiple config strategies (Block, Secret, env) | 109 |
 | Authenticated API pattern | Pluggable auth block (api_key, bearer, basic) | 110 |
+| Scheduled DAG + Connections | `flow.serve()`/`flow.deploy()` with blocks + params | 111 |

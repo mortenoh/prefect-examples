@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 110 example flows, organised by category.
+Detailed walkthrough of all 111 example flows, organised by category.
 
 ---
 
@@ -2596,3 +2596,72 @@ def build_auth_header(config: ApiAuthConfig, credentials: str) -> AuthHeader:
 
 Three authentication strategies are tested against a simulated API. The block
 pattern is reusable for any authenticated HTTP service.
+
+---
+
+## Deployment (111)
+
+### 111 -- DHIS2 Deployment
+
+**What it demonstrates:** Deploying a DHIS2 integration flow with parameters,
+schedules, `prefect.runtime` context, and block references. Bridges the
+deployment basics (037-039) with the DHIS2 integration (101-110).
+
+**Airflow equivalent:** Scheduled DAG with Connections + Variables.
+
+```python
+@flow(name="111_dhis2_deployment", log_prints=True)
+def dhis2_deployment_flow(endpoints: list[str] | None = None) -> str:
+    if endpoints is None:
+        endpoints = ["organisationUnits", "dataElements", "indicators"]
+    conn = get_dhis2_connection()
+    info = conn.get_server_info()
+    for ep in endpoints:
+        counts[ep] = sync_endpoint(conn, ep)
+    summary = build_sync_summary(counts)  # uses prefect.runtime
+    return summary
+```
+
+Key patterns demonstrated:
+
+- **Parameterized deployment** -- `endpoints` parameter lets one deployment
+  config drive different sync jobs
+- **`prefect.runtime`** -- `deployment.name` provides deployment-aware
+  context (falls back to "local" for direct runs)
+- **Block reference** -- `get_dhis2_connection()` loads credentials from a
+  saved block or falls back to inline defaults
+- **`prefect.yaml`** -- declarative deployment config at the repo root
+
+Deploy with `flow.serve()`:
+
+```python
+dhis2_deployment_flow.serve(
+    name="dhis2-daily-sync",
+    cron="0 6 * * *",
+    parameters={"endpoints": ["organisationUnits", "dataElements"]},
+)
+```
+
+Deploy with `prefect.yaml`:
+
+```yaml
+deployments:
+  - name: dhis2-daily-sync
+    entrypoint: flows/111_dhis2_deployment.py:dhis2_deployment_flow
+    parameters:
+      endpoints: [organisationUnits, dataElements, indicators]
+    schedules:
+      - cron: "0 6 * * *"
+    work_pool:
+      name: default
+```
+
+Manage after deployment:
+
+```bash
+prefect deploy -n dhis2-daily-sync               # create deployment
+prefect deployment run 111_dhis2_deployment/dhis2-daily-sync  # trigger run
+prefect deployment set-schedule <name> --cron "0 8 * * *"     # change schedule
+prefect deployment pause <name>                   # pause scheduling
+prefect deployment resume <name>                  # resume scheduling
+```

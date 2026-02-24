@@ -1,0 +1,48 @@
+# prefect.yaml -- Declarative deployment configuration.
+#
+# This is the standard production pattern for defining Prefect deployments.
+# Each entry maps a flow entrypoint to a deployment name, schedule, parameters,
+# and work pool.
+#
+# Usage:
+#   prefect deploy --all              # deploy everything
+#   prefect deploy -n dhis2-daily-sync  # deploy one by name
+#
+# Manage deployments after creation:
+#   prefect deployment ls                          # list all deployments
+#   prefect deployment inspect <name>              # view deployment details
+#   prefect deployment run <name>                  # trigger a run immediately
+#   prefect deployment run <name> -p endpoints='["organisationUnits"]'
+#   prefect deployment pause <name>                # pause schedule
+#   prefect deployment resume <name>               # resume schedule
+#   prefect deployment delete <name>               # remove deployment
+#
+# Change schedule after deployment:
+#   prefect deployment set-schedule <name> --cron "0 8 * * *"
+#   prefect deployment set-schedule <name> --interval 3600
+#   prefect deployment set-schedule <name> --rrule "FREQ=WEEKLY;BYDAY=MO,WE,FR"
+#   prefect deployment clear-schedule <name>       # remove all schedules
+#
+# Airflow equivalent: DAG files in dags/ folder with schedule_interval.
+# Prefect approach:   prefect.yaml defines deployments declaratively.
+
+deployments:
+  - name: dhis2-daily-sync
+    entrypoint: flows/111_dhis2_deployment.py:dhis2_deployment_flow
+    parameters:
+      endpoints:
+        - organisationUnits
+        - dataElements
+        - indicators
+    schedules:
+      - cron: "0 6 * * *"
+        timezone: "UTC"
+    work_pool:
+      name: default
+
+  - name: etl-every-5m
+    entrypoint: flows/037_flow_serve.py:flow_serve_flow
+    schedules:
+      - cron: "*/5 * * * *"
+    work_pool:
+      name: default

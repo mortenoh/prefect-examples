@@ -359,28 +359,194 @@ def test_fetch(mock_get_client):
 
 ## Deployment basics
 
+### Serve vs deploy decision guide
+
+Use `flow.serve()` when:
+
+- You want the simplest possible deployment
+- The flow runs on a single machine (dev laptop, cron server, VM)
+- No Docker or Kubernetes infrastructure is available
+
+Use `flow.deploy()` when:
+
+- You need infrastructure-level isolation (Docker, K8s)
+- Multiple team members trigger runs from the UI
+- You want auto-scaling via work pool configuration
+
+Use `prefect.yaml` when:
+
+- You manage multiple deployments declaratively
+- You want deployment config in version control
+- You follow a GitOps workflow
+
 ### flow.serve()
 
-The simplest deployment — runs in-process with optional scheduling:
+The simplest deployment -- runs in-process with optional scheduling:
 
 ```python
 my_flow.serve(name="my-deployment", cron="0 6 * * *")
 ```
 
+`flow.serve()` blocks the process and polls for scheduled runs. It is the
+Prefect equivalent of placing a DAG file in Airflow's `dags/` folder.
+
 ### flow.deploy()
 
-Production deployment — sends runs to a work pool:
+Production deployment -- sends runs to a work pool:
 
 ```python
-my_flow.deploy(name="my-deployment", work_pool_name="my-pool")
+my_flow.deploy(
+    name="my-deployment",
+    work_pool_name="my-pool",
+    cron="0 6 * * *",
+)
 ```
 
 Work pools define where work runs (process, docker, kubernetes). Workers poll
 pools for scheduled runs.
 
+### Parameterized deployments
+
+Pass default parameters at deployment time. These can be overridden per run
+from the UI, API, or CLI:
+
+```python
+# In code
+my_flow.serve(
+    name="dhis2-sync",
+    cron="0 6 * * *",
+    parameters={"endpoints": ["organisationUnits", "dataElements"]},
+)
+
+# In prefect.yaml
+# deployments:
+#   - name: dhis2-daily-sync
+#     entrypoint: flows/111_dhis2_deployment.py:dhis2_deployment_flow
+#     parameters:
+#       endpoints: [organisationUnits, dataElements]
+```
+
+Override at run time:
+
+```bash
+prefect deployment run 111_dhis2_deployment/dhis2-daily-sync \
+    -p endpoints='["organisationUnits"]'
+```
+
+### `prefect.yaml` pattern
+
+Define multiple deployments in a single YAML file at the project root:
+
+```yaml
+deployments:
+  - name: dhis2-daily-sync
+    entrypoint: flows/111_dhis2_deployment.py:dhis2_deployment_flow
+    parameters:
+      endpoints: [organisationUnits, dataElements, indicators]
+    schedules:
+      - cron: "0 6 * * *"
+        timezone: "UTC"
+    work_pool:
+      name: default
+
+  - name: etl-every-5m
+    entrypoint: flows/037_flow_serve.py:flow_serve_flow
+    schedules:
+      - cron: "*/5 * * * *"
+    work_pool:
+      name: default
+```
+
+Deploy all at once with `prefect deploy --all` or individually with
+`prefect deploy -n dhis2-daily-sync`.
+
+### Deployment-aware flows with `prefect.runtime`
+
+Use `prefect.runtime` to access deployment context inside a running flow:
+
+```python
+from prefect.runtime import deployment, flow_run
+
+deployment_name = deployment.name            # None for local runs
+flow_run_name = flow_run.name                # auto-generated name
+scheduled_start = flow_run.scheduled_start_time
+```
+
+This lets a single flow produce different output depending on whether it is
+running locally or as a scheduled deployment.
+
+### Work pool setup walkthrough
+
+```bash
+# 1. Create a process-based work pool
+prefect work-pool create my-pool --type process
+
+# 2. Start a worker that polls the pool
+prefect worker start --pool my-pool
+
+# 3. Deploy a flow to the pool
+prefect deploy -n dhis2-daily-sync
+
+# 4. Trigger a run manually
+prefect deployment run 111_dhis2_deployment/dhis2-daily-sync
+```
+
+### Managing deployments with the CLI
+
+```bash
+# List and inspect
+prefect deployment ls
+prefect deployment inspect <flow/deployment>
+
+# Schedule management
+prefect deployment set-schedule <name> --cron "0 8 * * *"
+prefect deployment set-schedule <name> --interval 3600
+prefect deployment set-schedule <name> --rrule "FREQ=WEEKLY;BYDAY=MO,WE,FR"
+prefect deployment clear-schedule <name>
+
+# Pause and resume
+prefect deployment pause <name>
+prefect deployment resume <name>
+
+# Trigger runs with parameter overrides
+prefect deployment run <name> -p key=value
+
+# Cleanup
+prefect deployment delete <name>
+```
+
+### Dev/prod deployment pattern
+
+Use `flow.serve()` during development for fast iteration, then switch to
+`flow.deploy()` (or `prefect.yaml`) for production:
+
+```python
+if __name__ == "__main__":
+    # Dev: run directly
+    # dhis2_deployment_flow()
+
+    # Dev: serve with schedule
+    # dhis2_deployment_flow.serve(name="dev-sync", cron="*/5 * * * *")
+
+    # Prod: deploy to work pool (or use prefect.yaml)
+    # dhis2_deployment_flow.deploy(
+    #     name="dhis2-daily-sync",
+    #     work_pool_name="my-pool",
+    #     cron="0 6 * * *",
+    # )
+    dhis2_deployment_flow()
+```
+
+### Deploying DHIS2 flows
+
+Flow 111 demonstrates deploying a real-world DHIS2 integration with parameters,
+block references, and `prefect.runtime` context. See the repo-root
+`prefect.yaml` for a complete declarative example.
+
 **See:** [037 Flow Serve](flow-reference.md#037-flow-serve),
 [038 Schedules](flow-reference.md#038-schedules),
-[039 Work Pools](flow-reference.md#039-work-pools)
+[039 Work Pools](flow-reference.md#039-work-pools),
+[111 DHIS2 Deployment](flow-reference.md#111-dhis2-deployment)
 
 ## Pydantic models for type-safe pipelines
 
