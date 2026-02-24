@@ -1,7 +1,8 @@
 """102 -- DHIS2 Org Units API.
 
-Block-authenticated metadata fetch with nested JSON flattening and derived
-columns (hierarchy depth, translation count).
+Fetches organisation units from the DHIS2 play server, flattens nested
+JSON (parent.id, createdBy.username), computes hierarchy depth from path,
+and writes a CSV export.
 
 Airflow equivalent: DHIS2 org unit fetch (DAG 058).
 Prefect approach:    Custom block auth, Pydantic flattening, CSV export.
@@ -29,10 +30,9 @@ sys.modules.setdefault("_dhis2_helpers", _helpers)
 _spec.loader.exec_module(_helpers)
 
 Dhis2Connection = _helpers.Dhis2Connection
-RawOrgUnit = _helpers.RawOrgUnit
 get_dhis2_connection = _helpers.get_dhis2_connection
 get_dhis2_password = _helpers.get_dhis2_password
-dhis2_api_fetch = _helpers.dhis2_api_fetch
+fetch_metadata = _helpers.fetch_metadata
 
 # ---------------------------------------------------------------------------
 # Models
@@ -67,51 +67,54 @@ class OrgUnitReport(BaseModel):
 
 
 @task
-def fetch_org_units(conn: Dhis2Connection, password: str) -> list[RawOrgUnit]:
-    """Fetch org units from the DHIS2 API.
+def fetch_org_units(conn: Dhis2Connection, password: str) -> list[dict]:
+    """Fetch all organisation units from DHIS2.
 
     Args:
         conn: DHIS2 connection block.
         password: DHIS2 password.
 
     Returns:
-        List of RawOrgUnit.
+        List of raw org unit dicts.
     """
-    raw_dicts = dhis2_api_fetch(conn, "organisationUnits", password)
-    units = [RawOrgUnit.model_validate(d) for d in raw_dicts]
-    print(f"Fetched {len(units)} org units")
-    return units
+    records = fetch_metadata(conn, "organisationUnits", password)
+    print(f"Fetched {len(records)} org units")
+    return records
 
 
 @task
-def flatten_org_units(raw: list[RawOrgUnit]) -> list[FlatOrgUnit]:
+def flatten_org_units(raw: list[dict]) -> list[FlatOrgUnit]:
     """Flatten raw org units into typed records.
 
     Extracts parent.id, createdBy.username, computes hierarchy depth from
-    path segments, and counts translations.
+    path separators, and counts translations.
 
     Args:
-        raw: Raw org unit records.
+        raw: Raw org unit dicts from the API.
 
     Returns:
         List of FlatOrgUnit.
     """
     flat: list[FlatOrgUnit] = []
     for r in raw:
-        parent_id = r.parent["id"] if r.parent else ""
-        created_by = r.createdBy["username"] if r.createdBy else ""
-        depth = len([s for s in r.path.split("/") if s])
+        parent = r.get("parent")
+        parent_id = parent["id"] if isinstance(parent, dict) else ""
+        created_by_obj = r.get("createdBy")
+        created_by = created_by_obj.get("username", "") if isinstance(created_by_obj, dict) else ""
+        path = r.get("path", "")
+        depth = path.count("/") - 1 if isinstance(path, str) and path else 0
+        translations = r.get("translations", [])
         flat.append(
             FlatOrgUnit(
-                id=r.id,
-                name=r.name,
-                short_name=r.shortName,
-                level=r.level,
+                id=r["id"],
+                name=r.get("name", ""),
+                short_name=r.get("shortName", ""),
+                level=r.get("level", 0),
                 parent_id=parent_id,
                 created_by=created_by,
                 hierarchy_depth=depth,
-                translation_count=len(r.translations),
-                opening_date=r.openingDate,
+                translation_count=len(translations) if isinstance(translations, list) else 0,
+                opening_date=r.get("openingDate", ""),
             )
         )
     print(f"Flattened {len(flat)} org units")

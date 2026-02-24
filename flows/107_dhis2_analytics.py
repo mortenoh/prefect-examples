@@ -1,7 +1,7 @@
 """107 -- DHIS2 Analytics Query.
 
-Analytics API with dimension parameters, headers+rows response parsing,
-and query parameter construction.
+Fetches analytics data from the DHIS2 play server using dimension
+parameters, parses the headers+rows response format, and writes CSV.
 
 Airflow equivalent: DHIS2 data values / analytics (DAG 111).
 Prefect approach:    Custom block auth, dimension query builder, tabular parsing.
@@ -13,6 +13,7 @@ import csv
 import importlib.util
 import sys
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
@@ -29,10 +30,9 @@ sys.modules.setdefault("_dhis2_helpers", _helpers)
 _spec.loader.exec_module(_helpers)
 
 Dhis2Connection = _helpers.Dhis2Connection
-RawAnalyticsResponse = _helpers.RawAnalyticsResponse
 get_dhis2_connection = _helpers.get_dhis2_connection
 get_dhis2_password = _helpers.get_dhis2_password
-simulate_analytics = _helpers.simulate_analytics
+fetch_analytics_api = _helpers.fetch_analytics
 
 # ---------------------------------------------------------------------------
 # Models
@@ -42,9 +42,8 @@ simulate_analytics = _helpers.simulate_analytics
 class AnalyticsQuery(BaseModel):
     """Describes an analytics API query."""
 
-    data_elements: list[str]
-    org_units: list[str]
-    periods: list[str]
+    dimension: list[str]
+    filter_param: str | None = None
 
 
 class AnalyticsRow(BaseModel):
@@ -72,44 +71,37 @@ class AnalyticsReport(BaseModel):
 
 @task
 def build_query(
-    data_elements: list[str] | None = None,
-    org_units: list[str] | None = None,
-    periods: list[str] | None = None,
+    data_elements: str = "fbfJHSPpUQD;cYeuwXTCPkU",
+    org_units: str = "ImspTQPwCqd",
+    filter_param: str = "pe:LAST_4_QUARTERS",
 ) -> AnalyticsQuery:
     """Build an analytics query from dimension parameters.
 
+    Uses the same defaults as the Airflow DAG 111:
+    - ANC 1st visit (fbfJHSPpUQD) and ANC 2nd visit (cYeuwXTCPkU)
+    - Sierra Leone national (ImspTQPwCqd)
+    - Last 4 quarters
+
     Args:
-        data_elements: Data element UIDs.
-        org_units: Org unit UIDs.
-        periods: Period identifiers (e.g. "202301").
+        data_elements: Semicolon-separated data element UIDs.
+        org_units: Semicolon-separated org unit UIDs.
+        filter_param: Filter parameter string.
 
     Returns:
         AnalyticsQuery.
     """
-    query = AnalyticsQuery(
-        data_elements=data_elements or ["DE_001", "DE_002", "DE_003"],
-        org_units=org_units or ["OU_001", "OU_002"],
-        periods=periods or ["202301", "202302", "202303"],
-    )
-    print(f"Query: {len(query.data_elements)} DEs x {len(query.org_units)} OUs x {len(query.periods)} periods")
+    dimension = [
+        f"dx:{data_elements}",
+        f"ou:{org_units}",
+    ]
+    query = AnalyticsQuery(dimension=dimension, filter_param=filter_param)
+    print(f"Query: dimension={dimension}, filter={filter_param}")
     return query
 
 
 @task
-def fetch_analytics(conn: Dhis2Connection, password: str, query: AnalyticsQuery) -> RawAnalyticsResponse:
+def fetch_analytics(conn: Dhis2Connection, password: str, query: AnalyticsQuery) -> dict[str, Any]:
     """Fetch analytics data from the DHIS2 API.
-
-    In a real implementation::
-
-        params = {
-            "dimension": [
-                f"dx:{';'.join(query.data_elements)}",
-                f"ou:{';'.join(query.org_units)}",
-                f"pe:{';'.join(query.periods)}",
-            ]
-        }
-        response = httpx.get(f"{conn.base_url}/api/analytics",
-                             auth=(conn.username, password), params=params)
 
     Args:
         conn: DHIS2 connection block.
@@ -117,16 +109,16 @@ def fetch_analytics(conn: Dhis2Connection, password: str, query: AnalyticsQuery)
         query: Analytics query.
 
     Returns:
-        RawAnalyticsResponse.
+        Raw analytics response dict with "headers" and "rows".
     """
-    _ = conn, password
-    response = simulate_analytics(query.data_elements, query.org_units, query.periods)
-    print(f"Fetched analytics: {len(response.rows)} rows")
-    return response
+    data = fetch_analytics_api(conn, password, query.dimension, query.filter_param)
+    row_count = len(data.get("rows", []))
+    print(f"Fetched analytics: {row_count} rows")
+    return data
 
 
 @task
-def parse_analytics(response: RawAnalyticsResponse) -> list[AnalyticsRow]:
+def parse_analytics(response: dict[str, Any]) -> list[AnalyticsRow]:
     """Parse headers+rows analytics response into typed records.
 
     Maps column names from headers to row values.
@@ -137,10 +129,10 @@ def parse_analytics(response: RawAnalyticsResponse) -> list[AnalyticsRow]:
     Returns:
         List of AnalyticsRow.
     """
-    header_names = [h["name"] for h in response.headers]
+    headers = [h["name"] for h in response["headers"]]
     rows: list[AnalyticsRow] = []
-    for row_data in response.rows:
-        record = dict(zip(header_names, row_data, strict=True))
+    for row_data in response["rows"]:
+        record = dict(zip(headers, row_data, strict=True))
         rows.append(
             AnalyticsRow(
                 dx=record["dx"],

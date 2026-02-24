@@ -3,6 +3,7 @@
 import importlib.util
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 _spec = importlib.util.spec_from_file_location(
     "flow_104",
@@ -14,7 +15,6 @@ sys.modules["flow_104"] = _mod
 _spec.loader.exec_module(_mod)
 
 Dhis2Connection = _mod.Dhis2Connection
-RawIndicator = _mod.RawIndicator
 FlatIndicator = _mod.FlatIndicator
 IndicatorReport = _mod.IndicatorReport
 fetch_indicators = _mod.fetch_indicators
@@ -25,6 +25,41 @@ dhis2_indicators_flow = _mod.dhis2_indicators_flow
 _count_operands = _mod._count_operands
 _count_operators = _mod._count_operators
 _complexity_bin = _mod._complexity_bin
+
+SAMPLE_INDICATORS = [
+    {
+        "id": "IND001",
+        "name": "ANC Coverage",
+        "shortName": "ANC",
+        "indicatorType": {"id": "IT001", "name": "Percentage"},
+        "numerator": "#{abc.def}+#{ghi.jkl}",
+        "denominator": "#{xyz.uvw}",
+    },
+    {
+        "id": "IND002",
+        "name": "Simple Rate",
+        "shortName": "SR",
+        "indicatorType": {"id": "IT002", "name": "Rate"},
+        "numerator": "#{abc.def}",
+        "denominator": "1",
+    },
+    {
+        "id": "IND003",
+        "name": "Complex Calc",
+        "shortName": "CC",
+        "indicatorType": {"id": "IT001", "name": "Percentage"},
+        "numerator": "#{a.b}+#{c.d}-#{e.f}*#{g.h}",
+        "denominator": "#{i.j}+#{k.l}",
+    },
+]
+
+
+def _mock_response(json_data: dict, status_code: int = 200) -> MagicMock:
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.json.return_value = json_data
+    resp.raise_for_status.return_value = None
+    return resp
 
 
 def test_count_operands_single() -> None:
@@ -50,40 +85,36 @@ def test_complexity_bins() -> None:
     assert _complexity_bin(10) == "complex"
 
 
-def test_fetch_indicators() -> None:
-    conn = Dhis2Connection()
-    indicators = fetch_indicators.fn(conn, "district")
-    assert len(indicators) == 10
-    assert all(isinstance(ind, RawIndicator) for ind in indicators)
-
-
 def test_flatten_indicators() -> None:
-    conn = Dhis2Connection()
-    raw = fetch_indicators.fn(conn, "district")
-    flat = flatten_indicators.fn(raw)
-    assert len(flat) == 10
+    flat = flatten_indicators.fn(SAMPLE_INDICATORS)
+    assert len(flat) == 3
     assert all(isinstance(ind, FlatIndicator) for ind in flat)
 
 
+def test_operand_counting() -> None:
+    flat = flatten_indicators.fn(SAMPLE_INDICATORS)
+    anc = next(i for i in flat if i.id == "IND001")
+    assert anc.numerator_operands == 2
+    assert anc.denominator_operands == 1
+
+
 def test_indicator_report() -> None:
-    conn = Dhis2Connection()
-    raw = fetch_indicators.fn(conn, "district")
-    flat = flatten_indicators.fn(raw)
+    flat = flatten_indicators.fn(SAMPLE_INDICATORS)
     report = indicator_report.fn(flat)
-    assert report.total == 10
+    assert report.total == 3
     assert report.most_complex_name != ""
     assert report.simplest_name != ""
 
 
 def test_write_csv(tmp_path: Path) -> None:
-    conn = Dhis2Connection()
-    raw = fetch_indicators.fn(conn, "district")
-    flat = flatten_indicators.fn(raw)
+    flat = flatten_indicators.fn(SAMPLE_INDICATORS)
     path = write_indicator_csv.fn(flat, str(tmp_path))
     assert path.exists()
     assert path.name == "indicators.csv"
 
 
-def test_flow_runs(tmp_path: Path) -> None:
+@patch("httpx.get")
+def test_flow_runs(mock_get: MagicMock, tmp_path: Path) -> None:
+    mock_get.return_value = _mock_response({"indicators": SAMPLE_INDICATORS})
     state = dhis2_indicators_flow(output_dir=str(tmp_path), return_state=True)
     assert state.is_completed()

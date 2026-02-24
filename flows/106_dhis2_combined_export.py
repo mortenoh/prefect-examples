@@ -1,7 +1,7 @@
 """106 -- DHIS2 Combined Export.
 
-Parallel multi-endpoint fetch with shared block, fan-in summary across
-heterogeneous outputs.
+Parallel multi-endpoint fetch from the DHIS2 play server with shared block,
+fan-in summary across heterogeneous outputs (CSV and JSON).
 
 Airflow equivalent: DHIS2 combined parallel export (DAG 062).
 Prefect approach:    .submit() for parallel tasks, fan-in combined report.
@@ -32,7 +32,7 @@ _spec.loader.exec_module(_helpers)
 Dhis2Connection = _helpers.Dhis2Connection
 get_dhis2_connection = _helpers.get_dhis2_connection
 get_dhis2_password = _helpers.get_dhis2_password
-dhis2_api_fetch = _helpers.dhis2_api_fetch
+fetch_metadata = _helpers.fetch_metadata
 
 # ---------------------------------------------------------------------------
 # Models
@@ -63,7 +63,7 @@ class CombinedExportReport(BaseModel):
 
 @task
 def export_org_units(conn: Dhis2Connection, password: str, output_dir: str) -> ExportResult:
-    """Export org units to CSV.
+    """Fetch org units and export to CSV.
 
     Args:
         conn: DHIS2 connection block.
@@ -73,7 +73,7 @@ def export_org_units(conn: Dhis2Connection, password: str, output_dir: str) -> E
     Returns:
         ExportResult.
     """
-    records = dhis2_api_fetch(conn, "organisationUnits", password)
+    records = fetch_metadata(conn, "organisationUnits", password)
     path = Path(output_dir) / "org_units.csv"
     if records:
         fieldnames = list(records[0].keys())
@@ -89,7 +89,7 @@ def export_org_units(conn: Dhis2Connection, password: str, output_dir: str) -> E
 
 @task
 def export_data_elements(conn: Dhis2Connection, password: str, output_dir: str) -> ExportResult:
-    """Export data elements to JSON.
+    """Fetch data elements and export to JSON.
 
     Args:
         conn: DHIS2 connection block.
@@ -99,7 +99,7 @@ def export_data_elements(conn: Dhis2Connection, password: str, output_dir: str) 
     Returns:
         ExportResult.
     """
-    records = dhis2_api_fetch(conn, "dataElements", password)
+    records = fetch_metadata(conn, "dataElements", password)
     path = Path(output_dir) / "data_elements.json"
     path.write_text(json.dumps(records, indent=2, default=str))
     print(f"Exported {len(records)} data elements to JSON")
@@ -108,7 +108,7 @@ def export_data_elements(conn: Dhis2Connection, password: str, output_dir: str) 
 
 @task
 def export_indicators(conn: Dhis2Connection, password: str, output_dir: str) -> ExportResult:
-    """Export indicators to CSV.
+    """Fetch indicators and export to CSV.
 
     Args:
         conn: DHIS2 connection block.
@@ -118,7 +118,7 @@ def export_indicators(conn: Dhis2Connection, password: str, output_dir: str) -> 
     Returns:
         ExportResult.
     """
-    records = dhis2_api_fetch(conn, "indicators", password)
+    records = fetch_metadata(conn, "indicators", password)
     path = Path(output_dir) / "indicators.csv"
     if records:
         fieldnames = list(records[0].keys())

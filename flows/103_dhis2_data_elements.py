@@ -1,7 +1,8 @@
 """103 -- DHIS2 Data Elements API.
 
-Metadata categorization with block auth, boolean derived columns, and
-valueType/aggregationType grouping.
+Fetches data elements from the DHIS2 play server, flattens
+categoryCombo.id, derives boolean has_code and name_length columns,
+and groups by valueType/aggregationType.
 
 Airflow equivalent: DHIS2 data element fetch (DAG 059).
 Prefect approach:    Custom block auth, Pydantic flattening, category stats.
@@ -29,10 +30,9 @@ sys.modules.setdefault("_dhis2_helpers", _helpers)
 _spec.loader.exec_module(_helpers)
 
 Dhis2Connection = _helpers.Dhis2Connection
-RawDataElement = _helpers.RawDataElement
 get_dhis2_connection = _helpers.get_dhis2_connection
 get_dhis2_password = _helpers.get_dhis2_password
-dhis2_api_fetch = _helpers.dhis2_api_fetch
+fetch_metadata = _helpers.fetch_metadata
 
 # ---------------------------------------------------------------------------
 # Models
@@ -68,46 +68,47 @@ class DataElementReport(BaseModel):
 
 
 @task
-def fetch_data_elements(conn: Dhis2Connection, password: str) -> list[RawDataElement]:
-    """Fetch data elements from the DHIS2 API.
+def fetch_data_elements(conn: Dhis2Connection, password: str) -> list[dict]:
+    """Fetch all data elements from DHIS2.
 
     Args:
         conn: DHIS2 connection block.
         password: DHIS2 password.
 
     Returns:
-        List of RawDataElement.
+        List of raw data element dicts.
     """
-    raw_dicts = dhis2_api_fetch(conn, "dataElements", password)
-    elements = [RawDataElement.model_validate(d) for d in raw_dicts]
-    print(f"Fetched {len(elements)} data elements")
-    return elements
+    records = fetch_metadata(conn, "dataElements", password)
+    print(f"Fetched {len(records)} data elements")
+    return records
 
 
 @task
-def flatten_data_elements(raw: list[RawDataElement]) -> list[FlatDataElement]:
+def flatten_data_elements(raw: list[dict]) -> list[FlatDataElement]:
     """Flatten raw data elements into typed records.
 
     Args:
-        raw: Raw data element records.
+        raw: Raw data element dicts from the API.
 
     Returns:
         List of FlatDataElement.
     """
     flat: list[FlatDataElement] = []
     for r in raw:
-        cc_id = r.categoryCombo["id"] if r.categoryCombo else ""
+        cc = r.get("categoryCombo")
+        cc_id = cc["id"] if isinstance(cc, dict) else ""
+        code = r.get("code")
         flat.append(
             FlatDataElement(
-                id=r.id,
-                name=r.name,
-                short_name=r.shortName,
-                domain_type=r.domainType,
-                value_type=r.valueType,
-                aggregation_type=r.aggregationType,
+                id=r["id"],
+                name=r.get("name", ""),
+                short_name=r.get("shortName", ""),
+                domain_type=r.get("domainType", ""),
+                value_type=r.get("valueType", ""),
+                aggregation_type=r.get("aggregationType", ""),
                 category_combo_id=cc_id,
-                has_code=r.code is not None,
-                name_length=len(r.name),
+                has_code=code is not None and code != "",
+                name_length=len(r.get("name", "")),
             )
         )
     print(f"Flattened {len(flat)} data elements")

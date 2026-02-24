@@ -3,6 +3,7 @@
 import importlib.util
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 _spec = importlib.util.spec_from_file_location(
     "flow_103",
@@ -14,7 +15,6 @@ sys.modules["flow_103"] = _mod
 _spec.loader.exec_module(_mod)
 
 Dhis2Connection = _mod.Dhis2Connection
-RawDataElement = _mod.RawDataElement
 FlatDataElement = _mod.FlatDataElement
 DataElementReport = _mod.DataElementReport
 fetch_data_elements = _mod.fetch_data_elements
@@ -23,68 +23,100 @@ write_data_element_csv = _mod.write_data_element_csv
 data_element_report = _mod.data_element_report
 dhis2_data_elements_flow = _mod.dhis2_data_elements_flow
 
+SAMPLE_DATA_ELEMENTS = [
+    {
+        "id": "DE001",
+        "name": "ANC 1st visit",
+        "shortName": "ANC1",
+        "domainType": "AGGREGATE",
+        "valueType": "NUMBER",
+        "aggregationType": "SUM",
+        "categoryCombo": {"id": "CC001", "name": "default"},
+        "code": "ANC_1",
+    },
+    {
+        "id": "DE002",
+        "name": "Malaria cases",
+        "shortName": "Mal",
+        "domainType": "AGGREGATE",
+        "valueType": "INTEGER",
+        "aggregationType": "SUM",
+        "categoryCombo": {"id": "CC002", "name": "age"},
+        "code": None,
+    },
+    {
+        "id": "DE003",
+        "name": "Birth date",
+        "shortName": "BD",
+        "domainType": "TRACKER",
+        "valueType": "DATE",
+        "aggregationType": "NONE",
+        "categoryCombo": None,
+        "code": "BIRTH_DT",
+    },
+]
 
-def test_fetch_data_elements() -> None:
+
+def _mock_response(json_data: dict, status_code: int = 200) -> MagicMock:
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.json.return_value = json_data
+    resp.raise_for_status.return_value = None
+    return resp
+
+
+@patch("httpx.get")
+def test_fetch_data_elements(mock_get: MagicMock) -> None:
+    mock_get.return_value = _mock_response({"dataElements": SAMPLE_DATA_ELEMENTS})
     conn = Dhis2Connection()
     elements = fetch_data_elements.fn(conn, "district")
-    assert len(elements) == 15
-    assert all(isinstance(e, RawDataElement) for e in elements)
+    assert len(elements) == 3
 
 
 def test_flatten_data_elements() -> None:
-    conn = Dhis2Connection()
-    raw = fetch_data_elements.fn(conn, "district")
-    flat = flatten_data_elements.fn(raw)
-    assert len(flat) == 15
+    flat = flatten_data_elements.fn(SAMPLE_DATA_ELEMENTS)
+    assert len(flat) == 3
     assert all(isinstance(e, FlatDataElement) for e in flat)
 
 
 def test_category_combo_extraction() -> None:
-    conn = Dhis2Connection()
-    raw = fetch_data_elements.fn(conn, "district")
-    flat = flatten_data_elements.fn(raw)
-    with_cc = [e for e in flat if e.category_combo_id]
-    without_cc = [e for e in flat if not e.category_combo_id]
-    assert len(with_cc) > 0
-    assert len(without_cc) > 0
+    flat = flatten_data_elements.fn(SAMPLE_DATA_ELEMENTS)
+    de1 = next(e for e in flat if e.id == "DE001")
+    de3 = next(e for e in flat if e.id == "DE003")
+    assert de1.category_combo_id == "CC001"
+    assert de3.category_combo_id == ""
 
 
 def test_has_code_logic() -> None:
-    conn = Dhis2Connection()
-    raw = fetch_data_elements.fn(conn, "district")
-    flat = flatten_data_elements.fn(raw)
+    flat = flatten_data_elements.fn(SAMPLE_DATA_ELEMENTS)
     coded = [e for e in flat if e.has_code]
     uncoded = [e for e in flat if not e.has_code]
-    assert len(coded) > 0
-    assert len(uncoded) > 0
+    assert len(coded) == 2  # DE001 and DE003
+    assert len(uncoded) == 1  # DE002
 
 
 def test_name_length() -> None:
-    conn = Dhis2Connection()
-    raw = fetch_data_elements.fn(conn, "district")
-    flat = flatten_data_elements.fn(raw)
+    flat = flatten_data_elements.fn(SAMPLE_DATA_ELEMENTS)
     for e in flat:
         assert e.name_length == len(e.name)
 
 
 def test_report_code_coverage() -> None:
-    conn = Dhis2Connection()
-    raw = fetch_data_elements.fn(conn, "district")
-    flat = flatten_data_elements.fn(raw)
+    flat = flatten_data_elements.fn(SAMPLE_DATA_ELEMENTS)
     report = data_element_report.fn(flat)
     assert 0.0 <= report.code_coverage <= 1.0
-    assert report.total == 15
+    assert report.total == 3
 
 
 def test_write_csv(tmp_path: Path) -> None:
-    conn = Dhis2Connection()
-    raw = fetch_data_elements.fn(conn, "district")
-    flat = flatten_data_elements.fn(raw)
+    flat = flatten_data_elements.fn(SAMPLE_DATA_ELEMENTS)
     path = write_data_element_csv.fn(flat, str(tmp_path))
     assert path.exists()
     assert path.name == "data_elements.csv"
 
 
-def test_flow_runs(tmp_path: Path) -> None:
+@patch("httpx.get")
+def test_flow_runs(mock_get: MagicMock, tmp_path: Path) -> None:
+    mock_get.return_value = _mock_response({"dataElements": SAMPLE_DATA_ELEMENTS})
     state = dhis2_data_elements_flow(output_dir=str(tmp_path), return_state=True)
     assert state.is_completed()

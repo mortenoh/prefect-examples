@@ -1,7 +1,7 @@
 """108 -- DHIS2 Full Pipeline.
 
-End-to-end DHIS2 pipeline with block config, error handling, quality checks,
-timing, and markdown dashboard.
+End-to-end DHIS2 pipeline with block config, real API calls, quality
+checks, timing, and markdown dashboard.
 
 Airflow equivalent: None (capstone combining all DHIS2 patterns).
 Prefect approach:    Multi-stage pipeline with quality scoring and dashboard.
@@ -13,7 +13,9 @@ import importlib.util
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
+import httpx
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -30,12 +32,9 @@ _spec.loader.exec_module(_helpers)
 
 Dhis2Connection = _helpers.Dhis2Connection
 Dhis2ApiResponse = _helpers.Dhis2ApiResponse
-RawOrgUnit = _helpers.RawOrgUnit
-RawDataElement = _helpers.RawDataElement
-RawIndicator = _helpers.RawIndicator
 get_dhis2_connection = _helpers.get_dhis2_connection
 get_dhis2_password = _helpers.get_dhis2_password
-dhis2_api_fetch = _helpers.dhis2_api_fetch
+fetch_metadata = _helpers.fetch_metadata
 
 # ---------------------------------------------------------------------------
 # Models
@@ -76,7 +75,7 @@ class Dhis2PipelineResult(BaseModel):
 
 @task
 def connect_and_verify(conn: Dhis2Connection, password: str) -> Dhis2ApiResponse:
-    """Connect to DHIS2 and verify access.
+    """Connect to DHIS2 and verify access via system/info.
 
     Args:
         conn: DHIS2 connection block.
@@ -85,18 +84,20 @@ def connect_and_verify(conn: Dhis2Connection, password: str) -> Dhis2ApiResponse
     Returns:
         Dhis2ApiResponse from verification.
     """
-    _ = conn, password
-    result = Dhis2ApiResponse(endpoint="system/info", record_count=1, status_code=200)
-    print(f"Connected to {conn.base_url}, verified OK")
-    return result
+    url = f"{conn.base_url}/api/system/info"
+    resp = httpx.get(url, auth=(conn.username, password), timeout=30)
+    resp.raise_for_status()
+    data: dict[str, Any] = resp.json()
+    print(f"Connected to {conn.base_url}, DHIS2 v{data.get('version', 'unknown')}")
+    return Dhis2ApiResponse(endpoint="system/info", record_count=1, status_code=resp.status_code)
 
 
 @task
 def fetch_all_metadata(
     conn: Dhis2Connection,
     password: str,
-) -> dict[str, list[dict[str, object]]]:
-    """Fetch org units, data elements, and indicators.
+) -> dict[str, list[dict[str, Any]]]:
+    """Fetch org units, data elements, and indicators from the DHIS2 API.
 
     Args:
         conn: DHIS2 connection block.
@@ -105,10 +106,10 @@ def fetch_all_metadata(
     Returns:
         Dict mapping endpoint name to list of records.
     """
-    org_units = dhis2_api_fetch(conn, "organisationUnits", password)
-    data_elements = dhis2_api_fetch(conn, "dataElements", password)
-    indicators = dhis2_api_fetch(conn, "indicators", password)
-    result = {
+    org_units = fetch_metadata(conn, "organisationUnits", password)
+    data_elements = fetch_metadata(conn, "dataElements", password)
+    indicators = fetch_metadata(conn, "indicators", password)
+    result: dict[str, list[dict[str, Any]]] = {
         "organisationUnits": org_units,
         "dataElements": data_elements,
         "indicators": indicators,
@@ -119,12 +120,12 @@ def fetch_all_metadata(
 
 
 @task
-def validate_metadata(metadata: dict[str, list[dict[str, object]]]) -> QualityResult:
+def validate_metadata(metadata: dict[str, list[dict[str, Any]]]) -> QualityResult:
     """Run quality checks on fetched metadata.
 
     Checks:
     - Each endpoint has records (non-empty)
-    - Org units have valid levels (1-4)
+    - Org units have valid levels (> 0)
     - Data elements have required fields (id, name, valueType)
     - Indicators have expressions (numerator, denominator)
 
@@ -150,7 +151,7 @@ def validate_metadata(metadata: dict[str, list[dict[str, object]]]) -> QualityRe
     for ou in metadata.get("organisationUnits", []):
         checks_total += 1
         level = ou.get("level", 0)
-        if isinstance(level, int) and 1 <= level <= 4:
+        if isinstance(level, int) and level > 0:
             checks_passed += 1
         else:
             issues.append(f"OrgUnit {ou.get('id', '?')}: invalid level {level}")

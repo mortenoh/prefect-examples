@@ -1,7 +1,7 @@
 """101 -- DHIS2 Connection Block.
 
 Custom Prefect block for DHIS2 credentials with Secret-based password
-management and connection verification.
+management and connection verification via a real API call.
 
 Airflow equivalent: BaseHook.get_connection("dhis2_default") (DAG 110).
 Prefect approach:    Custom Block subclass + Secret block for password.
@@ -12,7 +12,9 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
+from typing import Any
 
+import httpx
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -30,6 +32,7 @@ Dhis2Connection = _helpers.Dhis2Connection
 Dhis2ApiResponse = _helpers.Dhis2ApiResponse
 get_dhis2_connection = _helpers.get_dhis2_connection
 get_dhis2_password = _helpers.get_dhis2_password
+fetch_metadata = _helpers.fetch_metadata
 
 # ---------------------------------------------------------------------------
 # Models
@@ -76,7 +79,7 @@ def get_connection_info(conn: Dhis2Connection, password: str) -> ConnectionInfo:
 
 @task
 def verify_connection(conn: Dhis2Connection, password: str) -> Dhis2ApiResponse:
-    """Verify connectivity by simulating a ping to the DHIS2 API.
+    """Verify connectivity by fetching system/info from the DHIS2 API.
 
     Args:
         conn: DHIS2 connection block.
@@ -85,31 +88,49 @@ def verify_connection(conn: Dhis2Connection, password: str) -> Dhis2ApiResponse:
     Returns:
         Dhis2ApiResponse from the system/info endpoint.
     """
-    # In a real implementation:
-    # response = httpx.get(f"{conn.base_url}/api/{conn.api_version}/system/info",
-    #                      auth=(conn.username, password))
-    _ = conn, password
-    result = Dhis2ApiResponse(endpoint="system/info", record_count=1, status_code=200)
-    print(f"Verification: {result.endpoint} -> {result.status_code}")
-    return result
+    url = f"{conn.base_url}/api/system/info"
+    resp = httpx.get(url, auth=(conn.username, password), timeout=30)
+    resp.raise_for_status()
+    data: dict[str, Any] = resp.json()
+    print(f"Verified: DHIS2 v{data.get('version', 'unknown')} at {conn.base_url}")
+    return Dhis2ApiResponse(endpoint="system/info", record_count=1, status_code=resp.status_code)
 
 
 @task
-def display_connection(info: ConnectionInfo) -> str:
+def fetch_org_unit_count(conn: Dhis2Connection, password: str) -> int:
+    """Fetch org unit count to confirm API access.
+
+    Args:
+        conn: DHIS2 connection block.
+        password: DHIS2 password.
+
+    Returns:
+        Number of organisation units.
+    """
+    records = fetch_metadata(conn, "organisationUnits", password, fields="id")
+    count = len(records)
+    print(f"Organisation unit count: {count}")
+    return count
+
+
+@task
+def display_connection(info: ConnectionInfo, org_unit_count: int) -> str:
     """Format a human-readable connection summary.
 
     Args:
         info: Connection info.
+        org_unit_count: Number of org units fetched.
 
     Returns:
         Formatted summary string.
     """
     lines = [
-        f"Type:     {info.conn_type}",
-        f"Host:     {info.host}",
-        f"User:     {info.username}",
-        f"Password: {info.masked_password}",
-        f"API:      v{info.api_version}",
+        f"Type:      {info.conn_type}",
+        f"Host:      {info.host}",
+        f"User:      {info.username}",
+        f"Password:  {info.masked_password}",
+        f"API:       v{info.api_version}",
+        f"Org units: {org_unit_count}",
     ]
     summary = "\n".join(lines)
     print(summary)
@@ -132,7 +153,8 @@ def dhis2_connection_flow() -> ConnectionInfo:
     password = get_dhis2_password()
     info = get_connection_info(conn, password)
     verify_connection(conn, password)
-    display_connection(info)
+    count = fetch_org_unit_count(conn, password)
+    display_connection(info, count)
     return info
 
 

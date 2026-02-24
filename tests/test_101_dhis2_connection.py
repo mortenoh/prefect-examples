@@ -3,6 +3,7 @@
 import importlib.util
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 _spec = importlib.util.spec_from_file_location(
     "flow_101",
@@ -18,8 +19,17 @@ Dhis2ApiResponse = _mod.Dhis2ApiResponse
 ConnectionInfo = _mod.ConnectionInfo
 get_connection_info = _mod.get_connection_info
 verify_connection = _mod.verify_connection
+fetch_org_unit_count = _mod.fetch_org_unit_count
 display_connection = _mod.display_connection
 dhis2_connection_flow = _mod.dhis2_connection_flow
+
+
+def _mock_response(json_data: dict, status_code: int = 200) -> MagicMock:
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.json.return_value = json_data
+    resp.raise_for_status.return_value = None
+    return resp
 
 
 def test_connection_construction() -> None:
@@ -48,7 +58,9 @@ def test_short_password_masking() -> None:
     assert info.masked_password == "***"
 
 
-def test_verify_response() -> None:
+@patch("httpx.get")
+def test_verify_response(mock_get: MagicMock) -> None:
+    mock_get.return_value = _mock_response({"version": "2.40.0"})
     conn = Dhis2Connection()
     response = verify_connection.fn(conn, "district")
     assert isinstance(response, Dhis2ApiResponse)
@@ -56,14 +68,25 @@ def test_verify_response() -> None:
     assert response.endpoint == "system/info"
 
 
+@patch("httpx.get")
+def test_fetch_org_unit_count(mock_get: MagicMock) -> None:
+    mock_get.return_value = _mock_response({"organisationUnits": [{"id": "a"}, {"id": "b"}]})
+    conn = Dhis2Connection()
+    count = fetch_org_unit_count.fn(conn, "district")
+    assert count == 2
+
+
 def test_display_connection() -> None:
     conn = Dhis2Connection()
     info = get_connection_info.fn(conn, "district")
-    summary = display_connection.fn(info)
+    summary = display_connection.fn(info, 100)
     assert "admin" in summary
     assert "dhis2" in summary
+    assert "100" in summary
 
 
-def test_flow_runs() -> None:
+@patch("httpx.get")
+def test_flow_runs(mock_get: MagicMock) -> None:
+    mock_get.return_value = _mock_response({"version": "2.40.0", "organisationUnits": [{"id": "a"}, {"id": "b"}]})
     state = dhis2_connection_flow(return_state=True)
     assert state.is_completed()

@@ -1,7 +1,8 @@
 """104 -- DHIS2 Indicators API.
 
-Expression parsing with regex and block auth, operand counting, complexity
-scoring and binning.
+Fetches indicators from the DHIS2 play server, parses numerator and
+denominator expressions with regex to count operands, and computes an
+expression complexity score with binning.
 
 Airflow equivalent: DHIS2 indicator fetch (DAG 060).
 Prefect approach:    Custom block auth, regex operand parsing, complexity bins.
@@ -30,10 +31,9 @@ sys.modules.setdefault("_dhis2_helpers", _helpers)
 _spec.loader.exec_module(_helpers)
 
 Dhis2Connection = _helpers.Dhis2Connection
-RawIndicator = _helpers.RawIndicator
 get_dhis2_connection = _helpers.get_dhis2_connection
 get_dhis2_password = _helpers.get_dhis2_password
-dhis2_api_fetch = _helpers.dhis2_api_fetch
+fetch_metadata = _helpers.fetch_metadata
 OPERAND_PATTERN = _helpers.OPERAND_PATTERN
 
 # ---------------------------------------------------------------------------
@@ -71,11 +71,15 @@ class IndicatorReport(BaseModel):
 
 def _count_operands(expression: str) -> int:
     """Count ``#{uid.uid}`` operands in a DHIS2 expression."""
+    if not isinstance(expression, str):
+        return 0
     return len(re.findall(OPERAND_PATTERN, expression))
 
 
 def _count_operators(expression: str) -> int:
     """Count arithmetic operators in an expression."""
+    if not isinstance(expression, str):
+        return 0
     return sum(1 for c in expression if c in "+-*/")
 
 
@@ -97,24 +101,23 @@ def _complexity_bin(score: int) -> str:
 
 
 @task
-def fetch_indicators(conn: Dhis2Connection, password: str) -> list[RawIndicator]:
-    """Fetch indicators from the DHIS2 API.
+def fetch_indicators(conn: Dhis2Connection, password: str) -> list[dict]:
+    """Fetch all indicators from DHIS2.
 
     Args:
         conn: DHIS2 connection block.
         password: DHIS2 password.
 
     Returns:
-        List of RawIndicator.
+        List of raw indicator dicts.
     """
-    raw_dicts = dhis2_api_fetch(conn, "indicators", password)
-    indicators = [RawIndicator.model_validate(d) for d in raw_dicts]
-    print(f"Fetched {len(indicators)} indicators")
-    return indicators
+    records = fetch_metadata(conn, "indicators", password)
+    print(f"Fetched {len(records)} indicators")
+    return records
 
 
 @task
-def flatten_indicators(raw: list[RawIndicator]) -> list[FlatIndicator]:
+def flatten_indicators(raw: list[dict]) -> list[FlatIndicator]:
     """Parse and flatten indicator expressions.
 
     For each indicator, count operands in numerator and denominator using
@@ -122,24 +125,27 @@ def flatten_indicators(raw: list[RawIndicator]) -> list[FlatIndicator]:
     complexity score, and bin it.
 
     Args:
-        raw: Raw indicator records.
+        raw: Raw indicator dicts from the API.
 
     Returns:
         List of FlatIndicator.
     """
     flat: list[FlatIndicator] = []
     for r in raw:
-        num_ops = _count_operands(r.numerator)
-        den_ops = _count_operands(r.denominator)
-        num_operators = _count_operators(r.numerator) + _count_operators(r.denominator)
+        numerator = r.get("numerator", "")
+        denominator = r.get("denominator", "")
+        num_ops = _count_operands(numerator)
+        den_ops = _count_operands(denominator)
+        num_operators = _count_operators(numerator) + _count_operators(denominator)
         complexity = num_ops + den_ops + num_operators
+        indicator_type = r.get("indicatorType")
         flat.append(
             FlatIndicator(
-                id=r.id,
-                name=r.name,
-                short_name=r.shortName,
-                indicator_type_id=r.indicatorType["id"] if r.indicatorType else "",
-                indicator_type_name=r.indicatorType["name"] if r.indicatorType else "",
+                id=r["id"],
+                name=r.get("name", ""),
+                short_name=r.get("shortName", ""),
+                indicator_type_id=indicator_type["id"] if isinstance(indicator_type, dict) else "",
+                indicator_type_name=indicator_type.get("name", "") if isinstance(indicator_type, dict) else "",
                 numerator_operands=num_ops,
                 denominator_operands=den_ops,
                 expression_complexity=complexity,
