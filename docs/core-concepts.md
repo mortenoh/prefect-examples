@@ -234,6 +234,21 @@ check referential integrity between related datasets.
 Statistical profiling uses the stdlib `statistics` module (mean, stdev, median)
 to profile columns by inferred type (numeric vs string).
 
+## Analytics and Modeling
+
+Phase 5 introduces statistical analysis and modeling patterns:
+
+- **Pearson correlation** -- manual implementation using `math` and `statistics`
+  modules (no numpy/scipy required)
+- **Linear regression** -- ordinary least squares with R-squared computation
+- **Star schema** -- dimensional modeling with fact and dimension tables,
+  surrogate keys, and composite index ranking
+- **Log returns** -- financial time series analysis with rolling volatility
+- **Hypothesis testing** -- educational null hypothesis validation pattern
+
+These patterns demonstrate that analytics pipelines can be built with
+stdlib modules alone, making flows lightweight and dependency-free.
+
 ## Airflow to Prefect comparison
 
 | Airflow concept | Prefect equivalent | Example |
@@ -318,3 +333,23 @@ to profile columns by inferred type (numeric vs string).
 | No equivalent | Hash-based idempotency registry | 078 |
 | No equivalent | Checkpoint-based stage recovery | 079 |
 | Quality framework + dashboard | Capstone: all Phase 4 features | 080 |
+| WHO threshold classification | Threshold-based AQI classification | 081 |
+| Weighted risk scoring | Multi-source composite risk index | 082 |
+| Seasonal analysis | Latitude-daylight correlation | 083 |
+| Parquet aggregation | Fan-out grouped aggregation | 084 |
+| Nested JSON normalization | Pydantic model flattening | 085 |
+| Multi-indicator correlation | Pearson correlation matrix | 086 |
+| Currency volatility analysis | Log returns, rolling volatility | 087 |
+| Cross-domain hypothesis test | Null hypothesis validation | 088 |
+| Log-linear regression | Manual OLS regression | 089 |
+| Dimensional modeling | Star schema, composite index | 090 |
+| SQL-based ETL layers | Simulated staging/production/summary | 091 |
+| Generic data transfer | Category computation, checksum verification | 092 |
+| Org unit hierarchy | Tree flattening, path-based depth | 093 |
+| Expression parsing | Regex complexity scoring | 094 |
+| GeoJSON construction | Spatial feature collection | 095 |
+| Combined parallel export | Fan-in multi-endpoint summary | 096 |
+| No equivalent | Data lineage tracking (hashlib) | 097 |
+| No equivalent | Pipeline template factory | 098 |
+| No equivalent | Multi-pipeline orchestrator | 099 |
+| Full analytics pipeline | Grand capstone: all Phase 5 patterns | 100 |

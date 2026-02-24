@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 80 example flows, organised by category.
+Detailed walkthrough of all 100 example flows, organised by category.
 
 ---
 
@@ -1824,3 +1824,543 @@ This capstone combines all Phase 4 patterns: CSV file I/O, statistical
 profiling, quality rule checks with traffic-light scoring, application-level
 caching, hash-based deduplication, checkpoint saving, and a markdown dashboard
 artifact.
+
+---
+
+## Environmental and Risk Analysis (081--084)
+
+### 081 -- Air Quality Index
+
+**What it demonstrates:** Threshold-based AQI classification against WHO
+air quality standards, health advisory generation, and severity ordering.
+
+**Airflow equivalent:** Air quality monitoring with WHO thresholds (DAG 083).
+
+```python
+AQI_THRESHOLDS: list[tuple[float, str, str]] = [
+    (50.0, "Good", "green"),
+    (100.0, "Moderate", "yellow"),
+    (150.0, "Unhealthy for Sensitive Groups", "orange"),
+    (200.0, "Unhealthy", "red"),
+    (300.0, "Very Unhealthy", "purple"),
+    (float("inf"), "Hazardous", "maroon"),
+]
+
+@task
+def classify_aqi(readings: list[PollutantReading]) -> list[AqiClassification]:
+    classifications: list[AqiClassification] = []
+    for reading in readings:
+        mean_val = sum(reading.hourly_values) / len(reading.hourly_values)
+        for threshold, cat, col in AQI_THRESHOLDS:
+            if mean_val <= threshold:
+                category = cat
+                color = col
+                break
+        ...
+```
+
+Readings are classified by walking an ordered list of (threshold, category,
+color) tuples. A severity ordering list determines the worst city. WHO limits
+are checked separately for exceedance counting.
+
+---
+
+### 082 -- Composite Risk Assessment
+
+**What it demonstrates:** Multi-source weighted risk scoring combining marine
+and flood data into a composite index.
+
+**Airflow equivalent:** Marine forecast + flood discharge composite risk (DAG 084).
+
+```python
+@task
+def compute_composite(
+    location: str,
+    marine_factors: list[RiskFactor],
+    flood_factors: list[RiskFactor],
+    marine_weight: float,
+    flood_weight: float,
+) -> CompositeRisk:
+    marine_avg = sum(f.normalized_score for f in marine_factors) / len(marine_factors)
+    flood_avg = sum(f.normalized_score for f in flood_factors) / len(flood_factors)
+    weighted = marine_avg * marine_weight + flood_avg * flood_weight
+    category = _classify_risk(weighted)
+    ...
+```
+
+Raw risk factors are normalized to a 0-100 scale, then combined with
+configurable weights (default 60/40 marine/flood). The composite score is
+classified into low/moderate/high/critical categories.
+
+---
+
+### 083 -- Daylight Analysis
+
+**What it demonstrates:** Datetime arithmetic for seasonal daylight profiles
+and Pearson correlation between latitude and daylight amplitude.
+
+**Airflow equivalent:** Sunrise-sunset daylight analysis across latitudes (DAG 085).
+
+```python
+@task
+def correlate_latitude_amplitude(profiles: list[SeasonalProfile]) -> float:
+    x = [abs(p.latitude) for p in profiles]
+    y = [p.amplitude for p in profiles]
+    mean_x = statistics.mean(x)
+    mean_y = statistics.mean(y)
+    numerator = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y, strict=True))
+    denom_x = math.sqrt(sum((xi - mean_x) ** 2 for xi in x))
+    denom_y = math.sqrt(sum((yi - mean_y) ** 2 for yi in y))
+    return numerator / (denom_x * denom_y)
+```
+
+Day length is computed using a sinusoidal formula with amplitude proportional to
+latitude. The manual Pearson correlation confirms the expected strong positive
+relationship between absolute latitude and seasonal daylight variation.
+
+---
+
+### 084 -- Statistical Aggregation
+
+**What it demonstrates:** Fan-out aggregation: one dataset, three independent
+aggregations (by station, by date, cross-tabulation) running in parallel.
+
+**Airflow equivalent:** Parquet-style aggregation with groupby and cross-tab (DAG 057).
+
+```python
+# Fan-out: 3 independent aggregations
+station_future = aggregate_by_group.submit(records, "station", "temperature")
+date_future = aggregate_by_group.submit(records, "day", "temperature")
+cross_tab_future = build_cross_tab.submit(records, "station", "day", "temperature")
+
+station_agg = station_future.result()
+date_agg = date_future.result()
+cross_tab = cross_tab_future.result()
+```
+
+`.submit()` launches the three aggregations concurrently. The cross-tabulation
+builds a station-by-day matrix of mean temperatures using `statistics.mean()`.
+
+---
+
+## Economic and Demographic Analysis (085--088)
+
+### 085 -- Demographic Analysis
+
+**What it demonstrates:** Nested JSON normalization into relational tables,
+bridge tables for multi-valued fields, and border graph edge construction.
+
+**Airflow equivalent:** Country demographics with nested JSON normalization (DAG 087).
+
+```python
+@task
+def build_bridge_table(countries: list[Country], field: str) -> list[BridgeRecord]:
+    records: list[BridgeRecord] = []
+    for c in countries:
+        mapping = getattr(c, field)
+        for key, value in mapping.items():
+            records.append(BridgeRecord(country=c.name, key=key, value=value))
+    return records
+```
+
+Nested JSON fields (languages, currencies) are exploded into bridge tables
+linking country to key-value pairs. Border relationships become directed graph
+edges. Countries are ranked by population and density.
+
+---
+
+### 086 -- Multi-Indicator Correlation
+
+**What it demonstrates:** Multi-indicator join on (country, year), forward-fill
+for missing values, and pairwise Pearson correlation matrix.
+
+**Airflow equivalent:** World Bank multi-indicator analysis with correlation (DAG 088).
+
+```python
+def _pearson(x: list[float], y: list[float]) -> float:
+    mean_x = statistics.mean(x)
+    mean_y = statistics.mean(y)
+    num = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y, strict=True))
+    den_x = math.sqrt(sum((xi - mean_x) ** 2 for xi in x))
+    den_y = math.sqrt(sum((yi - mean_y) ** 2 for yi in y))
+    return num / (den_x * den_y)
+```
+
+Three indicator series (GDP, CO2, Renewable) are joined on country+year,
+forward-filled within each country, and then tested for pairwise correlation.
+Year-over-year growth rates are also computed.
+
+---
+
+### 087 -- Financial Time Series
+
+**What it demonstrates:** Log returns, rolling window volatility (annualized),
+cross-currency correlation matrix, and anomaly detection via z-score.
+
+**Airflow equivalent:** Currency analysis with log returns and volatility (DAG 089).
+
+```python
+@task
+def compute_log_returns(records: list[RateRecord]) -> dict[str, list[LogReturn]]:
+    ...
+    for i in range(1, len(sorted_rates)):
+        log_ret = math.log(sorted_rates[i].rate / sorted_rates[i - 1].rate)
+        currency_returns.append(LogReturn(day=sorted_rates[i].day, return_value=round(log_ret, 8)))
+    ...
+```
+
+Log returns are the natural logarithm of consecutive price ratios. Rolling
+volatility is the standard deviation of returns over a window, annualized by
+multiplying by sqrt(252). Anomalies are returns exceeding 2 standard deviations.
+
+---
+
+### 088 -- Hypothesis Testing
+
+**What it demonstrates:** Educational null-hypothesis pattern: align seismic
+and weather datasets, test for correlation, and interpret the (expected near-zero)
+result.
+
+**Airflow equivalent:** Earthquake-weather correlation / null hypothesis (DAG 093).
+
+```python
+@task
+def check_correlation(observations: list[DailyObservation], hypothesis: str) -> HypothesisResult:
+    x = [o.metric_a for o in observations]
+    y = [o.metric_b for o in observations]
+    r_val = _pearson(x, y)
+    interpretation = _interpret_result(r_val, len(observations))
+    is_significant = abs(r_val) > 0.3
+    ...
+```
+
+Two hypotheses are tested (earthquakes vs temperature, earthquakes vs pressure).
+Both produce near-zero correlations, confirming the null hypothesis. The absence
+of correlation is itself a valid finding.
+
+---
+
+## Advanced Analytics (089--092)
+
+### 089 -- Regression Analysis
+
+**What it demonstrates:** Manual OLS linear regression with log transformation,
+R-squared computation, and residual-based efficiency ranking.
+
+**Airflow equivalent:** Health expenditure log-linear regression (DAG 096).
+
+```python
+@task
+def linear_regression(x: list[float], y: list[float]) -> RegressionResult:
+    mean_x = statistics.mean(x)
+    mean_y = statistics.mean(y)
+    cov_xy = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y, strict=True)) / n
+    var_x = sum((xi - mean_x) ** 2 for xi in x) / n
+    slope = cov_xy / var_x if var_x > 0 else 0.0
+    intercept = mean_y - slope * mean_x
+    ss_res = sum((yi - (slope * xi + intercept)) ** 2 for xi, yi in zip(x, y, strict=True))
+    ss_tot = sum((yi - mean_y) ** 2 for yi in y)
+    r_squared = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
+    ...
+```
+
+Health spending is log-transformed before regression against mortality. Countries
+are ranked by residual: negative residual means lower mortality than predicted
+(more efficient). No numpy or scipy required.
+
+---
+
+### 090 -- Star Schema
+
+**What it demonstrates:** Dimensional modeling with fact and dimension tables,
+surrogate keys, min-max normalization, and weighted composite index ranking.
+
+**Airflow equivalent:** Health profile dimensional model (DAG 097).
+
+```python
+@task
+def build_country_dimension(data: list[dict]) -> list[DimCountry]:
+    dims: list[DimCountry] = []
+    for i, d in enumerate(data, 1):
+        dims.append(DimCountry(key=i, name=d["name"], region=d["region"], population=d["population"]))
+    return dims
+```
+
+Three dimension tables (country, time, indicator) and a fact table form a star
+schema. Indicators are min-max normalized per the `higher_is_better` flag, then
+weighted to produce a composite country ranking.
+
+---
+
+### 091 -- Staged ETL Pipeline
+
+**What it demonstrates:** Three-layer ETL pipeline: staging (raw load with
+timestamp), production (validated + transformed), and summary (grouped stats).
+
+**Airflow equivalent:** SQL-based three-layer ETL (DAGs 035-036).
+
+```python
+@task
+def validate_and_transform(staging: list[StagingRecord]) -> list[ProductionRecord]:
+    for s in staging:
+        is_valid = True
+        try:
+            value = float(s.value_raw)
+            if value < 0 or value > 1000:
+                is_valid = False
+        except (ValueError, TypeError):
+            is_valid = False
+        ...
+```
+
+Each record carries an `is_valid` flag through the production layer. Invalid
+records are retained but flagged. The summary layer computes grouped statistics
+(avg, min, max, count) over valid records only.
+
+---
+
+### 092 -- Data Transfer
+
+**What it demonstrates:** Cross-system data synchronization with computed
+categorical columns and transfer verification via row count and checksum.
+
+**Airflow equivalent:** Generic table-to-table transfer with transformation (DAG 037).
+
+```python
+@task
+def verify_transfer(sources: list[SourceRecord], destinations: list[DestRecord]) -> TransferVerification:
+    count_match = len(sources) == len(destinations)
+    source_hash = hashlib.sha256(
+        "|".join(f"{s.city}:{s.population}" for s in sorted(sources, key=lambda x: x.city)).encode()
+    ).hexdigest()[:16]
+    dest_hash = hashlib.sha256(
+        "|".join(f"{d.city}:{d.population}" for d in sorted(destinations, key=lambda x: x.city)).encode()
+    ).hexdigest()[:16]
+    return TransferVerification(count_match=count_match, checksum_match=source_hash == dest_hash)
+```
+
+Source records are enriched with a `size_category` during transfer. Verification
+checks both row counts and SHA-256 checksums to ensure data integrity.
+
+---
+
+## Domain API Processing (093--096)
+
+### 093 -- Hierarchical Data Processing
+
+**What it demonstrates:** Tree-structured org unit hierarchy with path-based
+depth computation, parent field flattening, and root/leaf identification.
+
+**Airflow equivalent:** DHIS2 org unit hierarchy flattening (DAG 058).
+
+```python
+@task
+def flatten_hierarchy(raw: list[RawOrgUnit]) -> list[OrgUnit]:
+    units: list[OrgUnit] = []
+    for r in raw:
+        parent_id = r.parent.id if r.parent else ""
+        parent_name = r.parent.name if r.parent else ""
+        depth = len([s for s in r.path.split("/") if s])
+        units.append(OrgUnit(id=r.id, name=r.name, level=r.level,
+                             parent_id=parent_id, parent_name=parent_name,
+                             path=r.path, hierarchy_depth=depth, ...))
+    ...
+```
+
+Nested parent references are flattened to `parent_id` and `parent_name` columns.
+Hierarchy depth is derived from the path string. Root and leaf nodes are
+identified by comparing parent and child ID sets.
+
+---
+
+### 094 -- Expression Complexity Scoring
+
+**What it demonstrates:** Regex-based expression parsing for operand counting,
+operator counting, complexity scoring, and binning.
+
+**Airflow equivalent:** DHIS2 indicator expression parsing (DAGs 059-060).
+
+```python
+OPERAND_PATTERN = re.compile(r"#\{[^}]+\}")
+
+@task
+def score_complexity(expressions: list[Expression]) -> list[ComplexityScore]:
+    for expr in expressions:
+        num_operands = parse_operands.fn(expr.numerator) + parse_operands.fn(expr.denominator)
+        num_operators = count_operators.fn(expr.numerator) + count_operators.fn(expr.denominator)
+        total = num_operands + num_operators
+        if total <= 2:
+            bin_label = "trivial"
+        elif total <= 4:
+            bin_label = "simple"
+        elif total <= 8:
+            bin_label = "moderate"
+        else:
+            bin_label = "complex"
+        ...
+```
+
+Expressions use `#{...}` operand syntax. The regex counts operands while a
+character scan counts operators. The combined score determines a complexity bin
+(trivial/simple/moderate/complex).
+
+---
+
+### 095 -- Spatial Data Construction
+
+**What it demonstrates:** Manual GeoJSON-like feature collection construction,
+bounding box computation from point geometries, and geometry type filtering.
+
+**Airflow equivalent:** DHIS2 org unit geometry / GeoJSON construction (DAG 061).
+
+```python
+@task
+def compute_bounding_box(features: list[Feature]) -> list[float]:
+    lons: list[float] = []
+    lats: list[float] = []
+    for f in features:
+        if f.geometry_type == "Point":
+            lons.append(f.coordinates[0])
+            lats.append(f.coordinates[1])
+    return [min(lons), min(lats), max(lons), max(lats)]
+```
+
+Features with Point and Polygon geometry types are assembled into a collection.
+The bounding box is computed from point coordinates as [min_lon, min_lat,
+max_lon, max_lat].
+
+---
+
+### 096 -- Parallel Multi-Endpoint Export
+
+**What it demonstrates:** Parallel independent endpoint processing with
+heterogeneous output formats (CSV + JSON) and fan-in summary.
+
+**Airflow equivalent:** DHIS2 combined parallel export (DAG 062).
+
+```python
+# Fan-out: 3 parallel endpoint fetches
+future_a = fetch_endpoint_a.submit(output_dir)
+future_b = fetch_endpoint_b.submit(output_dir)
+future_c = fetch_endpoint_c.submit(output_dir)
+
+result_a = future_a.result()
+result_b = future_b.result()
+result_c = future_c.result()
+
+summary = combine_results([result_a, result_b, result_c], duration)
+```
+
+Three endpoints are fetched in parallel via `.submit()`, writing CSV and JSON
+files. Results are combined into a summary with total record count and format
+distribution.
+
+---
+
+## Advanced Patterns and Grand Capstone (097--100)
+
+### 097 -- Data Lineage Tracking
+
+**What it demonstrates:** Hash-based provenance tracking through pipeline
+stages, building a lineage graph from ingest through filter, enrich, and dedup.
+
+**Airflow equivalent:** None (Prefect-native pattern).
+
+```python
+@task
+def compute_data_hash(records: list[DataRecord]) -> str:
+    raw = str(sorted(str(r.model_dump()) for r in records))
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+@task
+def transform_filter(records, min_value):
+    input_hash = compute_data_hash.fn(records)
+    filtered = [r for r in records if r.value >= min_value]
+    output_hash = compute_data_hash.fn(filtered)
+    entry = record_lineage.fn("transform", "filter_by_value", input_hash, output_hash, len(filtered))
+    return filtered, entry
+```
+
+Every transformation records its input and output hashes, creating a chain of
+lineage entries. The lineage graph tracks how data changes through each stage
+and counts data-modifying operations (where input_hash differs from output_hash).
+
+---
+
+### 098 -- Pipeline Template Factory
+
+**What it demonstrates:** Reusable pipeline templates with ordered stage slots,
+instantiated with different configurations via the factory pattern.
+
+**Airflow equivalent:** None (Prefect-native pattern).
+
+```python
+@task
+def execute_stage(stage: StageTemplate, overrides: dict) -> StageResult:
+    merged = {**stage.default_params, **overrides}
+    if stage.stage_type == "extract":
+        count = int(merged.get("batch_size", 100))
+    elif stage.stage_type == "validate":
+        count = int(int(merged.get("batch_size", 100)) * float(merged.get("pass_rate", 0.9)))
+    ...
+```
+
+Templates define ordered stages with default parameters. Instantiation merges
+overrides into defaults. The same template produces different pipelines depending
+on the configuration, demonstrating code reuse without duplication.
+
+---
+
+### 099 -- Multi-Pipeline Orchestrator
+
+**What it demonstrates:** Orchestration of multiple independent mini-pipelines
+with status collection and overall health rollup.
+
+**Airflow equivalent:** None (Prefect-native pattern).
+
+```python
+@task
+def aggregate_status(statuses: list[PipelineStatus]) -> OrchestratorResult:
+    successful = sum(1 for s in statuses if s.status == "success")
+    failed = len(statuses) - successful
+    if failed == 0:
+        overall = "healthy"
+    elif failed < len(statuses) / 2:
+        overall = "degraded"
+    else:
+        overall = "critical"
+    ...
+```
+
+Four independent pipelines (ingest, transform, export, quality) run and report
+status. The orchestrator aggregates results into healthy/degraded/critical based
+on majority voting and produces a markdown report.
+
+---
+
+### 100 -- Grand Capstone
+
+**What it demonstrates:** End-to-end analytics pipeline combining patterns from
+all 5 phases: CSV I/O, profiling, quality checks, enrichment, deduplication,
+regression, dimensional modeling, lineage tracking, and a dashboard artifact.
+
+**Airflow equivalent:** None (combines patterns from all 5 phases).
+
+```python
+@flow(name="100_grand_capstone", log_prints=True)
+def grand_capstone_flow(work_dir: str | None = None) -> CapstoneResult:
+    records = ingest_data(input_path)
+    profile_data(records)
+    quality = run_quality_checks(records)
+    cleaned = enrich_and_deduplicate(records)
+    regression = run_regression(cleaned, "value", "score")
+    dimensions = build_dimensions(cleaned)
+    lineage = track_lineage(stages)
+    build_capstone_dashboard(result)
+    ...
+```
+
+This final flow ties together every major concept from Phase 1 through Phase 5:
+file ingestion, statistical profiling, quality rule checking, hash-based
+deduplication, OLS regression, dimensional modeling with composite ranking,
+lineage tracking, and a rich markdown dashboard artifact.

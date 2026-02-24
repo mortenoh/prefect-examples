@@ -103,6 +103,26 @@ make docs                                  # serve documentation locally
 | 078 | Idempotent Operations | Hash-based idempotency registry, safe re-runs |
 | 079 | Error Recovery | Checkpoint-based stage recovery, resume from failure |
 | 080 | Production Pipeline v3 | Capstone: file I/O, profiling, quality, caching, checkpoints |
+| 081 | Air Quality Index | WHO threshold classification, health advisories, severity ordering |
+| 082 | Composite Risk | Multi-source weighted risk scoring, composite index |
+| 083 | Daylight Analysis | Datetime arithmetic, seasonal amplitude, latitude correlation |
+| 084 | Statistical Aggregation | Fan-out aggregation, grouped statistics, cross-tabulation |
+| 085 | Demographic Analysis | Nested JSON normalization, bridge tables, border graph edges |
+| 086 | Multi-Indicator Correlation | Multi-indicator join, forward-fill, Pearson correlation |
+| 087 | Financial Time Series | Log returns, rolling volatility, anomaly detection |
+| 088 | Hypothesis Testing | Cross-domain hypothesis testing, null hypothesis validation |
+| 089 | Regression Analysis | Log-linear regression, R-squared, residual ranking |
+| 090 | Star Schema | Dimensional modeling, surrogate keys, composite index |
+| 091 | Staged ETL Pipeline | Simulated SQL ETL, staging/production/summary layers |
+| 092 | Data Transfer | Cross-system data sync, computed categories, verification |
+| 093 | Hierarchical Data | Tree hierarchy, path-based depth, parent flattening |
+| 094 | Expression Scoring | Regex expression parsing, complexity scoring, binning |
+| 095 | Spatial Data | GeoJSON-like construction, bounding box, geometry filtering |
+| 096 | Parallel Export | Multi-endpoint parallel export, fan-in summary |
+| 097 | Data Lineage | Provenance tracking, hash-based lineage graph |
+| 098 | Pipeline Template | Reusable templates, factory pattern, config overrides |
+| 099 | Multi-Pipeline Orchestrator | Independent pipeline orchestration, status rollup |
+| 100 | Grand Capstone | End-to-end analytics: all Phase 5 patterns combined |
 
 ## Documentation
 

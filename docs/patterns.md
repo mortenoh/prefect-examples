@@ -635,3 +635,174 @@ def fetch_with_cache(endpoint, params, cache, ttl_seconds=300):
 Track hit/miss rates to measure cache effectiveness.
 
 **See:** [072 Response Caching](flow-reference.md#072-response-caching)
+
+## Threshold classification and advisories (flow 081)
+
+Classify values against an ordered list of thresholds and generate advisories:
+
+```python
+AQI_THRESHOLDS: list[tuple[float, str, str]] = [
+    (50.0, "Good", "green"),
+    (100.0, "Moderate", "yellow"),
+    (150.0, "Unhealthy for Sensitive Groups", "orange"),
+    (200.0, "Unhealthy", "red"),
+    (300.0, "Very Unhealthy", "purple"),
+    (float("inf"), "Hazardous", "maroon"),
+]
+
+for threshold, cat, col in AQI_THRESHOLDS:
+    if mean_val <= threshold:
+        category = cat
+        color = col
+        break
+```
+
+Walk the thresholds in order and stop at the first match. Use a separate
+severity ordering list to rank worst outcomes.
+
+**See:** [081 Air Quality Index](flow-reference.md#081-air-quality-index)
+
+## Composite risk scoring (flow 082)
+
+Normalize risk factors to a common scale, then compute a weighted composite:
+
+```python
+marine_avg = sum(f.normalized_score for f in marine_factors) / len(marine_factors)
+flood_avg = sum(f.normalized_score for f in flood_factors) / len(flood_factors)
+weighted = marine_avg * marine_weight + flood_avg * flood_weight
+```
+
+Configurable weights allow tuning the relative importance of each risk source.
+
+**See:** [082 Composite Risk](flow-reference.md#082-composite-risk-assessment)
+
+## Pearson correlation (flows 086, 088)
+
+Manual Pearson correlation using only `math` and `statistics`:
+
+```python
+def _pearson(x: list[float], y: list[float]) -> float:
+    mean_x = statistics.mean(x)
+    mean_y = statistics.mean(y)
+    num = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y, strict=True))
+    den_x = math.sqrt(sum((xi - mean_x) ** 2 for xi in x))
+    den_y = math.sqrt(sum((yi - mean_y) ** 2 for yi in y))
+    return num / (den_x * den_y)
+```
+
+This pattern appears in flows 083, 086, 087, and 088. No numpy or scipy
+required.
+
+**See:** [086 Multi-Indicator Correlation](flow-reference.md#086-multi-indicator-correlation),
+[088 Hypothesis Testing](flow-reference.md#088-hypothesis-testing)
+
+## Log-linear regression (flow 089)
+
+Manual OLS regression with R-squared and residual-based ranking:
+
+```python
+cov_xy = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y, strict=True)) / n
+var_x = sum((xi - mean_x) ** 2 for xi in x) / n
+slope = cov_xy / var_x
+intercept = mean_y - slope * mean_x
+ss_res = sum((yi - (slope * xi + intercept)) ** 2 for xi, yi in zip(x, y, strict=True))
+ss_tot = sum((yi - mean_y) ** 2 for yi in y)
+r_squared = 1.0 - (ss_res / ss_tot)
+```
+
+Log-transform skewed data before regression. Rank entities by residual:
+negative residual means better-than-predicted performance.
+
+**See:** [089 Regression Analysis](flow-reference.md#089-regression-analysis)
+
+## Dimensional modeling (Star schema) (flow 090)
+
+Build fact and dimension tables with surrogate keys and composite index:
+
+```python
+@task
+def build_country_dimension(data: list[dict]) -> list[DimCountry]:
+    for i, d in enumerate(data, 1):
+        dims.append(DimCountry(key=i, name=d["name"], region=d["region"], ...))
+
+@task
+def min_max_normalize(values: list[float], higher_is_better: bool) -> list[float]:
+    normalized = [(v - min_v) / (max_v - min_v) for v in values]
+    if not higher_is_better:
+        normalized = [1.0 - n for n in normalized]
+    return normalized
+```
+
+Surrogate keys are assigned sequentially. Min-max normalization respects the
+`higher_is_better` flag. Weighted normalized indicators produce a composite
+ranking.
+
+**See:** [090 Star Schema](flow-reference.md#090-star-schema)
+
+## Simulated SQL ETL (flow 091)
+
+Three-layer ETL: staging, production, summary:
+
+```python
+raw = generate_raw_data()
+staging = load_staging(raw)                   # raw + timestamp
+production = validate_and_transform(staging)  # parsed + is_valid flag
+valid = filter_valid(production)
+summary = compute_summary(valid, "category")  # grouped stats
+```
+
+Each layer adds metadata. Invalid records carry `is_valid=False` through the
+production layer without being dropped.
+
+**See:** [091 Staged ETL](flow-reference.md#091-staged-etl-pipeline)
+
+## Regex expression parsing (flow 094)
+
+Count operands and operators to score expression complexity:
+
+```python
+OPERAND_PATTERN = re.compile(r"#\{[^}]+\}")
+
+num_operands = len(OPERAND_PATTERN.findall(expression))
+num_operators = sum(1 for c in expression if c in "+-*/")
+total = num_operands + num_operators
+```
+
+Bin scores into trivial/simple/moderate/complex categories for reporting.
+
+**See:** [094 Expression Scoring](flow-reference.md#094-expression-complexity-scoring)
+
+## Data lineage tracking (flow 097)
+
+Hash-based provenance through pipeline stages:
+
+```python
+@task
+def compute_data_hash(records: list[DataRecord]) -> str:
+    raw = str(sorted(str(r.model_dump()) for r in records))
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+```
+
+Each transformation records input_hash and output_hash. The lineage graph shows
+which stages modified data (input_hash != output_hash) and which were passthrough.
+
+**See:** [097 Data Lineage](flow-reference.md#097-data-lineage-tracking)
+
+## Pipeline templates (flow 098)
+
+Factory pattern for reusable pipeline configurations:
+
+```python
+etl_basic = create_template("etl_basic", [
+    StageTemplate(name="extract", stage_type="extract", default_params={"batch_size": 100}),
+    StageTemplate(name="load", stage_type="load", default_params={"batch_size": 100}),
+])
+
+basic_small = instantiate_template(etl_basic, {"batch_size": 50})
+basic_large = instantiate_template(etl_basic, {"batch_size": 500})
+```
+
+Define a template once, instantiate with different overrides. Stage execution
+merges overrides into default parameters.
+
+**See:** [098 Pipeline Template](flow-reference.md#098-pipeline-template-factory)
