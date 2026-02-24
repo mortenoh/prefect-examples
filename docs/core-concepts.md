@@ -259,7 +259,7 @@ is a custom **Block** -- a typed, serializable configuration object:
 from prefect.blocks.core import Block
 
 class Dhis2Connection(Block):
-    base_url: str = "https://play.dhis2.org/40"
+    base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
     api_version: str = "40"
 

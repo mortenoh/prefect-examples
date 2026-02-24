@@ -9,30 +9,19 @@ Prefect approach:    Custom Block subclass + Secret block for password.
 
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
 from typing import Any
 
 import httpx
 from prefect import flow, task
 from pydantic import BaseModel
 
-# Import shared helpers
-_spec = importlib.util.spec_from_file_location(
-    "_dhis2_helpers",
-    Path(__file__).resolve().parent / "_dhis2_helpers.py",
+from prefect_examples.dhis2 import (
+    Dhis2ApiResponse,
+    Dhis2Connection,
+    fetch_metadata,
+    get_dhis2_connection,
+    get_dhis2_password,
 )
-assert _spec and _spec.loader
-_helpers = importlib.util.module_from_spec(_spec)
-sys.modules.setdefault("_dhis2_helpers", _helpers)
-_spec.loader.exec_module(_helpers)
-
-Dhis2Connection = _helpers.Dhis2Connection
-Dhis2ApiResponse = _helpers.Dhis2ApiResponse
-get_dhis2_connection = _helpers.get_dhis2_connection
-get_dhis2_password = _helpers.get_dhis2_password
-fetch_metadata = _helpers.fetch_metadata
 
 # ---------------------------------------------------------------------------
 # Models

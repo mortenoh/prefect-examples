@@ -41,7 +41,7 @@ def test_connection_construction() -> None:
 
 def test_connection_defaults() -> None:
     conn = Dhis2Connection()
-    assert conn.base_url == "https://play.dhis2.org/40"
+    assert conn.base_url == "https://play.im.dhis2.org/dev"
     assert conn.username == "admin"
 
 

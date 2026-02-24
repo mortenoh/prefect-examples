@@ -10,29 +10,19 @@ Prefect approach:    .submit() for parallel tasks, fan-in combined report.
 from __future__ import annotations
 
 import csv
-import importlib.util
 import json
-import sys
 from pathlib import Path
 
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
 
-# Import shared helpers
-_spec = importlib.util.spec_from_file_location(
-    "_dhis2_helpers",
-    Path(__file__).resolve().parent / "_dhis2_helpers.py",
+from prefect_examples.dhis2 import (
+    Dhis2Connection,
+    fetch_metadata,
+    get_dhis2_connection,
+    get_dhis2_password,
 )
-assert _spec and _spec.loader
-_helpers = importlib.util.module_from_spec(_spec)
-sys.modules.setdefault("_dhis2_helpers", _helpers)
-_spec.loader.exec_module(_helpers)
-
-Dhis2Connection = _helpers.Dhis2Connection
-get_dhis2_connection = _helpers.get_dhis2_connection
-get_dhis2_password = _helpers.get_dhis2_password
-fetch_metadata = _helpers.fetch_metadata
 
 # ---------------------------------------------------------------------------
 # Models

@@ -4,7 +4,7 @@ Provides the ``Dhis2Connection`` custom block, typed response models, and
 the ``fetch_metadata`` function that calls the real DHIS2 API via httpx.
 Used by flows 101--108.
 
-The DHIS2 play server (https://play.dhis2.org/40) is publicly available
+The DHIS2 play server (https://play.im.dhis2.org/dev) is publicly available
 with credentials admin/district.
 """
 
@@ -31,7 +31,7 @@ class Dhis2Connection(Block):
 
     _block_type_name = "dhis2-connection"
 
-    base_url: str = "https://play.dhis2.org/40"
+    base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
     api_version: str = "40"
 
@@ -75,7 +75,7 @@ def get_dhis2_password() -> str:
     try:
         from prefect.blocks.system import Secret
 
-        secret = Secret.load("dhis2-password")  # type: ignore[union-attr]
+        secret = Secret.load("dhis2-password")
         return secret.get()  # type: ignore[union-attr,no-any-return]
     except Exception:
         return "district"

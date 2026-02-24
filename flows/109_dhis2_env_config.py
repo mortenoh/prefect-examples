@@ -53,7 +53,7 @@ def from_inline_block() -> ConfigSource:
     source = ConfigSource(
         source_type="inline_block",
         key="base_url",
-        value="https://play.dhis2.org/40",
+        value="https://play.im.dhis2.org/dev",
         is_secret=False,
     )
     print(f"Inline block: {source.key}={source.value}")
@@ -119,7 +119,7 @@ def from_json_config(config_json: str | None = None) -> ConfigSource:
         ConfigSource.
     """
     if config_json is None:
-        config_json = json.dumps({"base_url": "https://play.dhis2.org/40", "api_version": "40"})
+        config_json = json.dumps({"base_url": "https://play.im.dhis2.org/dev", "api_version": "40"})
     config = json.loads(config_json)
     value = config.get("base_url", "")
     source = ConfigSource(
@@ -163,7 +163,7 @@ def dhis2_env_config_flow() -> ConfigReport:
     sources: list[ConfigSource] = []
     sources.append(from_inline_block())
     sources.append(from_secret_block())
-    sources.append(from_env_var("DHIS2_BASE_URL", "https://play.dhis2.org/40"))
+    sources.append(from_env_var("DHIS2_BASE_URL", "https://play.im.dhis2.org/dev"))
     sources.append(from_json_config())
 
     report = compare_strategies(sources)

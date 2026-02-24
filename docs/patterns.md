@@ -817,7 +817,7 @@ from prefect.blocks.core import Block
 
 class Dhis2Connection(Block):
     _block_type_name = "dhis2-connection"
-    base_url: str = "https://play.dhis2.org/40"
+    base_url: str = "https://play.im.dhis2.org/dev"
     username: str = "admin"
     api_version: str = "40"
 
