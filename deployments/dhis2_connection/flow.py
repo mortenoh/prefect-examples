@@ -18,10 +18,13 @@ Three ways to register this deployment:
     python deployments/dhis2_connection/deploy.py
 """
 
+import os
+
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
+from prefect.blocks.notifications import SlackWebhook
 from prefect.runtime import deployment
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 
 from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials, get_dhis2_credentials
 
@@ -90,6 +93,16 @@ def dhis2_connection_flow() -> ConnectionReport:
         f"[{report.deployment_name}] {report.username}@{report.host} "
         f"-- v{report.server_version}, {report.org_unit_count} org units"
     )
+    slack_url = os.environ.get("SLACK_WEBHOOK_URL")
+    if slack_url:
+        slack = SlackWebhook(url=SecretStr(slack_url))
+        slack.notify(
+            body=(
+                f"*{report.deployment_name}*: {report.username}@{report.host}\n"
+                f"Server v{report.server_version} -- {report.org_unit_count} org units"
+            ),
+            subject="DHIS2 Connection Report",
+        )
     return report
 
 

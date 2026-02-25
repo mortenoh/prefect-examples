@@ -375,6 +375,85 @@ def test_flow(mock_get_client):
 **See:** [Secret Block](flow-reference.md#secret-block),
 [Custom Blocks](flow-reference.md#custom-blocks)
 
+## Notification blocks
+
+Prefect ships with `NotificationBlock` subclasses that provide a unified
+`notify(body, subject)` interface for pipeline alerting. The two most common
+are `SlackWebhook` and `CustomWebhookNotificationBlock`:
+
+```python
+import os
+from pydantic import SecretStr
+from prefect.blocks.notifications import SlackWebhook, CustomWebhookNotificationBlock
+
+# SlackWebhook -- read URL from environment, never hardcode
+slack = SlackWebhook(url=SecretStr(os.environ["SLACK_WEBHOOK_URL"]))
+slack.notify(body="Pipeline completed: 150 records processed", subject="Pipeline Alert")
+
+# CustomWebhookNotificationBlock -- flexible for any HTTP endpoint
+custom = CustomWebhookNotificationBlock(
+    name="ops-webhook",
+    url="https://monitoring.example.com/alerts",
+    method="POST",
+    json_data={"text": "{{subject}}: {{body}}"},
+    secrets={"api_token": "my-secret-token"},
+)
+custom.notify(body="All checks passed", subject="Quality Report")
+```
+
+Both blocks call `notify(body, subject)` -- the only difference is how
+they build the HTTP request.
+
+### Template resolution
+
+`CustomWebhookNotificationBlock` resolves `{{subject}}`, `{{body}}`,
+`{{name}}`, and any key from `secrets` in both the URL and JSON payload:
+
+```python
+block = CustomWebhookNotificationBlock(
+    name="template-demo",
+    url="https://api.example.com/notify?token={{api_token}}",
+    method="POST",
+    json_data={
+        "title": "{{subject}}",
+        "message": "{{body}}",
+        "source": "{{name}}",
+        "auth": "Bearer {{api_token}}",
+    },
+    secrets={"api_token": "secret-xyz-789"},
+)
+```
+
+When `notify()` is called, every `{{placeholder}}` is replaced with its
+value before the HTTP request is sent.
+
+### Flow hooks for production notifications
+
+Attach notification blocks to flow hooks for automatic alerting:
+
+```python
+def on_completion_notify(flow, flow_run, state):
+    SlackWebhook.load("prod-slack").notify(
+        body=f"Flow {flow_run.name!r} completed.",
+        subject="Flow Completed",
+    )
+
+def on_failure_notify(flow, flow_run, state):
+    SlackWebhook.load("prod-slack").notify(
+        body=f"CRITICAL: Flow {flow_run.name!r} failed: {state.message}",
+        subject="Flow Failed",
+    )
+
+@flow(on_completion=[on_completion_notify], on_failure=[on_failure_notify])
+def my_pipeline():
+    ...
+```
+
+Save a block once with `slack.save("prod-slack", overwrite=True)`, then
+load it in any hook or task with `SlackWebhook.load("prod-slack")`.
+
+**See:** [Notification Blocks](flow-reference.md#notification-blocks)
+
 ## Deployment basics
 
 ### Serve vs deploy decision guide

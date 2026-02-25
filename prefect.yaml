@@ -618,6 +618,12 @@ deployments:
       name: default
     schedules: []
 
+  - name: patterns-notification-blocks
+    entrypoint: flows/patterns/patterns_notification_blocks.py:notification_blocks_flow
+    work_pool:
+      name: default
+    schedules: []
+
   - name: patterns-production-pipeline-v2
     entrypoint: flows/patterns/patterns_production_pipeline_v2.py:production_pipeline_v2_flow
     work_pool:

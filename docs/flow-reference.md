@@ -1152,6 +1152,73 @@ Flow hooks (`on_completion`, `on_failure`) trigger automatically. In production,
 
 ---
 
+### Notification Blocks
+
+**What it demonstrates:** Using Prefect's built-in `SlackWebhook` and
+`CustomWebhookNotificationBlock` for pipeline alerting with a unified
+`notify(body, subject)` interface.
+
+**Airflow equivalent:** Slack/email/PagerDuty callbacks via operators.
+
+```python
+@task
+def configure_notification_blocks() -> dict[str, Any]:
+    slack = SlackWebhook(url=SecretStr("https://hooks.slack.com/services/T00/B00/xxxx"))
+
+    custom = CustomWebhookNotificationBlock(
+        name="ops-webhook",
+        url="https://monitoring.example.com/alerts",
+        method="POST",
+        json_data={"text": "{{subject}}: {{body}}"},
+        secrets={"api_token": "placeholder-token"},
+    )
+    return {"slack": type(slack).__name__, "custom": type(custom).__name__}
+
+@task
+def demonstrate_template_resolution() -> dict[str, Any]:
+    block = CustomWebhookNotificationBlock(
+        name="template-demo",
+        url="https://api.example.com/notify?token={{api_token}}",
+        method="POST",
+        json_data={
+            "title": "{{subject}}",
+            "message": "{{body}}",
+            "source": "{{name}}",
+            "auth": "Bearer {{api_token}}",
+        },
+        secrets={"api_token": "secret-xyz-789"},
+    )
+    return block._build_request_args(
+        body="Pipeline completed: 150 records processed",
+        subject="Pipeline Alert",
+    )
+
+def on_completion_notify(flow, flow_run, state):
+    # SlackWebhook.load("prod-slack").notify(
+    #     body=f"Flow {flow_run.name!r} completed.", subject="Flow Completed")
+    print(f"HOOK  Flow {flow_run.name!r} completed -- would notify via SlackWebhook")
+
+@flow(
+    name="patterns_notification_blocks",
+    log_prints=True,
+    on_completion=[on_completion_notify],
+    on_failure=[on_failure_notify],
+)
+def notification_blocks_flow() -> None:
+    channels = configure_notification_blocks()
+    for source in ["api", "database", "file"]:
+        process_data(source)
+    demonstrate_template_resolution()
+```
+
+All notification blocks share the same `notify(body, subject)` method.
+`SlackWebhook` sends to a Slack webhook URL; `CustomWebhookNotificationBlock`
+sends to any HTTP endpoint with template resolution for `{{subject}}`,
+`{{body}}`, `{{name}}`, and custom `secrets` keys. Flow hooks wire these
+blocks to lifecycle events for automatic alerting in production.
+
+---
+
 ### Failure Escalation
 
 **What it demonstrates:** Progressive retry with escalation hooks at each failure.

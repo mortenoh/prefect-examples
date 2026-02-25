@@ -465,3 +465,153 @@ docker compose down -v    # stop services and delete all data
 
 **Related pages:** [Infrastructure](infrastructure.md),
 [CLI Reference](cli-reference.md)
+
+---
+
+## Tutorial 6: Testing with Slack webhooks
+
+Send real Slack notifications from a Prefect flow using notification blocks.
+
+### Step 1 -- Create a Slack app
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) and click
+   **Create New App** > **From scratch**.
+2. Name it (e.g. "Prefect Alerts") and pick a workspace.
+3. In the left sidebar, click **Incoming Webhooks** and toggle it **On**.
+4. Click **Add New Webhook to Workspace**, choose a channel, and click
+   **Allow**.
+5. Copy the webhook URL -- it looks like
+   `https://hooks.slack.com/services/T00/B00/xxxx`.
+
+### Step 2 -- Test with curl
+
+Verify the URL works before writing any Python:
+
+```bash
+curl -X POST -H 'Content-Type: application/json' \
+  -d '{"text": "Hello from curl!"}' \
+  https://hooks.slack.com/services/T00/B00/xxxx
+```
+
+You should see a message appear in the channel you selected.
+
+### Step 3 -- Add the URL to `.env`
+
+Never hardcode webhook URLs in source code. Add it to your `.env` file
+(already gitignored):
+
+```bash
+# .env
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T00/B00/xxxx
+```
+
+The variable is listed in `.env.example` as a reference.
+
+### Step 4 -- Use in a flow
+
+```python
+import os
+from pydantic import SecretStr
+from prefect import flow
+from prefect.blocks.notifications import SlackWebhook
+
+@flow(log_prints=True)
+def slack_test() -> None:
+    url = os.environ["SLACK_WEBHOOK_URL"]
+    slack = SlackWebhook(url=SecretStr(url))
+    slack.notify(body="Hello from Prefect!", subject="Test Notification")
+    print("Notification sent")
+
+if __name__ == "__main__":
+    slack_test()
+```
+
+Run it:
+
+```bash
+uv run python my_slack_test.py
+```
+
+### Step 5 -- Save as a block for reuse
+
+Saving the block to the Prefect server means you never hardcode the URL again:
+
+```python
+import os
+from pydantic import SecretStr
+from prefect.blocks.notifications import SlackWebhook
+
+slack = SlackWebhook(url=SecretStr(os.environ["SLACK_WEBHOOK_URL"]))
+slack.save("prod-slack", overwrite=True)
+print("Block saved!")
+```
+
+From now on, any flow can load it:
+
+```python
+slack = SlackWebhook.load("prod-slack")
+slack.notify(body="Pipeline finished", subject="ETL Complete")
+```
+
+### Step 6 -- Use in flow hooks
+
+Wire the saved block into lifecycle hooks for automatic alerting:
+
+```python
+from prefect import flow
+from prefect.blocks.notifications import SlackWebhook
+
+def on_completion(flow, flow_run, state):
+    SlackWebhook.load("prod-slack").notify(
+        body=f"Flow {flow_run.name!r} completed successfully.",
+        subject="Flow Completed",
+    )
+
+def on_failure(flow, flow_run, state):
+    SlackWebhook.load("prod-slack").notify(
+        body=f"Flow {flow_run.name!r} failed: {state.message}",
+        subject="Flow Failed",
+    )
+
+@flow(on_completion=[on_completion], on_failure=[on_failure], log_prints=True)
+def my_pipeline() -> None:
+    print("Doing work...")
+
+if __name__ == "__main__":
+    my_pipeline()
+```
+
+### Step 7 -- CustomWebhookNotificationBlock for generic webhooks
+
+`CustomWebhookNotificationBlock` works with any HTTP endpoint -- Discord,
+Teams, or a custom monitoring service:
+
+```python
+from prefect.blocks.notifications import CustomWebhookNotificationBlock
+
+webhook = CustomWebhookNotificationBlock(
+    name="discord-alerts",
+    url="https://discord.com/api/webhooks/1234/abcd",
+    method="POST",
+    json_data={"content": "**{{subject}}**\n{{body}}"},
+)
+webhook.notify(body="All checks passed", subject="Quality Report")
+
+# Save for reuse
+webhook.save("discord-alerts", overwrite=True)
+```
+
+Template placeholders (`{{subject}}`, `{{body}}`, `{{name}}`) and custom
+`secrets` keys are resolved automatically before the HTTP request is sent.
+
+### What you learned
+
+- Slack Incoming Webhooks provide a simple URL for posting messages
+- `SlackWebhook` wraps the URL in a `SecretStr` and sends via `notify()`
+- Saving blocks with `.save()` avoids hardcoding URLs in source code
+- Flow hooks (`on_completion`, `on_failure`) automate notifications
+- `CustomWebhookNotificationBlock` extends the same pattern to any HTTP
+  endpoint with template resolution
+
+**Related flows:** [Notification Blocks](flow-reference.md#notification-blocks),
+[Webhook Notifications](flow-reference.md#webhook-notifications)

@@ -36,6 +36,7 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | Task runners (ThreadPool) | Yes | Task Runners | `ThreadPoolTaskRunner` |
 | Pydantic models | Yes | Pydantic Models, Pydantic Validation | Type-safe data passing |
 | S3 storage (prefect-aws) | Yes | S3 Parquet Export, DHIS2 GeoParquet Export | `S3Bucket`, `MinIOCredentials` |
+| Notification blocks | Yes | Notification Blocks | Built-in blocks (Slack, Teams, Custom Webhook) with `notify()` interface |
 | Basic auth | Yes | Docker Compose stack | `PREFECT_SERVER_API_AUTH_STRING` / `PREFECT_API_AUTH_STRING` |
 
 ## Gaps -- features not yet covered
@@ -55,7 +56,6 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 |---------|-------------|------------|----------------|
 | **prefect-sqlalchemy** | Database connections, parameterized SQL queries | Intermediate | Most common integration for data engineering |
 | **prefect-dbt** | dbt Cloud/Core orchestration from Prefect flows | Advanced | Popular for analytics engineering teams |
-| **Notification blocks** | Slack/Discord/Teams/PagerDuty via built-in blocks (not raw httpx) | Intermediate | Production alerting without manual HTTP calls |
 | **Docker/K8s work pools** | Push-based execution to containers | Advanced | Production infrastructure patterns |
 | **GitHub storage deployments** | Pull flow code from GitHub repos at runtime | Intermediate | GitOps deployment workflow |
 | **DaskTaskRunner / RayTaskRunner** | Distributed task execution for CPU-heavy workloads | Advanced | Scaling beyond single-machine parallelism |
