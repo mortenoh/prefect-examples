@@ -37,6 +37,7 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | Pydantic models | Yes | Pydantic Models, Pydantic Validation | Type-safe data passing |
 | S3 storage (prefect-aws) | Yes | S3 Parquet Export, DHIS2 GeoParquet Export | `S3Bucket`, `MinIOCredentials` |
 | Notification blocks | Yes | Notification Blocks | Built-in blocks (Slack, Teams, Custom Webhook) with `notify()` interface |
+| Webhooks | Yes | Webhook Block | `Webhook` block for outbound HTTP; inbound webhooks documented |
 | Basic auth | Yes | Docker Compose stack | `PREFECT_SERVER_API_AUTH_STRING` / `PREFECT_API_AUTH_STRING` |
 
 ## Gaps -- features not yet covered
@@ -47,7 +48,6 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 |---------|-------------|------------|----------------|
 | **Automations and triggers** | Event-driven flow execution, deployment triggers, state-change reactions | Advanced | Core Prefect 3 differentiator for reactive orchestration |
 | **Global concurrency limits** | Cross-flow resource throttling via API (vs local `concurrency()`) | Intermediate | Important for shared-resource coordination across deployments |
-| **Webhooks** | Receive external HTTP events, transform to Prefect events via Jinja2 templates | Intermediate | Enables integration with external systems (GitHub, Slack, CI) |
 | **Rate limits** | `prefect.concurrency` API-level rate limiting for tasks and flows | Intermediate | Prevents overwhelming external APIs in production |
 
 ### Medium priority (commonly used integrations)

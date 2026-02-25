@@ -317,6 +317,72 @@ prefect automation delete <name>          # remove an automation
 
 **See:** [Prefect Automations docs](https://docs.prefect.io/concepts/automations/)
 
+## Webhooks
+
+Prefect has two webhook concepts:
+
+### Webhook block (outbound)
+
+The `Webhook` block from `prefect.blocks.webhook` is a reusable, server-persisted
+block for making outbound HTTP calls. It stores URL, method, headers, and auth
+credentials securely (URL as `SecretStr`, headers as `SecretDict`):
+
+```python
+from pydantic import SecretStr
+from prefect.blocks.webhook import Webhook
+from prefect.types import SecretDict
+
+webhook = Webhook(
+    method="POST",
+    url=SecretStr("https://api.example.com/events"),
+    headers=SecretDict({
+        "Content-Type": "application/json",
+        "Authorization": "Bearer my-token",
+    }),
+)
+
+# Call the webhook (async)
+response = await webhook.call({"event": "pipeline.completed"})
+
+# Save to server for reuse across flows
+webhook.save("my-webhook", overwrite=True)
+loaded = Webhook.load("my-webhook")
+```
+
+The `Webhook` block also powers the `CallWebhook` automation action -- when an
+automation fires, Prefect calls the saved webhook block automatically.
+
+### Inbound webhooks (Cloud)
+
+Prefect Cloud provides inbound webhook endpoints where external systems (GitHub,
+Slack, CI tools) POST events. A Jinja2 template transforms each incoming payload
+into a Prefect event:
+
+```jinja2
+{
+  "event": "{{ body.action }}",
+  "resource": {
+    "prefect.resource.id": "github.repo.{{ body.repository.full_name }}",
+    "ref": "{{ body.ref }}",
+    "sender": "{{ body.sender.login }}"
+  }
+}
+```
+
+This template would transform a GitHub push event into a Prefect event that can
+trigger automations. Inbound webhooks are managed via the CLI:
+
+```bash
+prefect webhook create my-github-hook \
+    --template '{"event":"{{ body.action }}"}'
+prefect webhook ls
+prefect webhook get my-github-hook
+prefect webhook delete my-github-hook
+```
+
+**See:** [Webhook Block flow](flow-reference.md#webhook-block),
+[Prefect Webhooks docs](https://docs.prefect.io/concepts/webhooks/)
+
 ## Custom Run Names
 
 Customise flow run and task run names for easier identification in the UI and

@@ -1219,6 +1219,63 @@ blocks to lifecycle events for automatic alerting in production.
 
 ---
 
+### Webhook Block
+
+**What it demonstrates:** Using the built-in `Webhook` block for configurable
+outbound HTTP calls with stored credentials.
+
+**Airflow equivalent:** `SimpleHttpOperator` with connection credentials.
+
+```python
+@task
+def create_post_webhook() -> dict[str, Any]:
+    webhook = Webhook(
+        method="POST",
+        url=SecretStr("https://api.example.com/events"),
+        headers=SecretDict({
+            "Content-Type": "application/json",
+            "Authorization": "Bearer placeholder-token",
+        }),
+    )
+    summary = {
+        "method": webhook.method,
+        "url_host": "api.example.com",
+        "header_keys": list(webhook.headers.get_secret_value().keys()),
+    }
+    print(f"POST webhook configured: {summary}")
+    return summary
+
+@task
+def simulate_webhook_call(
+    method: str, url_host: str, payload: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    result = {
+        "method": method,
+        "url_host": url_host,
+        "payload": payload,
+        "simulated": True,
+    }
+    print(f"Simulated {method} to {url_host} -- payload: {payload}")
+    return result
+
+@flow(name="core_webhook_block", log_prints=True)
+def webhook_block_flow() -> dict[str, Any]:
+    post_summary = create_post_webhook()
+    post_result = simulate_webhook_call(
+        method=post_summary["method"],
+        url_host=post_summary["url_host"],
+        payload={"event": "pipeline.completed", "records": 150},
+    )
+    pattern = demonstrate_save_load_pattern()
+    return {"post_result": post_result, "persistence_pattern": pattern}
+```
+
+The `Webhook` block stores URL, method, headers, and auth in a reusable,
+server-persisted block. It powers the `CallWebhook` automation action and can
+replace ad-hoc `httpx.post()` calls with a managed, auditable configuration.
+
+---
+
 ### Failure Escalation
 
 **What it demonstrates:** Progressive retry with escalation hooks at each failure.
