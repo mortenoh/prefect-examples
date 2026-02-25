@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 111 example flows, organised by category.
+Detailed walkthrough of all 113 example flows, organised by category.
 
 ---
 
@@ -2757,6 +2757,23 @@ def dhis2_connection_flow() -> ConnectionReport:
     server_info = verify_connection(client)
     count = fetch_org_unit_count(client)
     report = build_report(creds, server_info, count)
+    return report
+```
+
+### dhis2_block_connection -- DHIS2 Block Connection
+
+**What it demonstrates:** Verifies DHIS2 connectivity using a named credentials
+block, fetches the org unit count, and produces a connection status artifact.
+Supports multi-instance deployment via the `instance` parameter.
+
+```python
+@flow(name="dhis2_block_connection", log_prints=True)
+def dhis2_block_connection_flow(instance: str = "dhis2") -> ConnectionReport:
+    creds = get_dhis2_credentials(instance)
+    client = creds.get_client()
+    server_info = verify_connection(client)
+    count = fetch_org_unit_count(client)
+    report = build_report(creds, instance, server_info, count)
     return report
 ```
 

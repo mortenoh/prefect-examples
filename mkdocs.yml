@@ -44,6 +44,7 @@ nav:
   - Core Concepts: core-concepts.md
   - Flow Reference: flow-reference.md
   - Patterns: patterns.md
+  - Feature Coverage: feature-coverage.md
   - Infrastructure: infrastructure.md
   - CLI Reference: cli-reference.md
   - API Reference: api-reference.md

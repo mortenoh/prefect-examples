@@ -4,7 +4,7 @@ Progressive Prefect 3 examples -- from hello-world to production patterns.
 
 ## What you will learn
 
-This project walks through 110+ self-contained flows that cover the full
+This project walks through 113 self-contained flows that cover the full
 spectrum of Prefect 3 capabilities:
 
 - **Basics** -- flows, tasks, parameters, return values
@@ -30,8 +30,9 @@ directly.
 | [Getting Started](getting-started.md) | Prerequisites, installation, first run |
 | [Tutorials](tutorials.md) | Step-by-step walkthroughs for common tasks |
 | [Core Concepts](core-concepts.md) | Prefect fundamentals and Airflow comparison |
-| [Flow Reference](flow-reference.md) | Detailed walkthrough of all 110+ flows |
+| [Flow Reference](flow-reference.md) | Detailed walkthrough of all 113 flows |
 | [Patterns](patterns.md) | Common patterns and best practices |
+| [Feature Coverage](feature-coverage.md) | Prefect 3 feature coverage matrix and gaps |
 | [Infrastructure](infrastructure.md) | Docker Compose stack and local dev setup |
 | [CLI Reference](cli-reference.md) | Prefect CLI commands used in this project |
 | [API Reference](api-reference.md) | Auto-generated docs for `Dhis2Client`, `Dhis2Credentials` |

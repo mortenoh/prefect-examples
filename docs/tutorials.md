@@ -81,9 +81,9 @@ Open `http://localhost:4200` to see the flow run, task runs, and their states.
 - `log_prints=True` captures `print()` output in Prefect logs
 - Return values flow between tasks naturally -- no XCom needed
 
-**Related flows:** [001 Hello World](flow-reference.md#001-hello-world),
-[002 Python Tasks](flow-reference.md#002-python-tasks),
-[004 Taskflow ETL](flow-reference.md#004-taskflow-etl)
+**Related flows:** [Hello World](flow-reference.md#hello-world),
+[Python Tasks](flow-reference.md#python-tasks),
+[Taskflow ETL](flow-reference.md#taskflow-etl)
 
 ---
 
@@ -159,8 +159,8 @@ client = creds.get_client()
 - `get_client()` returns an authenticated API client
 - The fallback pattern keeps flows runnable without a server
 
-**Related flows:** [101 DHIS2 Connection](flow-reference.md#101-dhis2-connection-block),
-[102 DHIS2 Org Units](flow-reference.md#102-dhis2-org-units-api)
+**Related flows:** [DHIS2 Connection Block](flow-reference.md#dhis2-connection-block),
+[DHIS2 Org Units API](flow-reference.md#dhis2-org-units-api)
 
 ---
 
@@ -223,7 +223,7 @@ if __name__ == "__main__":
 - Variables complement blocks and parameters -- they are the simplest config
   mechanism
 
-**Related flows:** [017 Variables and Params](flow-reference.md#017-variables-and-params)
+**Related flows:** [Variables and Params](flow-reference.md#variables-and-params)
 
 ---
 
@@ -364,8 +364,8 @@ schedules:
 - Schedules can be updated after deployment via CLI or UI
 - The `pull` step configures where the worker finds the flow source
 
-**Related flows:** [037 Flow Serve](flow-reference.md#037-flow-serve),
-[038 Schedules](flow-reference.md#038-schedules)
+**Related flows:** [Flow Serve](flow-reference.md#flow-serve),
+[Schedules](flow-reference.md#schedules)
 
 ---
 

@@ -44,7 +44,7 @@ uv run python flows/basics/basics_dynamic_tasks.py
 make test
 ```
 
-This runs the full pytest suite. All 110+ flows have corresponding tests in
+This runs the full pytest suite. All 113 flows have corresponding tests in
 `tests/`.
 
 ## Serve the documentation
@@ -77,10 +77,13 @@ See [Infrastructure](infrastructure.md) for full details on the Docker stack.
 
 ```
 prefect-examples/
-    flows/              # 111 example flows in topic subdirectories
+    flows/              # 113 example flows in topic subdirectories
     deployments/        # Production deployment examples
-        dhis2_connection/   # Connection check deployment
-        dhis2_ou/           # Org unit listing deployment
+        dhis2_connection/       # Connection check deployment
+        dhis2_ou/               # Org unit listing deployment
+        dhis2_block_connection/ # Block-based connection deployment
+        s3_parquet_export/      # S3 parquet export deployment
+        dhis2_geoparquet_export/ # DHIS2 GeoParquet export deployment
     src/
         prefect_examples/
             config.py   # Shared configuration defaults

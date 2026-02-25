@@ -26,9 +26,9 @@ def pipeline():
 Each subflow gets its own flow run in the Prefect UI, with independent state
 tracking and retry behaviour.
 
-**See:** [009 Subflows](flow-reference.md#009-subflows),
-[015 Flow of Flows](flow-reference.md#015-flow-of-flows),
-[020 Complex Pipeline](flow-reference.md#020-complex-pipeline)
+**See:** [Subflows](flow-reference.md#subflows),
+[Flow of Flows](flow-reference.md#flow-of-flows),
+[Complex Pipeline](flow-reference.md#complex-pipeline)
 
 ## Dynamic mapping with `.map()`
 
@@ -57,8 +57,8 @@ validated = validate_record.map(raw)
 enriched = enrich_record.map(validated)
 ```
 
-**See:** [010 Dynamic Tasks](flow-reference.md#010-dynamic-tasks),
-[020 Complex Pipeline](flow-reference.md#020-complex-pipeline)
+**See:** [Dynamic Tasks](flow-reference.md#dynamic-tasks),
+[Complex Pipeline](flow-reference.md#complex-pipeline)
 
 ## Error handling with `allow_failure` and retries
 
@@ -89,8 +89,8 @@ def pipeline():
     cleanup_task(wait_for=[allow_failure(risky)])
 ```
 
-**See:** [007 State Handlers](flow-reference.md#007-state-handlers),
-[012 Retries and Hooks](flow-reference.md#012-retries-and-hooks)
+**See:** [State Handlers](flow-reference.md#state-handlers),
+[Retries and Hooks](flow-reference.md#retries-and-hooks)
 
 ## Polling with while loops
 
@@ -116,7 +116,7 @@ future_b = poll_condition.submit(name="sensor-B")
 process([future_a.result(), future_b.result()])
 ```
 
-**See:** [011 Polling Tasks](flow-reference.md#011-polling-tasks)
+**See:** [Polling Tasks](flow-reference.md#polling-tasks)
 
 ## Concurrency limits
 
@@ -135,7 +135,7 @@ def rate_limited_call(item: str) -> str:
 The limit name is global -- all tasks sharing the same name compete for the
 same slots.
 
-**See:** [016 Concurrency Limits](flow-reference.md#016-concurrency-limits)
+**See:** [Concurrency Limits](flow-reference.md#concurrency-limits)
 
 ## Variables and configuration
 
@@ -162,7 +162,7 @@ def pipeline(environment: str = "dev"):
     process(config, environment)
 ```
 
-**See:** [017 Variables and Params](flow-reference.md#017-variables-and-params)
+**See:** [Variables and Params](flow-reference.md#variables-and-params)
 
 ## State hooks for observability
 
@@ -187,8 +187,8 @@ def pipeline():
 Hooks are plain functions, not tasks. They receive the task/flow object, the
 run metadata, and the final state.
 
-**See:** [007 State Handlers](flow-reference.md#007-state-handlers),
-[012 Retries and Hooks](flow-reference.md#012-retries-and-hooks)
+**See:** [State Handlers](flow-reference.md#state-handlers),
+[Retries and Hooks](flow-reference.md#retries-and-hooks)
 
 ## Task caching
 
@@ -219,7 +219,7 @@ def cached_lookup(category: str, item_id: int) -> dict: ...
 Cache hits are only visible during Prefect runtime. Calling `.fn()` always
 executes the underlying function.
 
-**See:** [021 Task Caching](flow-reference.md#021-task-caching)
+**See:** [Task Caching](flow-reference.md#task-caching)
 
 ## Async patterns
 
@@ -245,10 +245,10 @@ async def concurrent_flow() -> None:
 Sync and async tasks can be mixed in an async flow. Sync tasks are called
 normally; async tasks are awaited.
 
-**See:** [033 Async Tasks](flow-reference.md#033-async-tasks),
-[034 Concurrent Async](flow-reference.md#034-concurrent-async),
-[035 Async Flow Patterns](flow-reference.md#035-async-flow-patterns),
-[036 Async Map and Submit](flow-reference.md#036-async-map-and-submit)
+**See:** [Async Tasks](flow-reference.md#async-tasks),
+[Concurrent Async](flow-reference.md#concurrent-async),
+[Async Flow Patterns](flow-reference.md#async-flow-patterns),
+[Async Map and Submit](flow-reference.md#async-map-and-submit)
 
 ## Artifacts
 
@@ -269,8 +269,8 @@ create_link_artifact(key="dashboard", link="https://example.com/dashboard")
 
 Without a Prefect server, artifact functions silently no-op — tests pass locally.
 
-**See:** [029 Markdown Artifacts](flow-reference.md#029-markdown-artifacts),
-[030 Table and Link Artifacts](flow-reference.md#030-table-and-link-artifacts)
+**See:** [Markdown Artifacts](flow-reference.md#markdown-artifacts),
+[Table and Link Artifacts](flow-reference.md#table-and-link-artifacts)
 
 ## Blocks and secrets
 
@@ -372,8 +372,8 @@ def test_flow(mock_get_client):
     assert state.is_completed()
 ```
 
-**See:** [031 Secret Block](flow-reference.md#031-secret-block),
-[032 Custom Blocks](flow-reference.md#032-custom-blocks)
+**See:** [Secret Block](flow-reference.md#secret-block),
+[Custom Blocks](flow-reference.md#custom-blocks)
 
 ## Deployment basics
 
@@ -558,9 +558,9 @@ with its own `flow.py`, `prefect.yaml`, and `deploy.py`:
 - **`dhis2_connection/`** -- connection check and server status artifact
 - **`dhis2_ou/`** -- org unit listing with markdown artifact
 
-**See:** [037 Flow Serve](flow-reference.md#037-flow-serve),
-[038 Schedules](flow-reference.md#038-schedules),
-[039 Work Pools](flow-reference.md#039-work-pools),
+**See:** [Flow Serve](flow-reference.md#flow-serve),
+[Schedules](flow-reference.md#schedules),
+[Work Pools](flow-reference.md#work-pools),
 [Deployments directory](flow-reference.md#deployments-directory)
 
 ## Pydantic models for type-safe pipelines
@@ -595,8 +595,8 @@ def validate_users(users: list[UserRecord]) -> ProcessingResult:
 Pydantic replaces XCom serialisation pain with automatic validation, type safety,
 and clean `.model_dump()` for dict conversion.
 
-**See:** [041 Pydantic Models](flow-reference.md#041-pydantic-models),
-[047 Pydantic Validation](flow-reference.md#047-pydantic-validation)
+**See:** [Pydantic Models](flow-reference.md#pydantic-models),
+[Pydantic Validation](flow-reference.md#pydantic-validation)
 
 ## Shell and HTTP tasks
 
@@ -621,8 +621,8 @@ def http_get(url: str) -> dict:
 No special operators needed. Standard Python libraries inside tasks are the
 Prefect way.
 
-**See:** [042 Shell Tasks](flow-reference.md#042-shell-tasks),
-[043 HTTP Tasks](flow-reference.md#043-http-tasks)
+**See:** [Shell Tasks](flow-reference.md#shell-tasks),
+[HTTP Tasks](flow-reference.md#http-tasks)
 
 ## Error handling with quarantine pattern
 
@@ -651,7 +651,7 @@ def process_with_quarantine(records: list[dict]) -> QuarantineResult:
 
 The quarantine pattern prevents a few bad records from failing the entire pipeline.
 
-**See:** [046 Error Handling ETL](flow-reference.md#046-error-handling-etl)
+**See:** [Error Handling ETL](flow-reference.md#error-handling-etl)
 
 ## Transactions for atomic operations
 
@@ -671,7 +671,7 @@ def atomic_pipeline():
 
 Transactions are a Prefect-specific feature with no direct Airflow equivalent.
 
-**See:** [057 Transactions](flow-reference.md#057-transactions)
+**See:** [Transactions](flow-reference.md#transactions)
 
 ## Task runners for concurrent execution
 
@@ -696,7 +696,7 @@ def cpu_flow():
 `ThreadPoolTaskRunner` provides concurrent execution for I/O-bound tasks like
 API calls and file reads.
 
-**See:** [059 Task Runners](flow-reference.md#059-task-runners)
+**See:** [Task Runners](flow-reference.md#task-runners)
 
 ## File I/O patterns
 
@@ -730,9 +730,9 @@ def read_file(path: Path) -> list[dict]:
         return json.loads(path.read_text())
 ```
 
-**See:** [061 CSV File Processing](flow-reference.md#061-csv-file-processing),
-[062 JSON Event Ingestion](flow-reference.md#062-json-event-ingestion),
-[063 Multi-File Batch](flow-reference.md#063-multi-file-batch-processing)
+**See:** [CSV File Processing](flow-reference.md#csv-file-processing),
+[JSON Event Ingestion](flow-reference.md#json-event-ingestion),
+[Multi-File Batch Processing](flow-reference.md#multi-file-batch-processing)
 
 ## Data quality rules engine
 
@@ -756,8 +756,8 @@ def execute_rule(data: list[dict], rule: QualityRule) -> RuleResult:
 Compute an overall score and classify as green (>= 0.9), amber (>= 0.7),
 or red (< 0.7).
 
-**See:** [065 Quality Rules Engine](flow-reference.md#065-quality-rules-engine),
-[066 Cross-Dataset Validation](flow-reference.md#066-cross-dataset-validation)
+**See:** [Quality Rules Engine](flow-reference.md#quality-rules-engine),
+[Cross-Dataset Validation](flow-reference.md#cross-dataset-validation)
 
 ## Configuration-driven pipelines
 
@@ -780,7 +780,7 @@ def pipeline(raw_config: dict):
 Different configs produce different pipeline runs through the same flow code.
 Disabled stages are skipped automatically.
 
-**See:** [073 Config-Driven Pipeline](flow-reference.md#073-config-driven-pipeline)
+**See:** [Config-Driven Pipeline](flow-reference.md#config-driven-pipeline)
 
 ## Producer-consumer pattern
 
@@ -797,7 +797,7 @@ def producer_consumer_flow():
 Producers write JSON data + metadata files. Consumers discover packages by
 scanning for metadata files. Each flow is independently testable.
 
-**See:** [074 Producer-Consumer](flow-reference.md#074-producer-consumer)
+**See:** [Producer-Consumer](flow-reference.md#producer-consumer)
 
 ## Circuit breaker pattern
 
@@ -814,7 +814,7 @@ def call_with_circuit(circuit: CircuitState, should_succeed: bool):
 States: closed (normal) -> open (fail-fast) -> half_open (probe) -> closed
 (recovery). Deterministic boolean outcomes make testing straightforward.
 
-**See:** [075 Circuit Breaker](flow-reference.md#075-circuit-breaker)
+**See:** [Circuit Breaker](flow-reference.md#circuit-breaker)
 
 ## Incremental processing with manifests
 
@@ -829,8 +829,8 @@ def identify_new_files(all_files: list[Path], manifest: ProcessingManifest) -> l
 Run the flow twice: the second run processes zero files. This is the foundation
 for idempotent file pipelines.
 
-**See:** [064 Incremental Processing](flow-reference.md#064-incremental-processing),
-[078 Idempotent Operations](flow-reference.md#078-idempotent-operations)
+**See:** [Incremental Processing](flow-reference.md#incremental-processing),
+[Idempotent Operations](flow-reference.md#idempotent-operations)
 
 ## Checkpoint-based recovery
 
@@ -848,7 +848,7 @@ for stage in stages:
 Fail at stage X, fix the issue, re-run, and stages before X are automatically
 skipped.
 
-**See:** [079 Error Recovery](flow-reference.md#079-error-recovery)
+**See:** [Error Recovery](flow-reference.md#error-recovery)
 
 ## Application-level API caching
 
@@ -868,7 +868,7 @@ def fetch_with_cache(endpoint, params, cache, ttl_seconds=300):
 
 Track hit/miss rates to measure cache effectiveness.
 
-**See:** [072 Response Caching](flow-reference.md#072-response-caching)
+**See:** [Response Caching](flow-reference.md#response-caching)
 
 ## Threshold classification and advisories (flow 081)
 
@@ -894,7 +894,7 @@ for threshold, cat, col in AQI_THRESHOLDS:
 Walk the thresholds in order and stop at the first match. Use a separate
 severity ordering list to rank worst outcomes.
 
-**See:** [081 Air Quality Index](flow-reference.md#081-air-quality-index)
+**See:** [Air Quality Index](flow-reference.md#air-quality-index)
 
 ## Composite risk scoring (flow 082)
 
@@ -908,7 +908,7 @@ weighted = marine_avg * marine_weight + flood_avg * flood_weight
 
 Configurable weights allow tuning the relative importance of each risk source.
 
-**See:** [082 Composite Risk](flow-reference.md#082-composite-risk-assessment)
+**See:** [Composite Risk Assessment](flow-reference.md#composite-risk-assessment)
 
 ## Pearson correlation (flows 086, 088)
 
@@ -927,8 +927,8 @@ def _pearson(x: list[float], y: list[float]) -> float:
 This pattern appears in flows 083, 086, 087, and 088. No numpy or scipy
 required.
 
-**See:** [086 Multi-Indicator Correlation](flow-reference.md#086-multi-indicator-correlation),
-[088 Hypothesis Testing](flow-reference.md#088-hypothesis-testing)
+**See:** [Multi-Indicator Correlation](flow-reference.md#multi-indicator-correlation),
+[Hypothesis Testing](flow-reference.md#hypothesis-testing)
 
 ## Log-linear regression (flow 089)
 
@@ -947,7 +947,7 @@ r_squared = 1.0 - (ss_res / ss_tot)
 Log-transform skewed data before regression. Rank entities by residual:
 negative residual means better-than-predicted performance.
 
-**See:** [089 Regression Analysis](flow-reference.md#089-regression-analysis)
+**See:** [Regression Analysis](flow-reference.md#regression-analysis)
 
 ## Dimensional modeling (Star schema) (flow 090)
 
@@ -971,7 +971,7 @@ Surrogate keys are assigned sequentially. Min-max normalization respects the
 `higher_is_better` flag. Weighted normalized indicators produce a composite
 ranking.
 
-**See:** [090 Star Schema](flow-reference.md#090-star-schema)
+**See:** [Star Schema](flow-reference.md#star-schema)
 
 ## Simulated SQL ETL (flow 091)
 
@@ -988,7 +988,7 @@ summary = compute_summary(valid, "category")  # grouped stats
 Each layer adds metadata. Invalid records carry `is_valid=False` through the
 production layer without being dropped.
 
-**See:** [091 Staged ETL](flow-reference.md#091-staged-etl-pipeline)
+**See:** [Staged ETL Pipeline](flow-reference.md#staged-etl-pipeline)
 
 ## Regex expression parsing (flow 094)
 
@@ -1004,7 +1004,7 @@ total = num_operands + num_operators
 
 Bin scores into trivial/simple/moderate/complex categories for reporting.
 
-**See:** [094 Expression Scoring](flow-reference.md#094-expression-complexity-scoring)
+**See:** [Expression Complexity Scoring](flow-reference.md#expression-complexity-scoring)
 
 ## Data lineage tracking (flow 097)
 
@@ -1020,7 +1020,7 @@ def compute_data_hash(records: list[DataRecord]) -> str:
 Each transformation records input_hash and output_hash. The lineage graph shows
 which stages modified data (input_hash != output_hash) and which were passthrough.
 
-**See:** [097 Data Lineage](flow-reference.md#097-data-lineage-tracking)
+**See:** [Data Lineage Tracking](flow-reference.md#data-lineage-tracking)
 
 ## Pipeline templates (flow 098)
 
@@ -1039,7 +1039,7 @@ basic_large = instantiate_template(etl_basic, {"batch_size": 500})
 Define a template once, instantiate with different overrides. Stage execution
 merges overrides into default parameters.
 
-**See:** [098 Pipeline Template](flow-reference.md#098-pipeline-template-factory)
+**See:** [Pipeline Template Factory](flow-reference.md#pipeline-template-factory)
 
 ## Custom blocks for API integration
 
@@ -1121,8 +1121,8 @@ def build_auth_header(config: ApiAuthConfig, credentials: str) -> AuthHeader:
     ...
 ```
 
-**See:** [101 DHIS2 Connection](flow-reference.md#101-dhis2-connection-block),
-[110 Authenticated API](flow-reference.md#110-authenticated-api-pipeline)
+**See:** [DHIS2 Connection Block](flow-reference.md#dhis2-connection-block),
+[Authenticated API Pipeline](flow-reference.md#authenticated-api-pipeline)
 
 ## Secret management strategies
 
@@ -1168,5 +1168,5 @@ def get_dhis2_credentials() -> Dhis2Credentials:
         return Dhis2Credentials()  # uses inline defaults
 ```
 
-**See:** [109 Env Config](flow-reference.md#109-environment-based-configuration),
-[101 DHIS2 Connection](flow-reference.md#101-dhis2-connection-block)
+**See:** [Environment-Based Configuration](flow-reference.md#environment-based-configuration),
+[DHIS2 Connection Block](flow-reference.md#dhis2-connection-block)

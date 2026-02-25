@@ -34,7 +34,7 @@ flows/
   patterns/             20 flows -- Pydantic, factories, error handling
   data_engineering/     20 flows -- file I/O, APIs, config-driven pipelines
   analytics/            20 flows -- statistics, dimensional modeling, lineage
-  dhis2/                10 flows -- DHIS2 integration
+  dhis2/                11 flows -- DHIS2 integration
   cloud/                 2 flows -- S3/cloud patterns
 src/prefect_examples/   Shared task library
 packages/prefect-dhis2/ DHIS2 integration package (workspace dependency)
@@ -179,7 +179,7 @@ Flows are organized into topic groups:
 |---|---|
 | `make help` | Show all available targets |
 | `make sync` | Install dependencies (`uv sync`) |
-| `make lint` | Run ruff and mypy on `src/` and `packages/` |
+| `make lint` | Run ruff check and mypy |
 | `make fmt` | Auto-format with ruff |
 | `make test` | Run the test suite |
 | `make run` | Run the hello-world flow |

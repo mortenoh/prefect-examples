@@ -193,8 +193,8 @@ create_table_artifact(key="data", table=[{"col": "value"}])
 
 Without a Prefect server, artifact functions silently no-op.
 
-**See:** [029 Markdown Artifacts](flow-reference.md#029-markdown-artifacts),
-[030 Table and Link Artifacts](flow-reference.md#030-table-and-link-artifacts)
+**See:** [Markdown Artifacts](flow-reference.md#markdown-artifacts),
+[Table and Link Artifacts](flow-reference.md#table-and-link-artifacts)
 
 ## Tags
 
@@ -220,7 +220,7 @@ def my_flow() -> None:
 Tags are additive -- tasks inherit tags from their parent flow, plus any set
 via the `tags()` context manager.
 
-**See:** [026 Tags](flow-reference.md#026-tags)
+**See:** [Tags](flow-reference.md#tags)
 
 ## Events
 
@@ -240,7 +240,7 @@ emit_event(
 Events are sent to the Prefect event system and can trigger automations
 configured in the UI. Without a server, `emit_event()` silently no-ops.
 
-**See:** [014 Events](flow-reference.md#014-events)
+**See:** [Events](flow-reference.md#events)
 
 ## Automations
 
@@ -343,8 +343,8 @@ def my_flow() -> None:
     ...
 ```
 
-**See:** [023 Task Run Names](flow-reference.md#023-task-run-names),
-[027 Flow Run Names](flow-reference.md#027-flow-run-names)
+**See:** [Task Run Names](flow-reference.md#task-run-names),
+[Flow Run Names](flow-reference.md#flow-run-names)
 
 ## Blocks
 
