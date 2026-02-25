@@ -47,6 +47,7 @@ generate-prefect-yaml: ## Regenerate prefect.yaml from flows/ directory
 	uv run python scripts/generate_prefect_yaml.py
 
 deploy-local: ## Deploy all flows to local Prefect server (run after make server)
+	uv run prefect work-pool create default --type process 2>/dev/null || true
 	uv run prefect deploy --all
 
 deploy: register-blocks create-blocks ## Register blocks, create instances, and deploy all flows
