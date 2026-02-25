@@ -6,11 +6,15 @@ Airflow equivalent: @task (TaskFlow API).
 Prefect approach:    Prefect is natively taskflow-first.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 from prefect import flow, task
 
 
 @task
-def extract() -> dict:
+def extract() -> dict[str, Any]:
     """Simulate data extraction from an external source.
 
     Returns:
@@ -29,7 +33,7 @@ def extract() -> dict:
 
 
 @task
-def transform(raw: dict) -> dict:
+def transform(raw: dict[str, Any]) -> dict[str, Any]:
     """Filter to active adults and upper-case their names.
 
     Args:
@@ -45,7 +49,7 @@ def transform(raw: dict) -> dict:
 
 
 @task
-def load(data: dict) -> str:
+def load(data: dict[str, Any]) -> str:
     """Persist the transformed data (simulated).
 
     Args:

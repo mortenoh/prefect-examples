@@ -10,6 +10,8 @@ Prefect approach:    Simulate seismic + weather data, align on date, test
 
 import math
 import statistics
+from collections.abc import Sequence
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -111,7 +113,7 @@ def simulate_weather_data(days: int) -> list[WeatherRecord]:
 
 
 @task
-def align_datasets(dataset_a: list[BaseModel], dataset_b: list[BaseModel], key: str) -> list[DailyObservation]:
+def align_datasets(dataset_a: Sequence[BaseModel], dataset_b: Sequence[BaseModel], key: str) -> list[DailyObservation]:
     """Align two datasets by joining on a common key.
 
     This returns observations where field_a = first numeric field from dataset_a
@@ -125,7 +127,7 @@ def align_datasets(dataset_a: list[BaseModel], dataset_b: list[BaseModel], key: 
     Returns:
         List of aligned DailyObservation.
     """
-    b_lookup: dict[str, dict] = {getattr(r, key): r.model_dump() for r in dataset_b}
+    b_lookup: dict[str, dict[str, Any]] = {getattr(r, key): r.model_dump() for r in dataset_b}
     aligned: list[DailyObservation] = []
     for a_model in dataset_a:
         a_rec = a_model.model_dump()

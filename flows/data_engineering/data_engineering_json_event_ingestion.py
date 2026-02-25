@@ -11,6 +11,7 @@ Prefect approach:    @task functions for each transformation step; @flow
 import json
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -25,7 +26,7 @@ class FlattenedEvent(BaseModel):
 
     event_id: str
     timestamp: str
-    flat_fields: dict
+    flat_fields: dict[str, Any]
 
 
 class IngestionResult(BaseModel):
@@ -85,7 +86,7 @@ def generate_events(path: Path, count: int = 5) -> Path:
 
 
 @task
-def load_json_events(path: Path) -> list[dict]:
+def load_json_events(path: Path) -> list[dict[str, Any]]:
     """Load JSON events from a file.
 
     Args:
@@ -94,13 +95,13 @@ def load_json_events(path: Path) -> list[dict]:
     Returns:
         List of event dicts.
     """
-    data = json.loads(path.read_text())
+    data: list[dict[str, Any]] = json.loads(path.read_text())
     print(f"Loaded {len(data)} events from {path.name}")
     return data
 
 
 @task
-def flatten_dict(data: dict, prefix: str = "", separator: str = ".") -> dict:
+def flatten_dict(data: dict[str, Any], prefix: str = "", separator: str = ".") -> dict[str, Any]:
     """Recursively flatten a nested dict into dot-separated keys.
 
     Args:
@@ -111,7 +112,7 @@ def flatten_dict(data: dict, prefix: str = "", separator: str = ".") -> dict:
     Returns:
         A flat dict with dot-separated keys.
     """
-    items: dict = {}
+    items: dict[str, Any] = {}
     for key, value in data.items():
         new_key = f"{prefix}{separator}{key}" if prefix else key
         if isinstance(value, dict):
@@ -129,7 +130,7 @@ def flatten_dict(data: dict, prefix: str = "", separator: str = ".") -> dict:
 
 
 @task
-def normalize_event(event: dict) -> FlattenedEvent:
+def normalize_event(event: dict[str, Any]) -> FlattenedEvent:
     """Flatten a single event into a FlattenedEvent.
 
     Args:
@@ -177,7 +178,7 @@ def compute_ingestion_stats(events: list[FlattenedEvent], output_path: str) -> I
         Ingestion result summary.
     """
 
-    def _depth(d: dict, level: int = 0) -> int:
+    def _depth(d: dict[str, Any], level: int = 0) -> int:
         if not isinstance(d, dict) or not d:
             return level
         return max(_depth(v, level + 1) for v in d.values())

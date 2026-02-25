@@ -6,6 +6,8 @@ Airflow equivalent: Error handling with quarantine (DAG 066).
 Prefect approach:    Try/except in tasks with Pydantic result models.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -17,8 +19,8 @@ from pydantic import BaseModel
 class QuarantineResult(BaseModel):
     """Result of processing with quarantine tracking."""
 
-    good_records: list[dict]
-    bad_records: list[dict]
+    good_records: list[dict[str, Any]]
+    bad_records: list[dict[str, Any]]
     errors: list[str]
 
 
@@ -28,7 +30,7 @@ class QuarantineResult(BaseModel):
 
 
 @task
-def generate_data() -> list[dict]:
+def generate_data() -> list[dict[str, Any]]:
     """Generate sample data including some invalid records.
 
     Returns:
@@ -46,7 +48,7 @@ def generate_data() -> list[dict]:
 
 
 @task
-def process_with_quarantine(records: list[dict]) -> QuarantineResult:
+def process_with_quarantine(records: list[dict[str, Any]]) -> QuarantineResult:
     """Process records, quarantining invalid ones.
 
     Args:

@@ -10,6 +10,7 @@ Prefect approach:    Simulate 3 indicators, join on country+year, forward-fill,
 
 import math
 import statistics
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -123,7 +124,7 @@ def join_indicators(
     records: list[JoinedRecord] = []
     for country in countries:
         for year in years:
-            fields: dict = {"country": country, "year": year}
+            fields: dict[str, Any] = {"country": country, "year": year}
             for ind in indicators:
                 val = lookup.get((ind, country), {}).get(year)
                 fields[ind] = val
@@ -152,7 +153,7 @@ def forward_fill(records: list[JoinedRecord], columns: list[str]) -> list[Joined
         country_records = sorted(by_country[country], key=lambda x: x.year)
         last_values: dict[str, float] = {}
         for r in country_records:
-            updates: dict = {}
+            updates: dict[str, float] = {}
             for col in columns:
                 val = getattr(r, col)
                 if val is None and col in last_values:

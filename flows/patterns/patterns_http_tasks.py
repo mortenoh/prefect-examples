@@ -6,6 +6,8 @@ Airflow equivalent: HttpOperator, HttpSensor (DAGs 033-034).
 Prefect approach:    httpx in a @task -- no special operator needed.
 """
 
+from typing import Any
+
 import httpx
 from prefect import flow, task
 
@@ -15,7 +17,7 @@ from prefect import flow, task
 
 
 @task
-def http_get(url: str) -> dict:
+def http_get(url: str) -> dict[str, Any]:
     """Perform an HTTP GET request and return the JSON response.
 
     Args:
@@ -26,13 +28,13 @@ def http_get(url: str) -> dict:
     """
     response = httpx.get(url, timeout=10.0)
     response.raise_for_status()
-    data = response.json()
+    data: dict[str, Any] = response.json()
     print(f"GET {url} -> {response.status_code}")
     return data
 
 
 @task
-def http_post(url: str, data: dict) -> dict:
+def http_post(url: str, data: dict[str, Any]) -> dict[str, Any]:
     """Perform an HTTP POST request and return the JSON response.
 
     Args:
@@ -44,7 +46,7 @@ def http_post(url: str, data: dict) -> dict:
     """
     response = httpx.post(url, json=data, timeout=10.0)
     response.raise_for_status()
-    result = response.json()
+    result: dict[str, Any] = response.json()
     print(f"POST {url} -> {response.status_code}")
     return result
 

@@ -6,6 +6,8 @@ Airflow equivalent: task_id / custom logging for operator identification.
 Prefect approach:    task_run_name as a template string or callable on @task.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from prefect.runtime import task_run
 
@@ -26,7 +28,7 @@ def generate_task_name() -> str:
 
 
 @task(task_run_name="fetch-{source}-page-{page}")
-def fetch_data(source: str, page: int) -> dict:
+def fetch_data(source: str, page: int) -> dict[str, Any]:
     """Fetch data from a source with a templated task run name.
 
     The task run name will appear as e.g. "fetch-api-page-1" in

@@ -33,4 +33,4 @@ def flow_module() -> type:
             spec.loader.exec_module(mod)
             return mod
 
-    return _Loader  # type: ignore[return-value]
+    return _Loader

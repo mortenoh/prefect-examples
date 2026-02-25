@@ -3,14 +3,18 @@
 Compose larger pipelines from smaller, reusable flows.
 
 Airflow equivalent: TaskGroup / SubDagOperator.
-Prefect approach:    @flow calling @flow — nested flow runs in UI.
+Prefect approach:    @flow calling @flow -- nested flow runs in UI.
 """
+
+from __future__ import annotations
+
+from typing import Any
 
 from prefect import flow, task
 
 
 @task
-def build_records() -> list[dict]:
+def build_records() -> list[dict[str, Any]]:
     """Return a handful of sample records."""
     records = [
         {"id": 1, "value": "alpha"},
@@ -22,13 +26,13 @@ def build_records() -> list[dict]:
 
 
 @flow(name="basics_extract", log_prints=True)
-def extract_flow() -> list[dict]:
+def extract_flow() -> list[dict[str, Any]]:
     """Extract raw records from a data source."""
     return build_records()
 
 
 @flow(name="basics_transform", log_prints=True)
-def transform_flow(raw: list[dict]) -> list[dict]:
+def transform_flow(raw: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Add a 'processed' flag to each record."""
     transformed = [{**record, "processed": True} for record in raw]
     print(f"Transformed {len(transformed)} records")
@@ -36,7 +40,7 @@ def transform_flow(raw: list[dict]) -> list[dict]:
 
 
 @flow(name="basics_load", log_prints=True)
-def load_flow(data: list[dict]) -> str:
+def load_flow(data: list[dict[str, Any]]) -> str:
     """Load data and return a summary string."""
     summary = f"Loaded {len(data)} records: {[r['id'] for r in data]}"
     print(summary)

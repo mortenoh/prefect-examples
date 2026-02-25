@@ -6,11 +6,13 @@ Airflow equivalent: DAG/task tags for filtering in the UI.
 Prefect approach:    tags= on @task, tags() context manager for runtime tagging.
 """
 
+from typing import Any
+
 from prefect import flow, tags, task
 
 
 @task(tags=["etl", "extract"])
-def extract_sales() -> list[dict]:
+def extract_sales() -> list[dict[str, Any]]:
     """Extract sales records with ETL extract tags.
 
     Returns:
@@ -26,7 +28,7 @@ def extract_sales() -> list[dict]:
 
 
 @task(tags=["etl", "transform"])
-def transform_sales(records: list[dict]) -> list[dict]:
+def transform_sales(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Apply transformations to sales records.
 
     Args:

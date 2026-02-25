@@ -13,6 +13,7 @@ import datetime
 import json
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -27,7 +28,7 @@ class Checkpoint(BaseModel):
 
     stage: str
     status: str  # completed, failed
-    data: dict
+    data: dict[str, Any]
     timestamp: str
 
 
@@ -77,7 +78,7 @@ def save_checkpoint(
     store: CheckpointStore,
     stage: str,
     status: str,
-    data: dict,
+    data: dict[str, Any],
     path: Path,
 ) -> CheckpointStore:
     """Save a checkpoint after a stage completes.
@@ -121,7 +122,7 @@ def should_run_stage(store: CheckpointStore, stage: str) -> bool:
 
 
 @task
-def execute_stage(stage_name: str, input_data: dict, fail_on: str | None = None) -> dict:
+def execute_stage(stage_name: str, input_data: dict[str, Any], fail_on: str | None = None) -> dict[str, Any]:
     """Execute a pipeline stage (simulated).
 
     Args:
@@ -171,7 +172,7 @@ def run_with_checkpoints(
     recovered = 0
     executed = 0
     failed = 0
-    context: dict = {}
+    context: dict[str, Any] = {}
 
     # Recover context from last completed stage
     for stage in stages:

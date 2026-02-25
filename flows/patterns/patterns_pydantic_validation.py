@@ -6,6 +6,8 @@ Airflow equivalent: Schema validation pipeline (DAGs 068-069).
 Prefect approach:    Pydantic field_validator replaces manual schema checking.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from pydantic import BaseModel, field_validator
 
@@ -52,7 +54,7 @@ class ValidationReport(BaseModel):
 
 
 @task
-def generate_readings() -> list[dict]:
+def generate_readings() -> list[dict[str, Any]]:
     """Generate raw weather readings, some intentionally invalid.
 
     Returns:
@@ -70,7 +72,7 @@ def generate_readings() -> list[dict]:
 
 
 @task
-def validate_readings(raw: list[dict]) -> ValidationReport:
+def validate_readings(raw: list[dict[str, Any]]) -> ValidationReport:
     """Validate raw readings against the WeatherReading schema.
 
     Args:

@@ -157,20 +157,32 @@ def test_transform_includes_computed_columns() -> None:
 def test_transform_preserves_temp_categories() -> None:
     readings = [
         SensorReading(
-            station=StationId.ALPHA, date="2024-01-01", temperature_c=-5.0,
-            humidity_pct=50.0, status=OperationalStatus.OPERATIONAL,
+            station=StationId.ALPHA,
+            date="2024-01-01",
+            temperature_c=-5.0,
+            humidity_pct=50.0,
+            status=OperationalStatus.OPERATIONAL,
         ),
         SensorReading(
-            station=StationId.BETA, date="2024-01-02", temperature_c=10.0,
-            humidity_pct=50.0, status=OperationalStatus.OPERATIONAL,
+            station=StationId.BETA,
+            date="2024-01-02",
+            temperature_c=10.0,
+            humidity_pct=50.0,
+            status=OperationalStatus.OPERATIONAL,
         ),
         SensorReading(
-            station=StationId.GAMMA, date="2024-01-03", temperature_c=25.0,
-            humidity_pct=50.0, status=OperationalStatus.OPERATIONAL,
+            station=StationId.GAMMA,
+            date="2024-01-03",
+            temperature_c=25.0,
+            humidity_pct=50.0,
+            status=OperationalStatus.OPERATIONAL,
         ),
         SensorReading(
-            station=StationId.DELTA, date="2024-01-04", temperature_c=35.0,
-            humidity_pct=50.0, status=OperationalStatus.OPERATIONAL,
+            station=StationId.DELTA,
+            date="2024-01-04",
+            temperature_c=35.0,
+            humidity_pct=50.0,
+            status=OperationalStatus.OPERATIONAL,
         ),
     ]
     result = transform_to_dataframe.fn(readings)
@@ -192,8 +204,11 @@ def test_upload_to_s3_success(mock_creds_cls: MagicMock, mock_bucket_cls: MagicM
     mock_creds_cls.return_value = MagicMock()
 
     transform = TransformResult(
-        row_count=5, column_count=7, parquet_size_bytes=100,
-        columns=["a"], parquet_data=b"fake-parquet",
+        row_count=5,
+        column_count=7,
+        parquet_size_bytes=100,
+        columns=["a"],
+        parquet_data=b"fake-parquet",
     )
     result = upload_to_s3.fn(transform, "test/file.parquet")
 
@@ -205,8 +220,11 @@ def test_upload_to_s3_success(mock_creds_cls: MagicMock, mock_bucket_cls: MagicM
 
 def test_upload_to_s3_fallback() -> None:
     transform = TransformResult(
-        row_count=5, column_count=7, parquet_size_bytes=17,
-        columns=["a"], parquet_data=b"fake-parquet-data",
+        row_count=5,
+        column_count=7,
+        parquet_size_bytes=17,
+        columns=["a"],
+        parquet_data=b"fake-parquet-data",
     )
     with patch("cloud_s3_parquet_export.MinIOCredentials", side_effect=Exception("no s3")):
         result = upload_to_s3.fn(transform, "test/file.parquet")

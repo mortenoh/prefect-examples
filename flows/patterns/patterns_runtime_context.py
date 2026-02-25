@@ -6,6 +6,8 @@ Airflow equivalent: Jinja templating, macros, runtime info (DAGs 008, 046, 052).
 Prefect approach:    prefect.runtime for flow_run and task_run metadata.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from prefect.runtime import flow_run, task_run
 
@@ -15,7 +17,7 @@ from prefect.runtime import flow_run, task_run
 
 
 @task
-def get_task_info() -> dict:
+def get_task_info() -> dict[str, Any]:
     """Read task run context information.
 
     Returns:
@@ -30,7 +32,7 @@ def get_task_info() -> dict:
 
 
 @task
-def get_flow_info() -> dict:
+def get_flow_info() -> dict[str, Any]:
     """Read flow run context information.
 
     Returns:
@@ -46,7 +48,7 @@ def get_flow_info() -> dict:
 
 
 @task
-def get_parameters() -> dict:
+def get_parameters() -> dict[str, Any]:
     """Read flow-level parameters from runtime context.
 
     Returns:

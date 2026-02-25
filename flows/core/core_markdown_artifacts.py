@@ -8,13 +8,14 @@ Prefect approach:    create_markdown_artifact() to publish formatted reports
 """
 
 import datetime
+from typing import Any
 
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 
 
 @task
-def generate_data() -> list[dict]:
+def generate_data() -> list[dict[str, Any]]:
     """Generate sample data for the report.
 
     Returns:
@@ -32,7 +33,7 @@ def generate_data() -> list[dict]:
 
 
 @task
-def publish_report(results: list[dict]) -> str:
+def publish_report(results: list[dict[str, Any]]) -> str:
     """Publish a markdown report as a Prefect artifact.
 
     The artifact is viewable in the Prefect UI under the Artifacts tab.

@@ -6,6 +6,7 @@ Airflow equivalent: @setup / @teardown decorators.
 Prefect approach:    Python context managers and try/finally.
 """
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 
 from prefect import flow, task
@@ -49,7 +50,7 @@ def cleanup_resource(resource: str) -> None:
 
 
 @contextmanager
-def managed_resource():
+def managed_resource() -> Iterator[str]:
     """Context manager that sets up and tears down a resource.
 
     Yields:

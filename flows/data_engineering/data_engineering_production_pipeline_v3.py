@@ -15,6 +15,7 @@ import statistics
 import tempfile
 import time
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
@@ -43,7 +44,7 @@ class PipelineV3Result(BaseModel):
     traffic_light: str
     enrichment_rate: float
     dedup_rate: float
-    profile_summary: dict
+    profile_summary: dict[str, Any]
     total_duration_seconds: float
 
 
@@ -53,7 +54,7 @@ class PipelineV3Result(BaseModel):
 
 
 @task
-def ingest_csv(path: Path) -> list[dict]:
+def ingest_csv(path: Path) -> list[dict[str, Any]]:
     """Ingest records from a CSV file.
 
     Args:
@@ -81,7 +82,7 @@ def ingest_csv(path: Path) -> list[dict]:
 
 
 @task
-def profile_data(records: list[dict]) -> dict:
+def profile_data(records: list[dict[str, Any]]) -> dict[str, Any]:
     """Profile the dataset with basic statistics.
 
     Args:
@@ -117,7 +118,7 @@ def profile_data(records: list[dict]) -> dict:
 
 
 @task
-def run_quality_checks(records: list[dict], rules: list[dict]) -> dict:
+def run_quality_checks(records: list[dict[str, Any]], rules: list[dict[str, Any]]) -> dict[str, Any]:
     """Run quality checks on the data.
 
     Args:
@@ -127,7 +128,7 @@ def run_quality_checks(records: list[dict], rules: list[dict]) -> dict:
     Returns:
         Quality check results with score and traffic light.
     """
-    results = []
+    results: list[dict[str, Any]] = []
     for rule in rules:
         col = rule.get("column", "")
         rule_type = rule["type"]
@@ -145,7 +146,7 @@ def run_quality_checks(records: list[dict], rules: list[dict]) -> dict:
             score = len(set(vals)) / len(vals) if vals else 1.0
             results.append({"rule": f"unique:{col}", "score": score, "passed": len(set(vals)) == len(vals)})
 
-    overall = sum(r["score"] for r in results) / len(results) if results else 0.0
+    overall: float = sum(float(r["score"]) for r in results) / len(results) if results else 0.0
     if overall >= 0.9:
         traffic_light = "green"
     elif overall >= 0.7:
@@ -157,7 +158,7 @@ def run_quality_checks(records: list[dict], rules: list[dict]) -> dict:
 
 
 @task
-def enrich_records(records: list[dict], cache: dict) -> tuple[list[dict], dict]:
+def enrich_records(records: list[dict[str, Any]], cache: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Enrich records with simulated external data, using a cache.
 
     Args:
@@ -187,7 +188,7 @@ def enrich_records(records: list[dict], cache: dict) -> tuple[list[dict], dict]:
 
 
 @task
-def deduplicate_records(records: list[dict], key_fields: list[str]) -> list[dict]:
+def deduplicate_records(records: list[dict[str, Any]], key_fields: list[str]) -> list[dict[str, Any]]:
     """Deduplicate records by hashing key fields.
 
     Args:
@@ -209,7 +210,7 @@ def deduplicate_records(records: list[dict], key_fields: list[str]) -> list[dict
 
 
 @task
-def write_output(records: list[dict], path: Path) -> str:
+def write_output(records: list[dict[str, Any]], path: Path) -> str:
     """Write output records to CSV.
 
     Args:
@@ -273,7 +274,7 @@ def build_dashboard(result: PipelineV3Result) -> str:
 
 
 @task
-def save_pipeline_checkpoint(stage: str, data: dict, directory: str) -> None:
+def save_pipeline_checkpoint(stage: str, data: dict[str, Any], directory: str) -> None:
     """Save a checkpoint for the pipeline stage.
 
     Args:
@@ -325,7 +326,7 @@ def production_pipeline_v3_flow(work_dir: str | None = None) -> PipelineV3Result
 
     pipeline_start = time.monotonic()
     stages: list[PipelineStage] = []
-    cache: dict = {}
+    cache: dict[str, Any] = {}
 
     # Stage 1: Ingest
     t0 = time.monotonic()
@@ -356,7 +357,7 @@ def production_pipeline_v3_flow(work_dir: str | None = None) -> PipelineV3Result
 
     # Stage 3: Quality
     t0 = time.monotonic()
-    rules = [
+    rules: list[dict[str, Any]] = [
         {"type": "not_null", "column": "id"},
         {"type": "not_null", "column": "name"},
         {"type": "range", "column": "value", "min": 0, "max": 500},

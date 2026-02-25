@@ -6,6 +6,8 @@ Airflow equivalent: Webhook alerts on pipeline events (DAG 074).
 Prefect approach:    httpx.post() in tasks and flow hooks.
 """
 
+from typing import Any
+
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -14,7 +16,7 @@ from prefect import flow, task
 
 
 @task
-def send_notification(event: str, payload: dict) -> dict:
+def send_notification(event: str, payload: dict[str, Any]) -> dict[str, Any]:
     """Send a webhook notification for a pipeline event.
 
     In production, this would POST to Slack, PagerDuty, etc.
@@ -37,7 +39,7 @@ def send_notification(event: str, payload: dict) -> dict:
 
 
 @task
-def process_data() -> dict:
+def process_data() -> dict[str, Any]:
     """Simulate data processing work.
 
     Returns:
@@ -53,7 +55,7 @@ def process_data() -> dict:
 # ---------------------------------------------------------------------------
 
 
-def on_flow_completion(flow, flow_run, state):
+def on_flow_completion(flow: Any, flow_run: Any, state: Any) -> None:
     """Send a notification when the flow completes.
 
     Args:
@@ -64,7 +66,7 @@ def on_flow_completion(flow, flow_run, state):
     print(f"HOOK  Flow {flow_run.name!r} completed with state: {state.name}")
 
 
-def on_flow_failure(flow, flow_run, state):
+def on_flow_failure(flow: Any, flow_run: Any, state: Any) -> None:
     """Send a critical notification when the flow fails.
 
     Args:

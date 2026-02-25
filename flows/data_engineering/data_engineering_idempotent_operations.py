@@ -9,6 +9,7 @@ Prefect approach:    Hash-based operation IDs, registry dict, skip-if-exists.
 
 import datetime
 import hashlib
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -24,7 +25,7 @@ class OperationRecord(BaseModel):
     operation_id: str
     name: str
     input_hash: str
-    result: dict
+    result: dict[str, Any]
     completed_at: str
 
 
@@ -40,7 +41,7 @@ class IdempotencyReport(BaseModel):
     total_operations: int
     executed: int
     skipped: int
-    operations_log: list[dict]
+    operations_log: list[dict[str, Any]]
 
 
 # ---------------------------------------------------------------------------
@@ -49,7 +50,7 @@ class IdempotencyReport(BaseModel):
 
 
 @task
-def compute_operation_id(name: str, inputs: dict) -> str:
+def compute_operation_id(name: str, inputs: dict[str, Any]) -> str:
     """Compute a unique operation ID from name and inputs.
 
     Args:
@@ -78,7 +79,7 @@ def check_registry(registry: IdempotencyRegistry, operation_id: str) -> Operatio
 
 
 @task
-def execute_operation(name: str, inputs: dict) -> dict:
+def execute_operation(name: str, inputs: dict[str, Any]) -> dict[str, Any]:
     """Execute an operation (simulated).
 
     Args:
@@ -106,7 +107,7 @@ def register_operation(
     operation_id: str,
     name: str,
     input_hash: str,
-    result: dict,
+    result: dict[str, Any],
 ) -> IdempotencyRegistry:
     """Register a completed operation.
 
@@ -135,8 +136,8 @@ def register_operation(
 def idempotent_execute(
     registry: IdempotencyRegistry,
     name: str,
-    inputs: dict,
-) -> tuple[IdempotencyRegistry, dict, bool]:
+    inputs: dict[str, Any],
+) -> tuple[IdempotencyRegistry, dict[str, Any], bool]:
     """Execute an operation idempotently.
 
     Args:
@@ -161,7 +162,7 @@ def idempotent_execute(
 
 
 @task
-def idempotency_report(operations_log: list[dict]) -> IdempotencyReport:
+def idempotency_report(operations_log: list[dict[str, Any]]) -> IdempotencyReport:
     """Generate an idempotency report.
 
     Args:
@@ -193,9 +194,9 @@ def idempotent_operations_flow() -> IdempotencyReport:
         IdempotencyReport showing executed vs skipped operations.
     """
     registry = IdempotencyRegistry()
-    log: list[dict] = []
+    log: list[dict[str, Any]] = []
 
-    operations = [
+    operations: list[tuple[str, dict[str, Any]]] = [
         ("transform", {"value": 42}),
         ("aggregate", {"values": [1, 2, 3]}),
         ("validate", {"data": "hello"}),

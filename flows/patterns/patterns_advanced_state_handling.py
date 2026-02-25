@@ -6,6 +6,8 @@ Airflow equivalent: Trigger rules (all_success, all_done, etc.) (DAG 007).
 Prefect approach:    allow_failure, return_state=True, state inspection.
 """
 
+from typing import Any
+
 from prefect import allow_failure, flow, task
 
 # ---------------------------------------------------------------------------
@@ -53,7 +55,7 @@ def skip_task(should_skip: bool = True) -> str:
 
 
 @task
-def inspect_states(states: list[dict]) -> str:
+def inspect_states(states: list[dict[str, Any]]) -> str:
     """Inspect upstream task states and summarize outcomes.
 
     Args:

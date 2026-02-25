@@ -37,8 +37,8 @@ def summarize(results: list[str]) -> str:
 def dynamic_tasks_flow() -> None:
     """Generate items, map processing over them, then summarize."""
     items = generate_items()
-    processed = process_item.map(items)
-    summarize(processed)
+    futures = process_item.map(items)
+    summarize([f.result() for f in futures])
 
 
 if __name__ == "__main__":

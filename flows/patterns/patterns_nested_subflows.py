@@ -6,6 +6,8 @@ Airflow equivalent: TaskGroups and nested groups (DAG 009).
 Prefect approach:    @flow calling @flow for hierarchical grouping.
 """
 
+from typing import Any
+
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -14,7 +16,7 @@ from prefect import flow, task
 
 
 @task
-def fetch_source_a() -> list[dict]:
+def fetch_source_a() -> list[dict[str, Any]]:
     """Fetch records from source A.
 
     Returns:
@@ -26,7 +28,7 @@ def fetch_source_a() -> list[dict]:
 
 
 @task
-def fetch_source_b() -> list[dict]:
+def fetch_source_b() -> list[dict[str, Any]]:
     """Fetch records from source B.
 
     Returns:
@@ -38,7 +40,7 @@ def fetch_source_b() -> list[dict]:
 
 
 @flow(name="patterns_extract_group", log_prints=True)
-def extract_group() -> list[dict]:
+def extract_group() -> list[dict[str, Any]]:
     """Extract data from multiple sources.
 
     Returns:
@@ -57,7 +59,7 @@ def extract_group() -> list[dict]:
 
 
 @task
-def clean_record(record: dict) -> dict:
+def clean_record(record: dict[str, Any]) -> dict[str, Any]:
     """Clean a single record.
 
     Args:
@@ -72,7 +74,7 @@ def clean_record(record: dict) -> dict:
 
 
 @task
-def enrich_record(record: dict) -> dict:
+def enrich_record(record: dict[str, Any]) -> dict[str, Any]:
     """Enrich a cleaned record with derived fields.
 
     Args:
@@ -87,7 +89,7 @@ def enrich_record(record: dict) -> dict:
 
 
 @flow(name="patterns_transform_group", log_prints=True)
-def transform_group(records: list[dict]) -> list[dict]:
+def transform_group(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Clean and enrich all records.
 
     Args:
@@ -111,7 +113,7 @@ def transform_group(records: list[dict]) -> list[dict]:
 
 
 @task
-def write_to_target(records: list[dict]) -> str:
+def write_to_target(records: list[dict[str, Any]]) -> str:
     """Write records to the target system.
 
     Args:
@@ -141,7 +143,7 @@ def verify_load(summary: str) -> str:
 
 
 @flow(name="patterns_load_group", log_prints=True)
-def load_group(records: list[dict]) -> str:
+def load_group(records: list[dict[str, Any]]) -> str:
     """Write records and verify the load.
 
     Args:

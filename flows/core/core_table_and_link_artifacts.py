@@ -7,12 +7,14 @@ Prefect approach:    create_table_artifact() and create_link_artifact()
                      for structured data and reference links in the UI.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from prefect.artifacts import create_link_artifact, create_table_artifact
 
 
 @task
-def compute_inventory() -> list[dict]:
+def compute_inventory() -> list[dict[str, Any]]:
     """Compute current inventory levels.
 
     Returns:
@@ -30,7 +32,7 @@ def compute_inventory() -> list[dict]:
 
 
 @task
-def publish_table(inventory: list[dict]) -> None:
+def publish_table(inventory: list[dict[str, Any]]) -> None:
     """Publish inventory data as a table artifact.
 
     Table artifacts render as formatted tables in the Prefect UI,

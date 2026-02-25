@@ -6,11 +6,15 @@ Airflow equivalent: TriggerDagRunOperator.
 Prefect approach:    subflow calls; run_deployment() for deployed flows.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 from prefect import flow, task
 
 
 @task
-def fetch_raw_data() -> dict:
+def fetch_raw_data() -> dict[str, Any]:
     """Simulate fetching raw data from an external source.
 
     Returns:
@@ -29,7 +33,7 @@ def fetch_raw_data() -> dict:
 
 
 @task
-def process_data(raw: dict) -> dict:
+def process_data(raw: dict[str, Any]) -> dict[str, Any]:
     """Clean and aggregate raw records.
 
     Args:
@@ -51,7 +55,7 @@ def process_data(raw: dict) -> dict:
 
 
 @task
-def build_report(data: dict) -> str:
+def build_report(data: dict[str, Any]) -> str:
     """Generate a human-readable report summary.
 
     Args:
@@ -71,13 +75,13 @@ def build_report(data: dict) -> str:
 
 
 @flow(name="basics_ingest", log_prints=True)
-def ingest_flow() -> dict:
+def ingest_flow() -> dict[str, Any]:
     """Ingest raw data from the source system."""
     return fetch_raw_data()
 
 
 @flow(name="basics_transform", log_prints=True)
-def transform_flow(raw: dict) -> dict:
+def transform_flow(raw: dict[str, Any]) -> dict[str, Any]:
     """Transform and enrich raw data.
 
     Args:
@@ -87,7 +91,7 @@ def transform_flow(raw: dict) -> dict:
 
 
 @flow(name="basics_report", log_prints=True)
-def report_flow(data: dict) -> str:
+def report_flow(data: dict[str, Any]) -> str:
     """Generate a summary report from processed data.
 
     Args:

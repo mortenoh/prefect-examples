@@ -6,17 +6,19 @@ Airflow equivalent: retries + on_failure_callback.
 Prefect approach:    retries/retry_delay_seconds on @task; state hooks.
 """
 
+from typing import Any
+
 from prefect import flow, task
 
 _attempt_counter: dict[str, int] = {}
 
 
-def my_task_failure_hook(task, task_run, state) -> None:
+def my_task_failure_hook(task: Any, task_run: Any, state: Any) -> None:
     """Log information when a task enters a failed state."""
     print(f"HOOK — task '{task_run.name}' failed with state: {state.name}")
 
 
-def my_flow_completion_hook(flow, flow_run, state) -> None:
+def my_flow_completion_hook(flow: Any, flow_run: Any, state: Any) -> None:
     """Log information when a flow run completes (success or failure)."""
     print(f"HOOK — flow '{flow_run.name}' completed with state: {state.name}")
 

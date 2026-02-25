@@ -7,6 +7,7 @@ Prefect approach:    ThreadPoolTaskRunner for I/O, default for CPU tasks.
 """
 
 import time
+from typing import Any
 
 from prefect import flow, task
 from prefect.task_runners import ThreadPoolTaskRunner
@@ -17,7 +18,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @task
-def io_bound_task(item: str) -> dict:
+def io_bound_task(item: str) -> dict[str, Any]:
     """Simulate an I/O-bound task (network call, file read).
 
     Args:
@@ -35,7 +36,7 @@ def io_bound_task(item: str) -> dict:
 
 
 @task
-def cpu_bound_task(n: int) -> dict:
+def cpu_bound_task(n: int) -> dict[str, Any]:
     """Simulate a CPU-bound task (computation).
 
     Args:
@@ -53,7 +54,7 @@ def cpu_bound_task(n: int) -> dict:
 
 
 @task
-def summarize_runner(results: list[dict], runner_name: str) -> str:
+def summarize_runner(results: list[dict[str, Any]], runner_name: str) -> str:
     """Summarize task runner results.
 
     Args:
@@ -74,7 +75,7 @@ def summarize_runner(results: list[dict], runner_name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-@flow(name="patterns_threaded_io", log_prints=True, task_runner=ThreadPoolTaskRunner(max_workers=3))
+@flow(name="patterns_threaded_io", log_prints=True, task_runner=ThreadPoolTaskRunner(max_workers=3))  # type: ignore[arg-type]
 def threaded_io_flow() -> str:
     """Run I/O-bound tasks with ThreadPoolTaskRunner for concurrency.
 

@@ -6,6 +6,8 @@ Airflow equivalent: expand_kwargs, partial+expand (DAG 054).
 Prefect approach:    .map() with list unpacking and result collection.
 """
 
+from typing import Any
+
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -14,7 +16,7 @@ from prefect import flow, task
 
 
 @task
-def process_station(station_id: str, lat: float, lon: float) -> dict:
+def process_station(station_id: str, lat: float, lon: float) -> dict[str, Any]:
     """Process weather data for a single station.
 
     Args:
@@ -32,7 +34,7 @@ def process_station(station_id: str, lat: float, lon: float) -> dict:
 
 
 @task
-def extract_data(date: str, variable: str) -> dict:
+def extract_data(date: str, variable: str) -> dict[str, Any]:
     """Extract data for a given date and variable.
 
     Args:
@@ -48,7 +50,7 @@ def extract_data(date: str, variable: str) -> dict:
 
 
 @task
-def summarize_results(results: list[dict]) -> str:
+def summarize_results(results: list[dict[str, Any]]) -> str:
     """Summarize a list of processed results.
 
     Args:

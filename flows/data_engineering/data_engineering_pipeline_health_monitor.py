@@ -11,6 +11,7 @@ Prefect approach:    Health check registry with @task dispatchers, worst-status-
 
 import time
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from prefect.artifacts import create_table_artifact
@@ -27,7 +28,7 @@ class HealthCheck(BaseModel):
     name: str
     check_type: str
     target: str = ""
-    params: dict = {}
+    params: dict[str, Any] = {}
 
 
 class HealthCheckResult(BaseModel):
@@ -105,7 +106,7 @@ def check_file_freshness(path: str, max_age_seconds: float = 3600) -> HealthChec
 
 
 @task
-def check_row_count(data: list[dict], min_rows: int = 0, max_rows: int = 1000000) -> HealthCheckResult:
+def check_row_count(data: list[dict[str, Any]], min_rows: int = 0, max_rows: int = 1000000) -> HealthCheckResult:
     """Check that data row count is within bounds.
 
     Args:
@@ -131,7 +132,7 @@ def check_row_count(data: list[dict], min_rows: int = 0, max_rows: int = 1000000
 
 
 @task
-def check_value_in_range(data: list[dict], column: str, min_val: float, max_val: float) -> HealthCheckResult:
+def check_value_in_range(data: list[dict[str, Any]], column: str, min_val: float, max_val: float) -> HealthCheckResult:
     """Check that all values in a column are within range.
 
     Args:
@@ -165,7 +166,7 @@ def check_value_in_range(data: list[dict], column: str, min_val: float, max_val:
 
 
 @task
-def run_health_check(check: HealthCheck, context: dict) -> HealthCheckResult:
+def run_health_check(check: HealthCheck, context: dict[str, Any]) -> HealthCheckResult:
     """Dispatch and run a health check.
 
     Args:

@@ -22,7 +22,7 @@ from prefect import flow, runtime, task
 from prefect.artifacts import create_markdown_artifact
 from prefect_aws import MinIOCredentials, S3Bucket
 from prefect_aws.client_parameters import AwsClientParameters
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, SecretStr, computed_field
 
 logger = logging.getLogger(__name__)
 
@@ -214,13 +214,13 @@ def upload_to_s3(transform: TransformResult, key: str) -> UploadResult:
     try:
         minio_creds = MinIOCredentials(
             minio_root_user="prefect",
-            minio_root_password="prefect123",
+            minio_root_password=SecretStr("prefect123"),
         )
         bucket = S3Bucket(
             bucket_name="prefect-data",
             credentials=minio_creds,
             bucket_folder="exports",
-            aws_client_parameters=AwsClientParameters(endpoint_url="http://localhost:9000"),
+            aws_client_parameters=AwsClientParameters(endpoint_url="http://localhost:9000"),  # type: ignore[call-arg]
         )
         bucket.upload_from_file_object(io.BytesIO(data), key)
         print(f"Uploaded {len(data)} bytes to s3://prefect-data/exports/{key}")
@@ -254,13 +254,13 @@ def verify_upload(upload: UploadResult, transform: TransformResult) -> ExportRes
         try:
             minio_creds = MinIOCredentials(
                 minio_root_user="prefect",
-                minio_root_password="prefect123",
+                minio_root_password=SecretStr("prefect123"),
             )
             bucket = S3Bucket(
                 bucket_name="prefect-data",
                 credentials=minio_creds,
                 bucket_folder="exports",
-                aws_client_parameters=AwsClientParameters(endpoint_url="http://localhost:9000"),
+                aws_client_parameters=AwsClientParameters(endpoint_url="http://localhost:9000"),  # type: ignore[call-arg]
             )
             buf = io.BytesIO()
             bucket.download_object_to_file_object(upload.key, buf)
@@ -277,11 +277,11 @@ def verify_upload(upload: UploadResult, transform: TransformResult) -> ExportRes
 
     category_dist: dict[str, int] = {}
     if "temp_category" in df.columns:
-        category_dist = df["temp_category"].value_counts().to_dict()
+        category_dist = dict(df["temp_category"].value_counts())
 
     station_dist: dict[str, int] = {}
     if "station" in df.columns:
-        station_dist = df["station"].value_counts().to_dict()
+        station_dist = dict(df["station"].value_counts())
 
     result = ExportResult(
         records_generated=transform.row_count,

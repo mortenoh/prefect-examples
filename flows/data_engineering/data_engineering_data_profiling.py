@@ -9,6 +9,7 @@ Prefect approach:    Column-level profiling with @task dispatchers, Pydantic
 """
 
 import statistics
+from typing import Any
 
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
@@ -55,7 +56,7 @@ class DatasetProfile(BaseModel):
 
 
 @task
-def generate_dataset(name: str, rows: int = 50) -> list[dict]:
+def generate_dataset(name: str, rows: int = 50) -> list[dict[str, Any]]:
     """Generate a sample dataset for profiling.
 
     Args:
@@ -67,7 +68,7 @@ def generate_dataset(name: str, rows: int = 50) -> list[dict]:
     """
     data = []
     for i in range(1, rows + 1):
-        record: dict = {
+        record: dict[str, Any] = {
             "id": i,
             "name": f"item_{i}" if i % 8 != 0 else None,
             "value": float(i * 7 % 100) if i % 12 != 0 else None,
@@ -80,7 +81,7 @@ def generate_dataset(name: str, rows: int = 50) -> list[dict]:
 
 
 @task
-def infer_column_type(values: list) -> str:
+def infer_column_type(values: list[Any]) -> str:
     """Infer the type of a column from its non-null values.
 
     Args:
@@ -98,7 +99,7 @@ def infer_column_type(values: list) -> str:
 
 
 @task
-def profile_numeric_column(name: str, values: list) -> ColumnProfile:
+def profile_numeric_column(name: str, values: list[Any]) -> ColumnProfile:
     """Profile a numeric column.
 
     Args:
@@ -135,7 +136,7 @@ def profile_numeric_column(name: str, values: list) -> ColumnProfile:
 
 
 @task
-def profile_string_column(name: str, values: list) -> ColumnProfile:
+def profile_string_column(name: str, values: list[Any]) -> ColumnProfile:
     """Profile a string column.
 
     Args:
@@ -163,7 +164,7 @@ def profile_string_column(name: str, values: list) -> ColumnProfile:
 
 
 @task
-def profile_column(name: str, values: list) -> ColumnProfile:
+def profile_column(name: str, values: list[Any]) -> ColumnProfile:
     """Profile a column by dispatching to the appropriate profiler.
 
     Args:
@@ -180,7 +181,7 @@ def profile_column(name: str, values: list) -> ColumnProfile:
 
 
 @task
-def profile_dataset(name: str, data: list[dict]) -> DatasetProfile:
+def profile_dataset(name: str, data: list[dict[str, Any]]) -> DatasetProfile:
     """Profile an entire dataset.
 
     Args:

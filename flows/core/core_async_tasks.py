@@ -7,12 +7,13 @@ Prefect approach:    async def tasks and flows, awaited sequentially.
 """
 
 import asyncio
+from typing import Any
 
 from prefect import flow, task
 
 
 @task
-async def async_fetch(url: str) -> dict:
+async def async_fetch(url: str) -> dict[str, Any]:
     """Simulate an async HTTP fetch.
 
     Args:
@@ -29,7 +30,7 @@ async def async_fetch(url: str) -> dict:
 
 
 @task
-async def async_process(data: dict) -> str:
+async def async_process(data: dict[str, Any]) -> str:
     """Process fetched data asynchronously.
 
     Args:

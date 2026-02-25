@@ -12,6 +12,7 @@ import csv
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -25,7 +26,7 @@ class CsvRecord(BaseModel):
     """A single CSV row with validation metadata."""
 
     row_number: int
-    data: dict
+    data: dict[str, Any]
     valid: bool = True
     errors: list[str] = []
 
@@ -77,7 +78,7 @@ def generate_csv(directory: str, filename: str, rows: int = 10) -> Path:
 
 
 @task
-def read_csv(path: Path) -> list[dict]:
+def read_csv(path: Path) -> list[dict[str, Any]]:
     """Read a CSV file into a list of dicts.
 
     Args:
@@ -94,7 +95,7 @@ def read_csv(path: Path) -> list[dict]:
 
 
 @task
-def validate_csv_row(row: dict, row_number: int, required_columns: list[str]) -> CsvRecord:
+def validate_csv_row(row: dict[str, Any], row_number: int, required_columns: list[str]) -> CsvRecord:
     """Validate a single CSV row.
 
     Args:
@@ -118,7 +119,7 @@ def validate_csv_row(row: dict, row_number: int, required_columns: list[str]) ->
 
 
 @task
-def transform_csv_rows(records: list[CsvRecord]) -> list[dict]:
+def transform_csv_rows(records: list[CsvRecord]) -> list[dict[str, Any]]:
     """Transform valid CSV records.
 
     Args:
@@ -142,7 +143,7 @@ def transform_csv_rows(records: list[CsvRecord]) -> list[dict]:
 
 
 @task
-def write_csv(directory: str, filename: str, rows: list[dict]) -> Path:
+def write_csv(directory: str, filename: str, rows: list[dict[str, Any]]) -> Path:
     """Write rows to a CSV file.
 
     Args:

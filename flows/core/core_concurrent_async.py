@@ -9,12 +9,13 @@ Prefect approach:    asyncio.gather() to run async tasks concurrently,
 
 import asyncio
 import time
+from typing import Any
 
 from prefect import flow, task
 
 
 @task
-async def fetch_endpoint(name: str, delay: float = 0.5) -> dict:
+async def fetch_endpoint(name: str, delay: float = 0.5) -> dict[str, Any]:
     """Simulate fetching data from an API endpoint.
 
     Args:
@@ -32,7 +33,7 @@ async def fetch_endpoint(name: str, delay: float = 0.5) -> dict:
 
 
 @task
-async def aggregate_results(results: list[dict]) -> str:
+async def aggregate_results(results: list[dict[str, Any]]) -> str:
     """Aggregate results from multiple endpoint fetches.
 
     Args:

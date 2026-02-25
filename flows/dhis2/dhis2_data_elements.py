@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
@@ -56,7 +57,7 @@ class DataElementReport(BaseModel):
 
 
 @task
-def fetch_data_elements(client: Dhis2Client) -> list[dict]:
+def fetch_data_elements(client: Dhis2Client) -> list[dict[str, Any]]:
     """Fetch all data elements from DHIS2.
 
     Args:
@@ -71,7 +72,7 @@ def fetch_data_elements(client: Dhis2Client) -> list[dict]:
 
 
 @task
-def flatten_data_elements(raw: list[dict]) -> list[FlatDataElement]:
+def flatten_data_elements(raw: list[dict[str, Any]]) -> list[FlatDataElement]:
     """Flatten raw data elements into typed records.
 
     Args:

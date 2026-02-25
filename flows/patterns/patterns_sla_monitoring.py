@@ -7,6 +7,7 @@ Prefect approach:    time.monotonic() for timing, threshold comparison.
 """
 
 import time
+from typing import Any
 
 from prefect import flow, task
 
@@ -16,7 +17,7 @@ from prefect import flow, task
 
 
 @task
-def fast_task() -> dict:
+def fast_task() -> dict[str, Any]:
     """A task that completes quickly.
 
     Returns:
@@ -30,7 +31,7 @@ def fast_task() -> dict:
 
 
 @task
-def medium_task() -> dict:
+def medium_task() -> dict[str, Any]:
     """A task that takes a moderate amount of time.
 
     Returns:
@@ -44,7 +45,7 @@ def medium_task() -> dict:
 
 
 @task
-def slow_task() -> dict:
+def slow_task() -> dict[str, Any]:
     """A task that takes longer to complete.
 
     Returns:
@@ -58,7 +59,7 @@ def slow_task() -> dict:
 
 
 @task
-def sla_report(results: list[dict], thresholds: dict | None = None) -> str:
+def sla_report(results: list[dict[str, Any]], thresholds: dict[str, float] | None = None) -> str:
     """Check task durations against SLA thresholds and report breaches.
 
     Args:

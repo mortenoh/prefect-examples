@@ -21,11 +21,13 @@ Key concepts:
     # )
 """
 
+from typing import Any
+
 from prefect import flow, task
 
 
 @task
-def fetch_data(source: str) -> dict:
+def fetch_data(source: str) -> dict[str, Any]:
     """Fetch data from a named source.
 
     Args:
@@ -40,7 +42,7 @@ def fetch_data(source: str) -> dict:
 
 
 @task
-def process_data(data: dict) -> str:
+def process_data(data: dict[str, Any]) -> str:
     """Process fetched data.
 
     Args:

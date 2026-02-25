@@ -6,6 +6,9 @@ Airflow equivalent: Custom operators, @task.bash variants (DAGs 013, 047).
 Prefect approach:    Python factory functions that return @task-decorated callables.
 """
 
+from collections.abc import Callable
+from typing import Any
+
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -13,7 +16,7 @@ from prefect import flow, task
 # ---------------------------------------------------------------------------
 
 
-def make_extractor(source: str):
+def make_extractor(source: str) -> Callable[[], dict[str, Any]]:
     """Create an extraction task for the given data source.
 
     Args:
@@ -24,7 +27,7 @@ def make_extractor(source: str):
     """
 
     @task(name=f"extract_{source}")
-    def extract() -> dict:
+    def extract() -> dict[str, Any]:
         data = {"source": source, "records": [f"{source}_record_{i}" for i in range(3)]}
         print(f"Extracted {len(data['records'])} records from {source}")
         return data
@@ -32,7 +35,7 @@ def make_extractor(source: str):
     return extract
 
 
-def retry_task(fn, retries: int = 3):
+def retry_task(fn: Callable[..., Any], retries: int = 3) -> Callable[..., Any]:
     """Wrap a callable as a Prefect task with retry configuration.
 
     Args:
@@ -42,7 +45,7 @@ def retry_task(fn, retries: int = 3):
     Returns:
         A Prefect task with retries configured.
     """
-    wrapped = task(fn, retries=retries, retry_delay_seconds=1)
+    wrapped: Callable[..., Any] = task(fn, retries=retries, retry_delay_seconds=1)  # type: ignore[call-overload]
     return wrapped
 
 
@@ -61,7 +64,7 @@ extract_file = make_extractor("file")
 
 
 @task
-def combine_extracts(extracts: list[dict]) -> str:
+def combine_extracts(extracts: list[dict[str, Any]]) -> str:
     """Combine results from multiple extraction tasks.
 
     Args:

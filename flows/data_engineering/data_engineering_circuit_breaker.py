@@ -9,6 +9,8 @@ Prefect approach:    State machine in a Pydantic model, deterministic
                      simulation via boolean outcomes list.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -127,7 +129,7 @@ def call_with_circuit(circuit: CircuitState, should_succeed: bool) -> tuple[Circ
         return circuit, CallResult(call_number=call_num, allowed=True, success=True, circuit_state="closed")
     else:
         new_failures = circuit.consecutive_failures + 1
-        updates: dict = {
+        updates: dict[str, Any] = {
             "consecutive_failures": new_failures,
             "total_failures": circuit.total_failures + 1,
         }

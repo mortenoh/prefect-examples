@@ -7,6 +7,7 @@ Prefect approach:    subprocess.run() inside a @task -- no special operator.
 """
 
 import subprocess
+from typing import Any
 
 from prefect import flow, task
 
@@ -49,7 +50,7 @@ def run_script(script: str) -> str:
 
 
 @task
-def capture_output(cmd: str) -> dict:
+def capture_output(cmd: str) -> dict[str, Any]:
     """Run a command and capture stdout, stderr, and return code.
 
     Args:

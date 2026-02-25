@@ -13,6 +13,7 @@ from __future__ import annotations
 import csv
 import re
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
@@ -89,7 +90,7 @@ def _complexity_bin(score: int) -> str:
 
 
 @task
-def fetch_indicators(client: Dhis2Client) -> list[dict]:
+def fetch_indicators(client: Dhis2Client) -> list[dict[str, Any]]:
     """Fetch all indicators from DHIS2.
 
     Args:
@@ -104,7 +105,7 @@ def fetch_indicators(client: Dhis2Client) -> list[dict]:
 
 
 @task
-def flatten_indicators(raw: list[dict]) -> list[FlatIndicator]:
+def flatten_indicators(raw: list[dict[str, Any]]) -> list[FlatIndicator]:
     """Parse and flatten indicator expressions.
 
     For each indicator, count operands in numerator and denominator using

@@ -6,6 +6,8 @@ Airflow equivalent: Progressive retry with escalating callbacks (DAG 075).
 Prefect approach:    retries with on_failure hooks for escalation logging.
 """
 
+from typing import Any
+
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -20,7 +22,7 @@ _attempt_counter: dict[str, int] = {}
 # ---------------------------------------------------------------------------
 
 
-def on_task_failure(task, task_run, state):
+def on_task_failure(task: Any, task_run: Any, state: Any) -> None:
     """Log escalation when a task fails.
 
     Args:
@@ -31,7 +33,7 @@ def on_task_failure(task, task_run, state):
     print(f"HOOK  WARNING: Task {task_run.name!r} failed — escalating")
 
 
-def on_flow_completion(flow, flow_run, state):
+def on_flow_completion(flow: Any, flow_run: Any, state: Any) -> None:
     """Log recovery or final outcome when the flow completes.
 
     Args:

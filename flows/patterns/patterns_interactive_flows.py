@@ -7,6 +7,8 @@ Prefect approach:    pause_flow_run() requires a server; here we simulate
                      the pattern with a mock approval step for local testing.
 """
 
+from typing import Any
+
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -15,7 +17,7 @@ from prefect import flow, task
 
 
 @task
-def prepare_data() -> dict:
+def prepare_data() -> dict[str, Any]:
     """Prepare data that requires human approval before publishing.
 
     Returns:
@@ -32,7 +34,7 @@ def prepare_data() -> dict:
 
 
 @task
-def mock_approval(data: dict) -> bool:
+def mock_approval(data: dict[str, Any]) -> bool:
     """Simulate a human approval step.
 
     In production, use prefect.flow_runs.pause_flow_run() to pause
@@ -45,14 +47,16 @@ def mock_approval(data: dict) -> bool:
     Returns:
         True if approved, False if rejected.
     """
-    approved = data.get("total_revenue", 0) > data.get("total_expenses", 0)
+    total_revenue = int(data.get("total_revenue", 0))
+    total_expenses = int(data.get("total_expenses", 0))
+    approved = total_revenue > total_expenses
     status = "APPROVED" if approved else "REJECTED"
     print(f"Approval decision for '{data['report']}': {status}")
     return approved
 
 
 @task
-def publish(data: dict) -> str:
+def publish(data: dict[str, Any]) -> str:
     """Publish approved data.
 
     Args:
@@ -67,7 +71,7 @@ def publish(data: dict) -> str:
 
 
 @task
-def archive(data: dict) -> str:
+def archive(data: dict[str, Any]) -> str:
     """Archive rejected data.
 
     Args:

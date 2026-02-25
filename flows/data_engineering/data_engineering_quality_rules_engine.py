@@ -9,6 +9,8 @@ Prefect approach:    Rule registry pattern with @task dispatchers and
                      Pydantic models for type-safe results.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -24,7 +26,7 @@ class QualityRule(BaseModel):
     name: str
     rule_type: str
     column: str = ""
-    params: dict = {}
+    params: dict[str, Any] = {}
 
 
 class RuleResult(BaseModel):
@@ -55,7 +57,7 @@ class QualityReport(BaseModel):
 
 
 @task
-def build_rules(config: list[dict]) -> list[QualityRule]:
+def build_rules(config: list[dict[str, Any]]) -> list[QualityRule]:
     """Build quality rules from configuration dicts.
 
     Args:
@@ -70,7 +72,7 @@ def build_rules(config: list[dict]) -> list[QualityRule]:
 
 
 @task
-def generate_sample_data(rows: int = 20) -> list[dict]:
+def generate_sample_data(rows: int = 20) -> list[dict[str, Any]]:
     """Generate sample data for quality checking.
 
     Args:
@@ -81,7 +83,7 @@ def generate_sample_data(rows: int = 20) -> list[dict]:
     """
     data = []
     for i in range(1, rows + 1):
-        record: dict = {
+        record: dict[str, Any] = {
             "id": i,
             "name": f"item_{i}" if i % 10 != 0 else "",
             "value": float(i * 10) if i % 15 != 0 else -1.0,
@@ -92,7 +94,7 @@ def generate_sample_data(rows: int = 20) -> list[dict]:
 
 
 @task
-def run_not_null_check(data: list[dict], column: str) -> RuleResult:
+def run_not_null_check(data: list[dict[str, Any]], column: str) -> RuleResult:
     """Check that a column has no null/empty values.
 
     Args:
@@ -116,7 +118,7 @@ def run_not_null_check(data: list[dict], column: str) -> RuleResult:
 
 
 @task
-def run_range_check(data: list[dict], column: str, min_val: float, max_val: float) -> RuleResult:
+def run_range_check(data: list[dict[str, Any]], column: str, min_val: float, max_val: float) -> RuleResult:
     """Check that numeric values fall within a range.
 
     Args:
@@ -146,7 +148,7 @@ def run_range_check(data: list[dict], column: str, min_val: float, max_val: floa
 
 
 @task
-def run_uniqueness_check(data: list[dict], column: str) -> RuleResult:
+def run_uniqueness_check(data: list[dict[str, Any]], column: str) -> RuleResult:
     """Check that values in a column are unique.
 
     Args:
@@ -171,7 +173,7 @@ def run_uniqueness_check(data: list[dict], column: str) -> RuleResult:
 
 
 @task
-def run_completeness_check(data: list[dict], expected_count: int) -> RuleResult:
+def run_completeness_check(data: list[dict[str, Any]], expected_count: int) -> RuleResult:
     """Check that the dataset has the expected number of rows.
 
     Args:
@@ -194,7 +196,7 @@ def run_completeness_check(data: list[dict], expected_count: int) -> RuleResult:
 
 
 @task
-def execute_rule(data: list[dict], rule: QualityRule) -> RuleResult:
+def execute_rule(data: list[dict[str, Any]], rule: QualityRule) -> RuleResult:
     """Dispatch and execute a quality rule.
 
     Args:
@@ -305,7 +307,7 @@ def publish_quality_report(report: QualityReport) -> str:
 
 
 @flow(name="data_engineering_quality_rules_engine", log_prints=True)
-def quality_rules_engine_flow(rules_config: list[dict] | None = None) -> QualityReport:
+def quality_rules_engine_flow(rules_config: list[dict[str, Any]] | None = None) -> QualityReport:
     """Run a configuration-driven quality rules engine.
 
     Args:

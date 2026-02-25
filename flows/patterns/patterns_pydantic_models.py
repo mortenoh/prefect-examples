@@ -7,6 +7,8 @@ Airflow equivalent: XCom push/pull with complex types (needs JSON/pickle).
 Prefect approach:    Pydantic models flow naturally between tasks.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -34,7 +36,7 @@ class UserRecord(BaseModel):
 class ProcessingResult(BaseModel):
     """Outcome of a processing step."""
 
-    records: list[dict]
+    records: list[dict[str, Any]]
     errors: list[str]
     summary: str
 
@@ -54,12 +56,12 @@ def extract_users(config: PipelineConfig) -> list[UserRecord]:
     Returns:
         A list of validated UserRecord instances.
     """
-    raw = [
+    raw: list[dict[str, str | int]] = [
         {"name": "Alice", "email": "alice@example.com", "age": 30},
         {"name": "Bob", "email": "bob@example.com", "age": 25},
         {"name": "Charlie", "email": "charlie@example.com", "age": 35},
     ]
-    users = [UserRecord(**r) for r in raw[: config.batch_size]]
+    users = [UserRecord(**r) for r in raw[: config.batch_size]]  # type: ignore[arg-type]
     print(f"Extracted {len(users)} users from {config.source}")
     return users
 

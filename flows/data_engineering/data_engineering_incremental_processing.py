@@ -13,6 +13,7 @@ import datetime
 import json
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -95,7 +96,7 @@ def identify_new_files(all_files: list[Path], manifest: ProcessingManifest) -> l
 
 
 @task
-def process_file(path: Path) -> dict:
+def process_file(path: Path) -> dict[str, Any]:
     """Process a single file and return record count.
 
     Args:
@@ -112,7 +113,7 @@ def process_file(path: Path) -> dict:
 
 
 @task
-def update_manifest(manifest: ProcessingManifest, results: list[dict], path: Path) -> ProcessingManifest:
+def update_manifest(manifest: ProcessingManifest, results: list[dict[str, Any]], path: Path) -> ProcessingManifest:
     """Update and save the manifest with newly processed files.
 
     Args:

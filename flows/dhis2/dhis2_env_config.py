@@ -70,7 +70,7 @@ def from_secret_block() -> ConfigSource:
     try:
         from prefect.blocks.system import Secret
 
-        secret = Secret.load("dhis2-password")  # type: ignore[union-attr]
+        secret = Secret.load("dhis2-password")
         value = secret.get()  # type: ignore[union-attr]
     except Exception:
         value = "district"

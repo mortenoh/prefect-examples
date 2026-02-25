@@ -8,6 +8,8 @@ Prefect approach:    Python decorators that wrap @task with extra features.
 
 import functools
 import time
+from collections.abc import Callable
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -17,7 +19,7 @@ from pydantic import BaseModel
 # ---------------------------------------------------------------------------
 
 
-def timed_task(fn):
+def timed_task(fn: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator that adds execution timing to a task function.
 
     Args:
@@ -29,7 +31,7 @@ def timed_task(fn):
 
     @task(name=fn.__name__)
     @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         start = time.monotonic()
         result = fn(*args, **kwargs)
         duration = round(time.monotonic() - start, 4)
@@ -41,7 +43,7 @@ def timed_task(fn):
     return wrapper
 
 
-def validated_task(model: type[BaseModel]):
+def validated_task(model: type[BaseModel]) -> Callable[..., Any]:
     """Decorator factory that validates task output against a Pydantic model.
 
     Args:
@@ -51,10 +53,10 @@ def validated_task(model: type[BaseModel]):
         A decorator that wraps a function as a validated task.
     """
 
-    def decorator(fn):
+    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
         @task(name=fn.__name__)
         @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = fn(*args, **kwargs)
             validated = model(**result) if isinstance(result, dict) else result
             print(f"{fn.__name__} output validated against {model.__name__}")
@@ -84,7 +86,7 @@ class MetricResult(BaseModel):
 
 
 @timed_task
-def compute_metric(name: str, value: float) -> dict:
+def compute_metric(name: str, value: float) -> dict[str, Any]:
     """Compute a named metric (wrapped with timing).
 
     Args:
@@ -99,7 +101,7 @@ def compute_metric(name: str, value: float) -> dict:
 
 
 @validated_task(MetricResult)
-def produce_metric(name: str, value: float, unit: str) -> dict:
+def produce_metric(name: str, value: float, unit: str) -> dict[str, Any]:
     """Produce a metric validated against MetricResult schema.
 
     Args:
@@ -114,7 +116,7 @@ def produce_metric(name: str, value: float, unit: str) -> dict:
 
 
 @task
-def report_metrics(metrics: list) -> str:
+def report_metrics(metrics: list[Any]) -> str:
     """Produce a summary of collected metrics.
 
     Args:

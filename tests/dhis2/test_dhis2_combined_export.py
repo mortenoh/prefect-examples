@@ -3,6 +3,7 @@
 import importlib.util
 import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 _spec = importlib.util.spec_from_file_location(
@@ -33,7 +34,7 @@ def _mock_client_with_side_effect() -> MagicMock:
     """Create a mock Dhis2Client that dispatches based on the endpoint."""
     mock_client = MagicMock(spec=Dhis2Client)
 
-    def _fetch_side_effect(endpoint: str, **kwargs: object) -> list[dict]:
+    def _fetch_side_effect(endpoint: str, **kwargs: object) -> list[dict[str, Any]]:
         if "organisationUnits" in endpoint:
             return SAMPLE_OU
         elif "dataElements" in endpoint:

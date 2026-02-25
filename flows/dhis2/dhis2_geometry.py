@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
@@ -56,7 +57,7 @@ class GeometryReport(BaseModel):
 
 
 @task
-def fetch_with_geometry(client: Dhis2Client) -> list[dict]:
+def fetch_with_geometry(client: Dhis2Client) -> list[dict[str, Any]]:
     """Fetch org units with geometry from DHIS2.
 
     Args:
@@ -75,7 +76,7 @@ def fetch_with_geometry(client: Dhis2Client) -> list[dict]:
 
 
 @task
-def build_features(raw: list[dict]) -> list[GeoFeature]:
+def build_features(raw: list[dict[str, Any]]) -> list[GeoFeature]:
     """Build GeoJSON features from org units that have geometry.
 
     Args:
@@ -110,20 +111,20 @@ def build_features(raw: list[dict]) -> list[GeoFeature]:
 def _extract_coords(geometry: dict[str, object]) -> list[tuple[float, float]]:
     """Extract all (lon, lat) pairs from a geometry object."""
     geom_type = geometry.get("type", "")
-    coords = geometry.get("coordinates", [])
+    raw_coords = geometry.get("coordinates", [])
+    coords: list[object] = raw_coords if isinstance(raw_coords, list) else []
     points: list[tuple[float, float]] = []
     if geom_type == "Point":
-        c = coords  # type: ignore[assignment]
-        if isinstance(c, list) and len(c) >= 2:
-            points.append((float(c[0]), float(c[1])))
+        if len(coords) >= 2:
+            points.append((float(coords[0]), float(coords[1])))  # type: ignore[arg-type]
     elif geom_type == "Polygon":
-        for ring in coords:  # type: ignore[union-attr]
+        for ring in coords:
             if isinstance(ring, list):
                 for pt in ring:
                     if isinstance(pt, list) and len(pt) >= 2:
                         points.append((float(pt[0]), float(pt[1])))
     elif geom_type == "MultiPolygon":
-        for polygon in coords:  # type: ignore[union-attr]
+        for polygon in coords:
             if isinstance(polygon, list):
                 for ring in polygon:
                     if isinstance(ring, list):

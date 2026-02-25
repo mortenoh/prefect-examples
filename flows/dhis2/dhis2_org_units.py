@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
@@ -55,7 +56,7 @@ class OrgUnitReport(BaseModel):
 
 
 @task
-def fetch_org_units(client: Dhis2Client) -> list[dict]:
+def fetch_org_units(client: Dhis2Client) -> list[dict[str, Any]]:
     """Fetch all organisation units from DHIS2.
 
     Args:
@@ -70,7 +71,7 @@ def fetch_org_units(client: Dhis2Client) -> list[dict]:
 
 
 @task
-def flatten_org_units(raw: list[dict]) -> list[FlatOrgUnit]:
+def flatten_org_units(raw: list[dict[str, Any]]) -> list[FlatOrgUnit]:
     """Flatten raw org units into typed records.
 
     Extracts parent.id, createdBy.username, computes hierarchy depth from

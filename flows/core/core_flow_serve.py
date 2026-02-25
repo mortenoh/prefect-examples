@@ -15,12 +15,13 @@ Notes:
 """
 
 import datetime
+from typing import Any
 
 from prefect import flow, task
 
 
 @task
-def extract_data() -> list[dict]:
+def extract_data() -> list[dict[str, Any]]:
     """Extract sample data records.
 
     Returns:
@@ -36,7 +37,7 @@ def extract_data() -> list[dict]:
 
 
 @task
-def transform_data(records: list[dict]) -> list[dict]:
+def transform_data(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Transform records by normalising values.
 
     Args:
@@ -52,7 +53,7 @@ def transform_data(records: list[dict]) -> list[dict]:
 
 
 @task
-def load_data(records: list[dict]) -> str:
+def load_data(records: list[dict[str, Any]]) -> str:
     """Load transformed records.
 
     Args:

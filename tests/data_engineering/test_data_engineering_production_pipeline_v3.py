@@ -4,6 +4,7 @@ import csv
 import importlib.util
 import sys
 from pathlib import Path
+from typing import Any
 
 _spec = importlib.util.spec_from_file_location(
     "data_engineering_production_pipeline_v3",
@@ -70,7 +71,7 @@ def test_enrich_records() -> None:
 
 def test_enrich_records_cache_hit() -> None:
     records = [{"id": 1}]
-    cache: dict = {}
+    cache: dict[str, Any] = {}
     enrich_records.fn(records, cache)
     _, stats = enrich_records.fn(records, cache)
     assert stats["hits"] == 1

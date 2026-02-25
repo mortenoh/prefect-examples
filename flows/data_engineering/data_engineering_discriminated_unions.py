@@ -7,7 +7,7 @@ Airflow equivalent: Multi-API dashboard with heterogeneous sources (DAG 098).
 Prefect approach:    Literal discriminator field, union type, dispatch @task.
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from prefect import flow, task
 from pydantic import BaseModel, Field
@@ -66,7 +66,7 @@ Event = Annotated[
 
 
 @task
-def parse_events(raw: list[dict]) -> list[Event]:
+def parse_events(raw: list[dict[str, Any]]) -> list[Event]:
     """Parse raw event dicts into typed Event objects.
 
     Args:
@@ -77,7 +77,7 @@ def parse_events(raw: list[dict]) -> list[Event]:
     """
     from pydantic import TypeAdapter
 
-    adapter = TypeAdapter(Event)
+    adapter: TypeAdapter[Event] = TypeAdapter(Event)
     events = [adapter.validate_python(r) for r in raw]
     print(f"Parsed {len(events)} events")
     return events
@@ -162,7 +162,7 @@ def route_event(event: Event) -> ProcessingResult:
 
 
 @task
-def summarize_processing(results: list[ProcessingResult]) -> dict:
+def summarize_processing(results: list[ProcessingResult]) -> dict[str, Any]:
     """Summarise processing results by event type.
 
     Args:
@@ -187,7 +187,7 @@ def summarize_processing(results: list[ProcessingResult]) -> dict:
 
 
 @flow(name="data_engineering_discriminated_unions", log_prints=True)
-def discriminated_unions_flow(raw_events: list[dict] | None = None) -> dict:
+def discriminated_unions_flow(raw_events: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """Process heterogeneous events using discriminated unions.
 
     Args:

@@ -7,6 +7,8 @@ Prefect approach:    Secret block from prefect.blocks.system with graceful
                      fallback for local development.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from prefect.blocks.system import Secret
 
@@ -24,7 +26,7 @@ def get_api_key() -> str:
     """
     try:
         secret = Secret.load("example-api-key")
-        api_key = secret.get()  # type: ignore[union-attr]
+        api_key: str = secret.get()  # type: ignore[union-attr]
         print("Loaded API key from Secret block")
     except ValueError:
         api_key = "dev-fallback-key-12345"
@@ -33,7 +35,7 @@ def get_api_key() -> str:
 
 
 @task
-def call_api(api_key: str, endpoint: str) -> dict:
+def call_api(api_key: str, endpoint: str) -> dict[str, Any]:
     """Simulate an API call using the provided key.
 
     Args:

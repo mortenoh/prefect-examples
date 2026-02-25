@@ -6,14 +6,17 @@ Airflow equivalent: Variables + params.
 Prefect approach:    Variable.get()/set() + flow parameters.
 """
 
+from __future__ import annotations
+
 import json
+from typing import Any
 
 from prefect import flow, task
 from prefect.variables import Variable
 
 
 @task
-def read_config() -> dict:
+def read_config() -> dict[str, Any]:
     """Set and retrieve an example config variable.
 
     Writes a JSON config to a Prefect Variable, reads it back, and
@@ -24,13 +27,13 @@ def read_config() -> dict:
     """
     Variable.set("example_config", '{"debug": true, "batch_size": 100}', overwrite=True)
     raw = Variable.get("example_config", default="{}")
-    config = json.loads(str(raw))
+    config: dict[str, Any] = json.loads(str(raw))
     print(f"Loaded config: {config}")
     return config
 
 
 @task
-def process_with_config(config: dict, env: str) -> str:
+def process_with_config(config: dict[str, Any], env: str) -> str:
     """Use the configuration to drive processing behaviour.
 
     Args:

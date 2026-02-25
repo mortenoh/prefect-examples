@@ -11,6 +11,7 @@ Prefect approach:    Windowed processing with .map(), statistics module
 
 import random
 import statistics
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -40,7 +41,7 @@ class WindowResult(BaseModel):
     max_val: float
     median: float
     anomaly_count: int
-    anomalies: list[dict]
+    anomalies: list[dict[str, Any]]
 
 
 class StreamResult(BaseModel):
@@ -52,7 +53,7 @@ class StreamResult(BaseModel):
     global_stdev: float
     total_anomalies: int
     window_results: list[WindowResult]
-    trends: list[dict]
+    trends: list[dict[str, Any]]
 
 
 # ---------------------------------------------------------------------------
@@ -61,7 +62,7 @@ class StreamResult(BaseModel):
 
 
 @task
-def generate_stream(total_records: int = 100, seed: int = 42) -> list[dict]:
+def generate_stream(total_records: int = 100, seed: int = 42) -> list[dict[str, Any]]:
     """Generate a synthetic data stream with some anomalies.
 
     Args:
@@ -84,7 +85,7 @@ def generate_stream(total_records: int = 100, seed: int = 42) -> list[dict]:
 
 
 @task
-def create_windows(data: list[dict], window_size: int = 20) -> list[BatchWindow]:
+def create_windows(data: list[dict[str, Any]], window_size: int = 20) -> list[BatchWindow]:
     """Split data into fixed-size windows.
 
     Args:
@@ -94,7 +95,7 @@ def create_windows(data: list[dict], window_size: int = 20) -> list[BatchWindow]
     Returns:
         List of BatchWindow definitions.
     """
-    windows = []
+    windows: list[BatchWindow] = []
     for i in range(0, len(data), window_size):
         end = min(i + window_size, len(data))
         windows.append(
@@ -110,7 +111,7 @@ def create_windows(data: list[dict], window_size: int = 20) -> list[BatchWindow]
 
 
 @task
-def process_window(data: list[dict], window: BatchWindow) -> WindowResult:
+def process_window(data: list[dict[str, Any]], window: BatchWindow) -> WindowResult:
     """Process a single window: compute stats and detect anomalies.
 
     Args:
@@ -181,7 +182,7 @@ def merge_window_results(results: list[WindowResult]) -> StreamResult:
 
 
 @task
-def detect_trends(results: list[WindowResult]) -> list[dict]:
+def detect_trends(results: list[WindowResult]) -> list[dict[str, Any]]:
     """Detect trends between consecutive windows.
 
     Args:

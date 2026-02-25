@@ -8,6 +8,7 @@ Prefect approach:    Compose all Phase 3 features into a realistic pipeline.
 """
 
 import datetime
+from typing import Any
 
 from prefect import flow, get_run_logger, tags, task
 from prefect.artifacts import create_markdown_artifact
@@ -61,7 +62,7 @@ class PipelineMetrics(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-def on_pipeline_completion(flow, flow_run, state):
+def on_pipeline_completion(flow: Any, flow_run: Any, state: Any) -> None:
     """Log pipeline completion.
 
     Args:
@@ -78,7 +79,7 @@ def on_pipeline_completion(flow, flow_run, state):
 
 
 @task(retries=2, retry_delay_seconds=1)
-def extract_record(record_data: dict) -> SourceRecord:
+def extract_record(record_data: dict[str, Any]) -> SourceRecord:
     """Extract and parse a single source record.
 
     Args:
@@ -111,7 +112,7 @@ def validate_record(record: SourceRecord) -> ValidatedRecord | None:
 
 
 @task
-def transform_record(record: ValidatedRecord) -> dict:
+def transform_record(record: ValidatedRecord) -> dict[str, Any]:
     """Apply business transformations to a validated record.
 
     Args:
@@ -127,7 +128,7 @@ def transform_record(record: ValidatedRecord) -> dict:
 
 
 @task
-def compute_metrics(records: list[dict]) -> PipelineMetrics:
+def compute_metrics(records: list[dict[str, Any]]) -> PipelineMetrics:
     """Compute pipeline metrics from processed records.
 
     Args:
@@ -191,7 +192,7 @@ def extract_stage() -> list[SourceRecord]:
     Returns:
         A list of source records.
     """
-    raw_data = [
+    raw_data: list[dict[str, Any]] = [
         {"id": 1, "name": "Alice", "value": 250.0, "region": "US"},
         {"id": 2, "name": "Bob", "value": 150.0, "region": "EU"},
         {"id": 3, "name": "Charlie", "value": 300.0, "region": "US"},
@@ -224,7 +225,7 @@ def validate_stage(records: list[SourceRecord]) -> list[ValidatedRecord]:
 
 
 @flow(name="patterns_transform", log_prints=True)
-def transform_stage(records: list[ValidatedRecord]) -> list[dict]:
+def transform_stage(records: list[ValidatedRecord]) -> list[dict[str, Any]]:
     """Transform validated records.
 
     Args:

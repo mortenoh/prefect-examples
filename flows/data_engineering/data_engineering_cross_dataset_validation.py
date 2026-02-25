@@ -8,6 +8,8 @@ Prefect approach:    Pure @task functions for FK checks, Pydantic models for
                      structured results.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -24,7 +26,7 @@ class IntegrityResult(BaseModel):
     parent_key: str
     total_children: int
     orphan_count: int
-    orphan_keys: list
+    orphan_keys: list[Any]
     passed: bool
 
 
@@ -44,7 +46,7 @@ class CrossValidationReport(BaseModel):
 
 
 @task
-def generate_customers() -> list[dict]:
+def generate_customers() -> list[dict[str, Any]]:
     """Generate a customer dataset.
 
     Returns:
@@ -54,7 +56,7 @@ def generate_customers() -> list[dict]:
 
 
 @task
-def generate_products() -> list[dict]:
+def generate_products() -> list[dict[str, Any]]:
     """Generate a product dataset.
 
     Returns:
@@ -64,7 +66,7 @@ def generate_products() -> list[dict]:
 
 
 @task
-def generate_orders() -> list[dict]:
+def generate_orders() -> list[dict[str, Any]]:
     """Generate an order dataset with some deliberately orphaned references.
 
     Returns:
@@ -85,8 +87,8 @@ def generate_orders() -> list[dict]:
 
 @task
 def check_referential_integrity(
-    child_data: list[dict],
-    parent_data: list[dict],
+    child_data: list[dict[str, Any]],
+    parent_data: list[dict[str, Any]],
     child_key: str,
     parent_key: str,
     check_name: str,

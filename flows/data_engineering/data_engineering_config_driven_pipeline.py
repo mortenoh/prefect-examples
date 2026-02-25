@@ -8,6 +8,8 @@ Airflow equivalent: API-triggered scheduling with config payload (DAG 109).
 Prefect approach:    Pydantic config models, stage dispatcher @task.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -22,7 +24,7 @@ class StageConfig(BaseModel):
     name: str
     enabled: bool = True
     task_type: str = "default"
-    params: dict = {}
+    params: dict[str, Any] = {}
 
 
 class PipelineConfig(BaseModel):
@@ -58,7 +60,7 @@ class PipelineResult(BaseModel):
 
 
 @task
-def parse_config(raw: dict) -> PipelineConfig:
+def parse_config(raw: dict[str, Any]) -> PipelineConfig:
     """Parse a raw config dict into a PipelineConfig.
 
     Args:
@@ -73,7 +75,7 @@ def parse_config(raw: dict) -> PipelineConfig:
 
 
 @task
-def execute_extract(params: dict) -> dict:
+def execute_extract(params: dict[str, Any]) -> dict[str, Any]:
     """Simulate an extract stage.
 
     Args:
@@ -88,7 +90,7 @@ def execute_extract(params: dict) -> dict:
 
 
 @task
-def execute_validate(params: dict, context: dict) -> dict:
+def execute_validate(params: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
     """Simulate a validate stage.
 
     Args:
@@ -105,7 +107,7 @@ def execute_validate(params: dict, context: dict) -> dict:
 
 
 @task
-def execute_transform(params: dict, context: dict) -> dict:
+def execute_transform(params: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
     """Simulate a transform stage.
 
     Args:
@@ -122,7 +124,7 @@ def execute_transform(params: dict, context: dict) -> dict:
 
 
 @task
-def execute_load(params: dict, context: dict) -> dict:
+def execute_load(params: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
     """Simulate a load stage.
 
     Args:
@@ -138,7 +140,7 @@ def execute_load(params: dict, context: dict) -> dict:
 
 
 @task
-def dispatch_stage(stage: StageConfig, context: dict) -> StageResult:
+def dispatch_stage(stage: StageConfig, context: dict[str, Any]) -> StageResult:
     """Dispatch a stage to its handler based on task_type.
 
     Args:
@@ -158,7 +160,9 @@ def dispatch_stage(stage: StageConfig, context: dict) -> StageResult:
     if handler is None:
         return StageResult(stage_name=stage.name, status="error", details=f"Unknown task type: {stage.task_type}")
 
-    result = handler.fn(stage.params) if stage.task_type == "extract" else handler.fn(stage.params, context)
+    result: dict[str, Any] = (
+        handler.fn(stage.params) if stage.task_type == "extract" else handler.fn(stage.params, context)  # type: ignore[attr-defined]
+    )
 
     return StageResult(
         stage_name=stage.name,
@@ -175,7 +179,7 @@ def dispatch_stage(stage: StageConfig, context: dict) -> StageResult:
 
 
 @flow(name="data_engineering_config_driven_pipeline", log_prints=True)
-def config_driven_pipeline_flow(raw_config: dict | None = None) -> PipelineResult:
+def config_driven_pipeline_flow(raw_config: dict[str, Any] | None = None) -> PipelineResult:
     """Execute a pipeline driven by configuration.
 
     Args:
@@ -198,7 +202,7 @@ def config_driven_pipeline_flow(raw_config: dict | None = None) -> PipelineResul
     config = parse_config(raw_config)
 
     results: list[StageResult] = []
-    context: dict = {}
+    context: dict[str, Any] = {}
     skipped = 0
 
     for stage in config.stages:

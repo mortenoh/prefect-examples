@@ -8,6 +8,7 @@ Prefect approach:    Compose Phase 2 features into a realistic pipeline.
 """
 
 import datetime
+from typing import Any
 
 from prefect import flow, get_run_logger, tags, task
 from prefect.artifacts import create_markdown_artifact
@@ -19,7 +20,7 @@ from prefect.cache_policies import INPUTS
 
 
 @task(retries=2, retry_delay_seconds=1)
-def validate(record: dict) -> dict:
+def validate(record: dict[str, Any]) -> dict[str, Any]:
     """Validate a record with automatic retries.
 
     Args:
@@ -34,7 +35,7 @@ def validate(record: dict) -> dict:
 
 
 @task(cache_policy=INPUTS)
-def enrich(record: dict) -> dict:
+def enrich(record: dict[str, Any]) -> dict[str, Any]:
     """Enrich a record with metadata, cached by input.
 
     Args:
@@ -79,7 +80,7 @@ def notify(summary: str) -> None:
 
 
 @flow(name="core_extract", log_prints=True)
-def extract_stage() -> list[dict]:
+def extract_stage() -> list[dict[str, Any]]:
     """Extract records from the source system.
 
     Returns:
@@ -97,7 +98,7 @@ def extract_stage() -> list[dict]:
 
 
 @flow(name="core_transform", log_prints=True)
-def transform_stage(records: list[dict]) -> list[dict]:
+def transform_stage(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Validate and enrich records using Phase 2 features.
 
     Uses retries on validate, caching on enrich, and mapped execution.
@@ -116,7 +117,7 @@ def transform_stage(records: list[dict]) -> list[dict]:
 
 
 @flow(name="core_load", log_prints=True, persist_result=True)
-def load_stage(records: list[dict]) -> str:
+def load_stage(records: list[dict[str, Any]]) -> str:
     """Load processed records and return a summary.
 
     Args:

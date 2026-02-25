@@ -69,11 +69,11 @@ async def async_map_and_submit_flow() -> None:
     transformed = [f.result() for f in transform_futures]
 
     # Use .submit() for individual async task runs
-    validate_futures = [async_validate.submit(item) for item in transformed]
+    validate_futures = [async_validate.submit(item) for item in transformed]  # type: ignore[call-overload]
     validations = [f.result() for f in validate_futures]
 
     valid_items = [item for item, valid in zip(transformed, validations, strict=True) if valid]
-    await async_summarize(valid_items)
+    await async_summarize(valid_items)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":

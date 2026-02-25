@@ -3,6 +3,7 @@
 import importlib.util
 import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from prefect_examples.dhis2 import Dhis2Credentials
@@ -46,7 +47,7 @@ def _mock_client_with_side_effect() -> MagicMock:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.get_server_info.return_value = SAMPLE_SYSTEM_INFO
 
-    def _fetch_side_effect(endpoint: str, **kwargs: object) -> list[dict]:
+    def _fetch_side_effect(endpoint: str, **kwargs: object) -> list[dict[str, Any]]:
         if "organisationUnits" in endpoint:
             return SAMPLE_ORG_UNITS
         elif "dataElements" in endpoint:

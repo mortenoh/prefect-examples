@@ -6,6 +6,8 @@ Airflow equivalent: Thin DAG wiring, logic in modules (DAGs 077-078).
 Prefect approach:    Pure functions for logic, thin @task wrappers.
 """
 
+from typing import Any
+
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -13,7 +15,7 @@ from prefect import flow, task
 # ---------------------------------------------------------------------------
 
 
-def _extract_records() -> list[dict]:
+def _extract_records() -> list[dict[str, Any]]:
     """Extract raw records from the source.
 
     Returns:
@@ -26,7 +28,7 @@ def _extract_records() -> list[dict]:
     ]
 
 
-def _validate_record(record: dict) -> dict:
+def _validate_record(record: dict[str, Any]) -> dict[str, Any]:
     """Validate a single record.
 
     Args:
@@ -45,7 +47,7 @@ def _validate_record(record: dict) -> dict:
     return {**record, "valid": True}
 
 
-def _transform_record(record: dict) -> dict:
+def _transform_record(record: dict[str, Any]) -> dict[str, Any]:
     """Apply business transformations to a validated record.
 
     Args:
@@ -72,7 +74,7 @@ def _transform_record(record: dict) -> dict:
 
 
 @task
-def extract() -> list[dict]:
+def extract() -> list[dict[str, Any]]:
     """Extract records (thin wrapper over pure function).
 
     Returns:
@@ -84,7 +86,7 @@ def extract() -> list[dict]:
 
 
 @task
-def validate(record: dict) -> dict:
+def validate(record: dict[str, Any]) -> dict[str, Any]:
     """Validate a record (thin wrapper over pure function).
 
     Args:
@@ -97,7 +99,7 @@ def validate(record: dict) -> dict:
 
 
 @task
-def transform(record: dict) -> dict:
+def transform(record: dict[str, Any]) -> dict[str, Any]:
     """Transform a record (thin wrapper over pure function).
 
     Args:

@@ -6,7 +6,10 @@ Airflow equivalent: complex DAG with branching, sensors, callbacks.
 Prefect approach:    combine subflows, .map(), result passing, hooks.
 """
 
+from __future__ import annotations
+
 import datetime
+from typing import Any
 
 from prefect import flow, task
 
@@ -16,7 +19,7 @@ from prefect import flow, task
 
 
 @task
-def validate_record(record: dict) -> dict:
+def validate_record(record: dict[str, Any]) -> dict[str, Any]:
     """Mark a record as valid after basic checks.
 
     Args:
@@ -31,7 +34,7 @@ def validate_record(record: dict) -> dict:
 
 
 @task
-def enrich_record(record: dict) -> dict:
+def enrich_record(record: dict[str, Any]) -> dict[str, Any]:
     """Add enrichment metadata to a validated record.
 
     Args:
@@ -65,7 +68,7 @@ def notify(summary: str) -> None:
 
 
 @flow(name="basics_extract", log_prints=True)
-def extract_stage() -> list[dict]:
+def extract_stage() -> list[dict[str, Any]]:
     """Extract sample records from the source system.
 
     Returns:
@@ -82,7 +85,7 @@ def extract_stage() -> list[dict]:
 
 
 @flow(name="basics_transform", log_prints=True)
-def transform_stage(raw: list[dict]) -> list[dict]:
+def transform_stage(raw: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Validate and enrich raw records using mapped tasks.
 
     Args:
@@ -99,7 +102,7 @@ def transform_stage(raw: list[dict]) -> list[dict]:
 
 
 @flow(name="basics_load", log_prints=True)
-def load_stage(data: list[dict]) -> str:
+def load_stage(data: list[dict[str, Any]]) -> str:
     """Persist processed records and return a summary.
 
     Args:

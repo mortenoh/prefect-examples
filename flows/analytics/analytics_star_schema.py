@@ -9,6 +9,8 @@ Prefect approach:    Build 3 dimension tables, a fact table, normalize,
                      compute composite index, and rank countries.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -74,7 +76,7 @@ class StarSchemaReport(BaseModel):
 
 
 @task
-def build_country_dimension(data: list[dict]) -> list[DimCountry]:
+def build_country_dimension(data: list[dict[str, Any]]) -> list[DimCountry]:
     """Build country dimension table with surrogate keys.
 
     Args:
@@ -109,7 +111,7 @@ def build_time_dimension(start_year: int, end_year: int) -> list[DimTime]:
 
 
 @task
-def build_indicator_dimension(indicators: list[dict]) -> list[DimIndicator]:
+def build_indicator_dimension(indicators: list[dict[str, Any]]) -> list[DimIndicator]:
     """Build indicator dimension table.
 
     Args:

@@ -4,6 +4,7 @@ import importlib.util
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 _spec = importlib.util.spec_from_file_location(
     "data_engineering_response_caching",
@@ -52,7 +53,7 @@ def test_check_cache_hit() -> None:
 
 
 def test_fetch_with_cache_miss_then_hit() -> None:
-    cache: dict = {}
+    cache: dict[str, Any] = {}
     _, hit1 = fetch_with_cache.fn("/api/test", {"a": 1}, cache, 300)
     assert hit1 is False
     _, hit2 = fetch_with_cache.fn("/api/test", {"a": 1}, cache, 300)

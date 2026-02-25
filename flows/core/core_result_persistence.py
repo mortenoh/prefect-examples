@@ -8,12 +8,13 @@ Prefect approach:    persist_result=True on @task/@flow,
 """
 
 import statistics
+from typing import Any
 
 from prefect import flow, task
 
 
 @task(persist_result=True)
-def compute_metrics(data: list[int]) -> dict:
+def compute_metrics(data: list[int]) -> dict[str, Any]:
     """Compute summary metrics from a list of integers.
 
     Results are persisted so they survive restarts and can be
@@ -36,7 +37,7 @@ def compute_metrics(data: list[int]) -> dict:
 
 
 @task(persist_result=True, result_storage_key="latest-summary-{parameters[label]}")
-def build_summary(metrics: dict, label: str) -> str:
+def build_summary(metrics: dict[str, Any], label: str) -> str:
     """Build a human-readable summary from metrics.
 
     The result_storage_key includes the label parameter, making it

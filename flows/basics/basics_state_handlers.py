@@ -6,6 +6,8 @@ Airflow equivalent: on_failure_callback / trigger_rule.
 Prefect approach:    state hooks + allow_failure.
 """
 
+from typing import Any
+
 from prefect import allow_failure, flow, task
 
 # ---------------------------------------------------------------------------
@@ -13,7 +15,7 @@ from prefect import allow_failure, flow, task
 # ---------------------------------------------------------------------------
 
 
-def on_task_failure(task, task_run, state):
+def on_task_failure(task: Any, task_run: Any, state: Any) -> None:
     """Log details when a task enters a failed state.
 
     Args:
@@ -24,7 +26,7 @@ def on_task_failure(task, task_run, state):
     print(f"HOOK  Task {task_run.name!r} failed with state: {state.name}")
 
 
-def on_flow_completion(flow, flow_run, state):
+def on_flow_completion(flow: Any, flow_run: Any, state: Any) -> None:
     """Log details when the flow completes (regardless of outcome).
 
     Args:
@@ -49,7 +51,7 @@ def succeed_task() -> str:
 
 
 @task(on_failure=[on_task_failure])
-def fail_task():
+def fail_task() -> None:
     """A task that always raises an error."""
     raise ValueError("Intentional failure for demonstration")
 

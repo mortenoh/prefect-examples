@@ -7,6 +7,7 @@ Prefect approach:    Flow parameters for date ranges, gap detection logic.
 """
 
 import datetime
+from typing import Any
 
 from prefect import flow, task
 
@@ -16,7 +17,7 @@ from prefect import flow, task
 
 
 @task
-def process_date(date_str: str) -> dict:
+def process_date(date_str: str) -> dict[str, Any]:
     """Process data for a single date.
 
     Args:
@@ -56,7 +57,7 @@ def detect_gaps(processed_dates: list[str], start_date: str, end_date: str) -> l
 
 
 @task
-def backfill_report(original: list[dict], backfilled: list[dict]) -> str:
+def backfill_report(original: list[dict[str, Any]], backfilled: list[dict[str, Any]]) -> str:
     """Generate a report on backfill results.
 
     Args:

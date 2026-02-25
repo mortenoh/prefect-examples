@@ -3,6 +3,7 @@
 import importlib.util
 import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 _spec = importlib.util.spec_from_file_location(
@@ -19,7 +20,7 @@ http_post = _mod.http_post
 check_endpoint = _mod.check_endpoint
 
 
-def _mock_response(json_data: dict, status_code: int = 200) -> MagicMock:
+def _mock_response(json_data: dict[str, Any], status_code: int = 200) -> MagicMock:
     resp = MagicMock()
     resp.status_code = status_code
     resp.json.return_value = json_data

@@ -8,6 +8,8 @@ Prefect approach:    Simulated pagination, itertools-style chunking,
                      .map() for parallel chunk processing.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -20,7 +22,7 @@ class PageResponse(BaseModel):
     """Response from a single API page."""
 
     page: int
-    records: list[dict]
+    records: list[dict[str, Any]]
     total_pages: int
     has_next: bool
 
@@ -86,7 +88,7 @@ def fetch_all_pages(page_size: int = 10, total_records: int = 45) -> list[PageRe
 
 
 @task
-def chunk_records(records: list[dict], chunk_size: int = 15) -> list[list[dict]]:
+def chunk_records(records: list[dict[str, Any]], chunk_size: int = 15) -> list[list[dict[str, Any]]]:
     """Split records into chunks for parallel processing.
 
     Args:
@@ -104,7 +106,7 @@ def chunk_records(records: list[dict], chunk_size: int = 15) -> list[list[dict]]
 
 
 @task
-def process_chunk(records: list[dict], chunk_id: int) -> dict:
+def process_chunk(records: list[dict[str, Any]], chunk_id: int) -> dict[str, Any]:
     """Process a single chunk of records.
 
     Args:
@@ -115,7 +117,7 @@ def process_chunk(records: list[dict], chunk_id: int) -> dict:
         Dict with chunk processing summary.
     """
     total_value = sum(r.get("value", 0) for r in records)
-    categories = {}
+    categories: dict[str, int] = {}
     for r in records:
         cat = r.get("category", "unknown")
         categories[cat] = categories.get(cat, 0) + 1
@@ -128,7 +130,7 @@ def process_chunk(records: list[dict], chunk_id: int) -> dict:
 
 
 @task
-def combine_chunk_results(results: list[dict], total_pages: int) -> PaginationResult:
+def combine_chunk_results(results: list[dict[str, Any]], total_pages: int) -> PaginationResult:
     """Combine results from all processed chunks.
 
     Args:

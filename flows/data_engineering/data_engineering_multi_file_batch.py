@@ -12,6 +12,7 @@ import hashlib
 import json
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -58,7 +59,7 @@ def discover_files(directory: str, extensions: list[str]) -> list[Path]:
         Sorted list of matching file paths.
     """
     base = Path(directory)
-    files = []
+    files: list[Path] = []
     for ext in extensions:
         files.extend(base.glob(f"*{ext}"))
     files.sort()
@@ -67,7 +68,7 @@ def discover_files(directory: str, extensions: list[str]) -> list[Path]:
 
 
 @task
-def read_file(path: Path) -> list[dict]:
+def read_file(path: Path) -> list[dict[str, Any]]:
     """Read a file based on its extension (CSV or JSON).
 
     Args:
@@ -91,7 +92,7 @@ def read_file(path: Path) -> list[dict]:
 
 
 @task
-def harmonize_columns(records: list[dict], column_map: dict[str, str]) -> list[dict]:
+def harmonize_columns(records: list[dict[str, Any]], column_map: dict[str, str]) -> list[dict[str, Any]]:
     """Rename columns according to a mapping.
 
     Args:
@@ -112,7 +113,7 @@ def harmonize_columns(records: list[dict], column_map: dict[str, str]) -> list[d
 
 
 @task
-def compute_record_hash(record: dict, key_fields: list[str]) -> str:
+def compute_record_hash(record: dict[str, Any], key_fields: list[str]) -> str:
     """Compute a hash for a record based on key fields.
 
     Args:
@@ -128,7 +129,7 @@ def compute_record_hash(record: dict, key_fields: list[str]) -> str:
 
 @task
 def deduplicate(
-    records: list[dict], source_files: list[str], formats: list[str], key_fields: list[str]
+    records: list[dict[str, Any]], source_files: list[str], formats: list[str], key_fields: list[str]
 ) -> list[UnifiedRecord]:
     """Deduplicate records based on hash of key fields.
 
@@ -208,7 +209,7 @@ def multi_file_batch_flow(work_dir: str | None = None) -> BatchResult:
     files = discover_files(str(base), [".csv", ".json"])
 
     # Read and collect
-    all_records: list[dict] = []
+    all_records: list[dict[str, Any]] = []
     source_files: list[str] = []
     formats: list[str] = []
     format_counts: dict[str, int] = {}

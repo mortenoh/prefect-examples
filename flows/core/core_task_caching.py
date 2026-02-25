@@ -7,9 +7,11 @@ Prefect approach:    cache_policy on @task (INPUTS, TASK_SOURCE, cache_key_fn).
 """
 
 import datetime
+from typing import Any
 
 from prefect import flow, task
 from prefect.cache_policies import INPUTS, TASK_SOURCE
+from prefect.context import TaskRunContext
 
 
 @task(cache_policy=INPUTS, cache_expiration=datetime.timedelta(minutes=5))
@@ -49,13 +51,13 @@ def compound_cache_task(data: str) -> str:
     return result
 
 
-def _category_cache_key(context: dict, parameters: dict) -> str:  # type: ignore[type-arg]
+def _category_cache_key(context: TaskRunContext, parameters: dict[str, Any]) -> str | None:
     """Build a cache key from category and item_id parameters."""
     return f"{parameters['category']}:{parameters['item_id']}"
 
 
 @task(cache_key_fn=_category_cache_key, cache_expiration=datetime.timedelta(minutes=10))
-def cached_lookup(category: str, item_id: int) -> dict:
+def cached_lookup(category: str, item_id: int) -> dict[str, Any]:
     """Look up an item with a custom cache key.
 
     The cache key is built from category and item_id so that

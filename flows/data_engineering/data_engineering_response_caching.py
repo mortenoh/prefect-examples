@@ -9,6 +9,7 @@ Prefect approach:    Dict-based cache with TTL, hashlib cache keys.
 
 import hashlib
 import time
+from typing import Any
 
 from prefect import flow, task
 from pydantic import BaseModel
@@ -22,7 +23,7 @@ class CacheEntry(BaseModel):
     """A single cache entry."""
 
     key: str
-    value: dict
+    value: dict[str, Any]
     cached_at: float
     ttl_seconds: int
 
@@ -42,7 +43,7 @@ class CacheStats(BaseModel):
 
 
 @task
-def make_cache_key(endpoint: str, params: dict) -> str:
+def make_cache_key(endpoint: str, params: dict[str, Any]) -> str:
     """Generate a deterministic cache key.
 
     Args:
@@ -57,7 +58,7 @@ def make_cache_key(endpoint: str, params: dict) -> str:
 
 
 @task
-def check_cache(cache: dict, key: str, ttl_seconds: int) -> CacheEntry | None:
+def check_cache(cache: dict[str, Any], key: str, ttl_seconds: int) -> CacheEntry | None:
     """Check if a valid cache entry exists.
 
     Args:
@@ -83,7 +84,7 @@ def check_cache(cache: dict, key: str, ttl_seconds: int) -> CacheEntry | None:
 
 
 @task
-def simulate_api_call(endpoint: str, params: dict) -> dict:
+def simulate_api_call(endpoint: str, params: dict[str, Any]) -> dict[str, Any]:
     """Simulate an API call.
 
     Args:
@@ -107,10 +108,10 @@ def simulate_api_call(endpoint: str, params: dict) -> dict:
 @task
 def fetch_with_cache(
     endpoint: str,
-    params: dict,
-    cache: dict,
+    params: dict[str, Any],
+    cache: dict[str, Any],
     ttl_seconds: int = 300,
-) -> tuple[dict, bool]:
+) -> tuple[dict[str, Any], bool]:
     """Fetch data with caching. Returns cached data on hit.
 
     Args:
@@ -168,10 +169,10 @@ def response_caching_flow() -> CacheStats:
     Returns:
         CacheStats with hit/miss rates.
     """
-    cache: dict = {}
+    cache: dict[str, Any] = {}
     hit_log: list[bool] = []
 
-    requests = [
+    requests: list[tuple[str, dict[str, Any]]] = [
         ("/api/users", {"page": 1}),
         ("/api/products", {"category": "A"}),
         ("/api/users", {"page": 1}),

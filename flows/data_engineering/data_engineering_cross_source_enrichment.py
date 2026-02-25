@@ -8,6 +8,8 @@ Prefect approach:    Multiple enrichment tasks per record, None return
                      for failures, completeness tracking.
 """
 
+from typing import Any
+
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -30,9 +32,9 @@ class EnrichedRecord(BaseModel):
     id: int
     name: str
     region: str
-    demographic: dict | None = None
-    financial: dict | None = None
-    geographic: dict | None = None
+    demographic: dict[str, Any] | None = None
+    financial: dict[str, Any] | None = None
+    geographic: dict[str, Any] | None = None
     enrichment_completeness: float = 0.0
 
 
@@ -67,7 +69,7 @@ def fetch_base_records() -> list[BaseRecord]:
 
 
 @task
-def enrich_from_demographics(record_id: int) -> dict | None:
+def enrich_from_demographics(record_id: int) -> dict[str, Any] | None:
     """Simulate demographic enrichment. Fails for certain IDs.
 
     Args:
@@ -85,7 +87,7 @@ def enrich_from_demographics(record_id: int) -> dict | None:
 
 
 @task
-def enrich_from_financials(record_id: int) -> dict | None:
+def enrich_from_financials(record_id: int) -> dict[str, Any] | None:
     """Simulate financial enrichment. Fails for certain IDs.
 
     Args:
@@ -103,7 +105,7 @@ def enrich_from_financials(record_id: int) -> dict | None:
 
 
 @task
-def enrich_from_geography(record_id: int) -> dict | None:
+def enrich_from_geography(record_id: int) -> dict[str, Any] | None:
     """Simulate geographic enrichment. Fails for certain IDs.
 
     Args:
@@ -123,9 +125,9 @@ def enrich_from_geography(record_id: int) -> dict | None:
 @task
 def merge_enrichments(
     base: BaseRecord,
-    demo: dict | None,
-    fin: dict | None,
-    geo: dict | None,
+    demo: dict[str, Any] | None,
+    fin: dict[str, Any] | None,
+    geo: dict[str, Any] | None,
 ) -> EnrichedRecord:
     """Merge enrichment data into a single record.
 
