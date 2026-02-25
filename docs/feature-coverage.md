@@ -17,7 +17,7 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | Parameters | Yes | Parameterized Flows | Typed defaults, runtime overrides |
 | Results / persistence | Yes | Task Results, Result Persistence | `persist_result`, `result_storage_key` |
 | Remote result storage | Yes | Remote Result Storage | `result_storage=S3Bucket(...)` on tasks/flows |
-| Artifacts | Yes | Markdown Artifacts, Table and Link Artifacts | Markdown, tables, links in UI |
+| Artifacts | Yes | Markdown Artifacts, Table and Link Artifacts, Progress Artifacts | Markdown, tables, links, progress tracking in UI |
 | Tags | Yes | Tags | Decorator and context-manager |
 | Custom run names | Yes | Task Run Names, Flow Run Names | Templates and callables |
 | Structured logging | Yes | Structured Logging | `get_run_logger()`, `log_prints` |

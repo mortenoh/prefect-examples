@@ -312,6 +312,12 @@ deployments:
       name: default
     schedules: []
 
+  - name: core-progress-artifacts
+    entrypoint: flows/core/core_progress_artifacts.py:progress_artifacts_flow
+    work_pool:
+      name: default
+    schedules: []
+
   - name: core-remote-result-storage
     entrypoint: flows/core/core_remote_result_storage.py:remote_result_storage_flow
     work_pool:
