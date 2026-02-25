@@ -16,6 +16,10 @@ make deploy           # register deployments with the Prefect server
 
 The Prefect UI is available at `http://localhost:4200`.
 
+The same `.env` file is used for local development -- every flow file calls
+`load_dotenv()` in its `__main__` block, so `uv run python flows/...` picks
+up the variables automatically.
+
 ---
 
 ## Services

@@ -17,6 +17,19 @@ make sync
 dependencies (Prefect, pytest, ruff, mypy, mkdocs) into a project-local
 virtual environment.
 
+## Environment variables
+
+Some flows require credentials or API URLs. Copy the example file and fill in
+any values you need:
+
+```bash
+cp .env.example .env
+```
+
+Every flow file calls `load_dotenv()` in its `if __name__ == "__main__"` block,
+so variables from `.env` are loaded automatically when you run a flow with
+`uv run python`.
+
 ## Run your first flow
 
 ```bash

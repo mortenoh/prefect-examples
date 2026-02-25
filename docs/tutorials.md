@@ -511,9 +511,11 @@ The variable is listed in `.env.example` as a reference.
 
 ```python
 import os
-from pydantic import SecretStr
+
+from dotenv import load_dotenv
 from prefect import flow
 from prefect.blocks.notifications import SlackWebhook
+from pydantic import SecretStr
 
 @flow(log_prints=True)
 def slack_test() -> None:
@@ -523,6 +525,7 @@ def slack_test() -> None:
     print("Notification sent")
 
 if __name__ == "__main__":
+    load_dotenv()
     slack_test()
 ```
 
