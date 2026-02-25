@@ -1,8 +1,13 @@
+-include .env
+export
+
 PREFECT_API_URL ?= http://localhost:4200/api
+PREFECT_SERVER_ANALYTICS_ENABLED ?= false
+PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT ?= false
 
 .DEFAULT_GOAL := help
 
-.PHONY: help sync lint fmt test clean run server start restart deploy register-blocks create-blocks docs docs-build
+.PHONY: help sync lint fmt test clean run server start restart deploy-local deploy register-blocks create-blocks generate-prefect-yaml docs docs-build
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -30,7 +35,7 @@ run: ## Run flow basics_hello_world
 	uv run python flows/basics/basics_hello_world.py
 
 server: ## Start Prefect UI server (http://127.0.0.1:4200)
-	PREFECT_SERVER_ANALYTICS_ENABLED=false PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT=false PREFECT_SERVER_API_AUTH_STRING=$(PREFECT_SERVER_API_AUTH_STRING) uv run prefect server start
+	uv run prefect server start
 
 start: ## Start Prefect stack (PostgreSQL + Server + Worker + RustFS)
 	docker compose up --build
@@ -38,18 +43,24 @@ start: ## Start Prefect stack (PostgreSQL + Server + Worker + RustFS)
 restart: ## Tear down, rebuild, and start the Docker stack from scratch
 	docker compose down -v && docker compose build --no-cache && docker compose up
 
+generate-prefect-yaml: ## Regenerate prefect.yaml from flows/ directory
+	uv run python scripts/generate_prefect_yaml.py
+
+deploy-local: ## Deploy all flows to local Prefect server (run after make server)
+	uv run prefect deploy --all
+
 deploy: register-blocks create-blocks ## Register blocks, create instances, and deploy all flows
-	cd deployments/dhis2_connection && PREFECT_API_URL=$(PREFECT_API_URL) PREFECT_API_AUTH_STRING=$(PREFECT_API_AUTH_STRING) uv run prefect deploy --all
-	cd deployments/dhis2_ou && PREFECT_API_URL=$(PREFECT_API_URL) PREFECT_API_AUTH_STRING=$(PREFECT_API_AUTH_STRING) uv run prefect deploy --all
-	cd deployments/dhis2_block_connection && PREFECT_API_URL=$(PREFECT_API_URL) PREFECT_API_AUTH_STRING=$(PREFECT_API_AUTH_STRING) uv run prefect deploy --all
-	cd deployments/s3_parquet_export && PREFECT_API_URL=$(PREFECT_API_URL) PREFECT_API_AUTH_STRING=$(PREFECT_API_AUTH_STRING) uv run prefect deploy --all
-	cd deployments/dhis2_geoparquet_export && PREFECT_API_URL=$(PREFECT_API_URL) PREFECT_API_AUTH_STRING=$(PREFECT_API_AUTH_STRING) uv run prefect deploy --all
+	cd deployments/dhis2_connection && uv run prefect deploy --all
+	cd deployments/dhis2_ou && uv run prefect deploy --all
+	cd deployments/dhis2_block_connection && uv run prefect deploy --all
+	cd deployments/s3_parquet_export && uv run prefect deploy --all
+	cd deployments/dhis2_geoparquet_export && uv run prefect deploy --all
 
 register-blocks: ## Register custom block types with Prefect server
-	PREFECT_API_URL=$(PREFECT_API_URL) PREFECT_API_AUTH_STRING=$(PREFECT_API_AUTH_STRING) uv run prefect block register -m prefect_dhis2
+	uv run prefect block register -m prefect_dhis2
 
 create-blocks: ## Create DHIS2 credentials block instances for all known servers
-	PREFECT_API_URL=$(PREFECT_API_URL) PREFECT_API_AUTH_STRING=$(PREFECT_API_AUTH_STRING) uv run python scripts/create_blocks.py
+	uv run python scripts/create_blocks.py
 
 docs: ## Serve docs locally
 	uv run mkdocs serve
