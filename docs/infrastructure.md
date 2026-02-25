@@ -143,7 +143,8 @@ disabled. Uncomment both to enable it.
 ### UI login
 
 When auth is enabled, the Prefect UI shows a browser-native Basic Auth login
-prompt. Enter the same username and password from `PREFECT_AUTH`.
+prompt. Enter the username and password from your `.env` file
+(the value of `PREFECT_SERVER_API_AUTH_STRING`, e.g. `admin:admin`).
 
 ### CLI usage
 

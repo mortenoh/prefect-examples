@@ -31,7 +31,7 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | Schedules (cron/interval/rrule) | Yes | Schedules | All three schedule types |
 | `prefect.runtime` | Yes | Runtime Context | Deployment-aware flows |
 | Transactions | Yes | Transactions | `transaction()` for atomic groups |
-| Interactive flows | Yes | Interactive Flows | `pause_flow_run()` |
+| Interactive flows | Yes | Interactive Flows | Mock approval (real `pause_flow_run()` requires server) |
 | Task runners (ThreadPool) | Yes | Task Runners | `ThreadPoolTaskRunner` |
 | Pydantic models | Yes | Pydantic Models, Pydantic Validation | Type-safe data passing |
 | S3 storage (prefect-aws) | Yes | S3 Parquet Export, DHIS2 GeoParquet Export | `S3Bucket`, `MinIOCredentials` |
@@ -47,6 +47,7 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | **Global concurrency limits** | Cross-flow resource throttling via API (vs local `concurrency()`) | Intermediate | Important for shared-resource coordination across deployments |
 | **Webhooks** | Receive external HTTP events, transform to Prefect events via Jinja2 templates | Intermediate | Enables integration with external systems (GitHub, Slack, CI) |
 | **Remote result storage** | Store task results in S3/GCS/Azure instead of local filesystem | Intermediate | Required for production distributed execution |
+| **Rate limits** | `prefect.concurrency` API-level rate limiting for tasks and flows | Intermediate | Prevents overwhelming external APIs in production |
 
 ### Medium priority (commonly used integrations)
 
@@ -58,6 +59,7 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | **Docker/K8s work pools** | Push-based execution to containers | Advanced | Production infrastructure patterns |
 | **GitHub storage deployments** | Pull flow code from GitHub repos at runtime | Intermediate | GitOps deployment workflow |
 | **DaskTaskRunner / RayTaskRunner** | Distributed task execution for CPU-heavy workloads | Advanced | Scaling beyond single-machine parallelism |
+| **`pause_flow_run()` (real)** | Server-side flow pause with human-in-the-loop approval | Intermediate | Interactive flows example uses mock; real pause needs server |
 
 ### Lower priority (nice to have)
 
@@ -69,3 +71,4 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | **Flow run infrastructure overrides** | Per-run infrastructure customization | Intermediate |
 | **Reverse proxy auth (SSO/OIDC)** | oauth2-proxy + nginx/Caddy/Traefik for multi-user auth | Advanced |
 | **RBAC** | Role-based access control (Prefect Cloud only) | N/A |
+| **Incident management** | Prefect Cloud incident creation and response | N/A |
