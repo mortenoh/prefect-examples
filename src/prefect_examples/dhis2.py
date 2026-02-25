@@ -167,13 +167,16 @@ class Dhis2ApiResponse(BaseModel):
 OPERAND_PATTERN = re.compile(r"#\{[^}]+\}")
 
 
-def get_dhis2_credentials() -> Dhis2Credentials:
-    """Load the DHIS2 credentials block, falling back to inline defaults.
+def get_dhis2_credentials(name: str = "dhis2") -> Dhis2Credentials:
+    """Load a DHIS2 credentials block, falling back to inline defaults.
+
+    Args:
+        name: Block name to load (default ``"dhis2"``).
 
     Returns:
         Dhis2Credentials instance.
     """
     try:
-        return Dhis2Credentials.load("dhis2")  # type: ignore[return-value]
+        return Dhis2Credentials.load(name)  # type: ignore[return-value]
     except Exception:
         return Dhis2Credentials()

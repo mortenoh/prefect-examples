@@ -1,0 +1,103 @@
+"""DHIS2 Block Connection -- deployment-ready flow.
+
+Verifies DHIS2 connectivity using a named credentials block, fetches org unit
+count, and reports status including which instance/block was used.
+
+Three ways to register this deployment:
+
+1. CLI::
+
+    cd deployments/dhis2_block_connection
+    prefect deploy --all
+
+2. Declarative (prefect.yaml in this directory)::
+
+    See prefect.yaml
+
+3. Python::
+
+    python deployments/dhis2_block_connection/deploy.py
+"""
+
+from prefect import flow, task
+from prefect.artifacts import create_markdown_artifact
+from prefect.runtime import deployment
+from pydantic import BaseModel
+
+from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials, get_dhis2_credentials
+
+
+class ConnectionReport(BaseModel):
+    deployment_name: str
+    instance: str
+    host: str
+    username: str
+    server_version: str
+    org_unit_count: int
+
+
+@task
+def verify_connection(client: Dhis2Client) -> dict:
+    data = client.get_server_info()
+    print(f"Connected to DHIS2 v{data.get('version', 'unknown')}")
+    return data
+
+
+@task
+def fetch_org_unit_count(client: Dhis2Client) -> int:
+    records = client.fetch_metadata("organisationUnits", fields="id")
+    print(f"Organisation units: {len(records)}")
+    return len(records)
+
+
+@task
+def build_report(
+    creds: Dhis2Credentials,
+    instance: str,
+    server_info: dict,
+    org_unit_count: int,
+) -> ConnectionReport:
+    return ConnectionReport(
+        deployment_name=deployment.name or "local",
+        instance=instance,
+        host=creds.base_url,
+        username=creds.username,
+        server_version=server_info.get("version", "unknown"),
+        org_unit_count=org_unit_count,
+    )
+
+
+@flow(name="dhis2_block_connection", log_prints=True)
+def dhis2_block_connection_flow(instance: str = "dhis2") -> ConnectionReport:
+    """Verify DHIS2 connectivity for a named block and report status."""
+    creds = get_dhis2_credentials(instance)
+    client = creds.get_client()
+    server_info = verify_connection(client)
+    count = fetch_org_unit_count(client)
+    report = build_report(creds, instance, server_info, count)
+    markdown = (
+        f"# DHIS2 Block Connection Report\n\n"
+        f"| Field | Value |\n"
+        f"|-------|-------|\n"
+        f"| Deployment | {report.deployment_name} |\n"
+        f"| Instance (block) | {report.instance} |\n"
+        f"| Host | {report.host} |\n"
+        f"| User | {report.username} |\n"
+        f"| Server version | {report.server_version} |\n"
+        f"| Organisation units | {report.org_unit_count} |\n"
+    )
+    create_markdown_artifact(
+        key="dhis2-block-connection-report",
+        markdown=markdown,
+        description="DHIS2 block connection verification report",
+    )
+    print(
+        f"[{report.deployment_name}] [{report.instance}] "
+        f"{report.username}@{report.host} "
+        f"-- v{report.server_version}, {report.org_unit_count} org units"
+    )
+    return report
+
+
+if __name__ == "__main__":
+    dhis2_block_connection_flow()

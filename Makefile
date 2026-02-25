@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help sync lint fmt test clean run server start restart deploy register-blocks docs docs-build
+.PHONY: help sync lint fmt test clean run server start restart deploy register-blocks create-blocks docs docs-build
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -36,12 +36,16 @@ start: ## Start Prefect stack (PostgreSQL + Server + Worker + RustFS)
 restart: ## Tear down, rebuild, and start the Docker stack from scratch
 	docker compose down -v && docker compose build --no-cache && docker compose up
 
-deploy: ## Register flow deployments with Prefect server
+deploy: register-blocks create-blocks ## Register blocks, create instances, and deploy all flows
 	cd deployments/dhis2_connection && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
 	cd deployments/dhis2_ou && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
+	cd deployments/dhis2_block_connection && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
 
 register-blocks: ## Register custom block types with Prefect server
 	PREFECT_API_URL=http://localhost:4200/api uv run prefect block register -m prefect_dhis2
+
+create-blocks: ## Create DHIS2 credentials block instances for all known servers
+	PREFECT_API_URL=http://localhost:4200/api uv run python scripts/create_blocks.py
 
 docs: ## Serve docs locally
 	uv run mkdocs serve

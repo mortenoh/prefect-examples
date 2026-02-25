@@ -39,6 +39,7 @@ flows/
 src/prefect_examples/   Shared task library
 packages/prefect-dhis2/ DHIS2 integration package (workspace dependency)
 deployments/            Prefect deployment definitions
+scripts/                Operational scripts (block creation, setup)
 tests/                  Test suite (mirrors flows/ structure)
 docs/                   MkDocs documentation source
 compose.yml             Docker stack (PostgreSQL, Prefect server, worker)
@@ -159,6 +160,7 @@ Flows are organized into topic groups:
 | analytics | Multi-Pipeline Orchestrator | Independent pipeline orchestration, status rollup |
 | analytics | Grand Capstone | End-to-end analytics: all Phase 5 patterns combined |
 | dhis2 | DHIS2 Connection | Custom `Block` for DHIS2 credentials, `Secret` for password |
+| dhis2 | DHIS2 Block Connection | Named block loading, multi-instance support |
 | dhis2 | DHIS2 Org Units | Block-authenticated metadata fetch, nested JSON flattening |
 | dhis2 | DHIS2 Data Elements | Data element fetch with categorization, code coverage |
 | dhis2 | DHIS2 Indicators | Expression parsing with regex, complexity scoring, binning |
@@ -183,8 +185,9 @@ Flows are organized into topic groups:
 | `make server` | Start a local Prefect server |
 | `make start` | Start the full Docker stack |
 | `make restart` | Tear down and rebuild the Docker stack |
-| `make deploy` | Register all deployments with the server |
+| `make deploy` | Register blocks, create instances, and deploy all flows |
 | `make register-blocks` | Register custom block types (DHIS2) |
+| `make create-blocks` | Create DHIS2 credentials block instances for all known servers |
 | `make docs` | Serve documentation locally |
 | `make docs-build` | Build static documentation site |
 | `make clean` | Remove build artifacts |

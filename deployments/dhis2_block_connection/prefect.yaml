@@ -1,0 +1,44 @@
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /opt/prefect/deployments/dhis2_block_connection
+
+deployments:
+  - name: dhis2-block-connection-dev
+    entrypoint: flow.py:dhis2_block_connection_flow
+    parameters:
+      instance: "dhis2-dev"
+    schedules:
+      - cron: "*/15 * * * *"
+        timezone: "UTC"
+    work_pool:
+      name: default
+
+  - name: dhis2-block-connection-v42
+    entrypoint: flow.py:dhis2_block_connection_flow
+    parameters:
+      instance: "dhis2-stable-2-42-4"
+    schedules:
+      - cron: "*/15 * * * *"
+        timezone: "UTC"
+    work_pool:
+      name: default
+
+  - name: dhis2-block-connection-v41
+    entrypoint: flow.py:dhis2_block_connection_flow
+    parameters:
+      instance: "dhis2-stable-2-41-7"
+    schedules:
+      - cron: "*/15 * * * *"
+        timezone: "UTC"
+    work_pool:
+      name: default
+
+  - name: dhis2-block-connection-v40
+    entrypoint: flow.py:dhis2_block_connection_flow
+    parameters:
+      instance: "dhis2-stable-2-40-11"
+    schedules:
+      - cron: "*/15 * * * *"
+        timezone: "UTC"
+    work_pool:
+      name: default

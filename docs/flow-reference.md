@@ -2401,6 +2401,32 @@ that handles API calls -- callers never touch the password directly.
 
 ---
 
+### DHIS2 Block Connection
+
+**What it demonstrates:** Named credentials block loading so different DHIS2
+instances (play, staging, production) can be targeted at runtime via a single
+``instance`` parameter.
+
+**Airflow equivalent:** Multiple connections by conn_id.
+
+```python
+@flow(name="dhis2_block_connection", log_prints=True)
+def dhis2_block_connection_flow(instance: str = "dhis2") -> ConnectionInfo:
+    creds = get_dhis2_credentials(instance)  # loads named block
+    client = creds.get_client()
+    info = get_connection_info(creds, instance)
+    verify_connection(client, creds.base_url)
+    count = fetch_org_unit_count(client)
+    display_connection(info, count)
+```
+
+Save multiple ``Dhis2Credentials`` blocks (e.g. ``"dhis2"``, ``"dhis2-staging"``,
+``"dhis2-prod"``) and pass the block name as the ``instance`` parameter. The
+flow loads whichever block you specify, falling back to default play-server
+credentials when no saved block exists.
+
+---
+
 ### DHIS2 Org Units API
 
 **What it demonstrates:** Block-authenticated metadata fetch, nested JSON

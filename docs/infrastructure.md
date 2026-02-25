@@ -116,8 +116,9 @@ The worker additionally sets:
 |---|---|---|
 | `make start` | `docker compose up --build` | Start all services (foreground) |
 | `make restart` | `docker compose down -v && docker compose build --no-cache && docker compose up` | Full teardown and rebuild |
-| `make deploy` | `prefect deploy --all` (per deployment dir) | Register deployments with the server |
+| `make deploy` | register-blocks + create-blocks + `prefect deploy --all` | Register blocks, create instances, and deploy all flows |
 | `make register-blocks` | `prefect block register -m prefect_dhis2` | Register custom block types with the server |
+| `make create-blocks` | `uv run python scripts/create_blocks.py` | Create DHIS2 credentials block instances for all known servers |
 | `make server` | `uv run prefect server start` | Start a standalone server (no Docker) |
 
 To run services in the background, add `-d`:

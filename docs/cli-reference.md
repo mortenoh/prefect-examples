@@ -281,7 +281,8 @@ The project `Makefile` wraps common commands:
 | `make server` | `uv run prefect server start` | Start a local Prefect server |
 | `make start` | `docker compose up --build` | Start the full Docker stack |
 | `make restart` | `docker compose down -v && ... up` | Tear down and rebuild the stack |
-| `make deploy` | `prefect deploy --all` (per deployment dir) | Register all deployments |
-| `make docs` | `uv run mkdocs serve` | Serve docs locally |
+| `make deploy` | register-blocks + create-blocks + `prefect deploy --all` | Register blocks, create instances, and deploy all flows |
 | `make register-blocks` | `prefect block register -m prefect_dhis2` | Register custom block types with the server |
+| `make create-blocks` | `uv run python scripts/create_blocks.py` | Create DHIS2 credentials block instances for all known servers |
+| `make docs` | `uv run mkdocs serve` | Serve docs locally |
 | `make docs-build` | `uv run mkdocs build` | Build static docs site |
