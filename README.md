@@ -35,7 +35,7 @@ flows/
   data_engineering/     20 flows -- file I/O, APIs, config-driven pipelines
   analytics/            20 flows -- statistics, dimensional modeling, lineage
   dhis2/                10 flows -- DHIS2 integration
-  cloud/                 1 flow  -- S3/cloud patterns
+  cloud/                 2 flows -- S3/cloud patterns
 src/prefect_examples/   Shared task library
 packages/prefect-dhis2/ DHIS2 integration package (workspace dependency)
 deployments/            Prefect deployment definitions
@@ -171,6 +171,7 @@ Flows are organized into topic groups:
 | dhis2 | DHIS2 Env Config | Environment-based configuration strategies |
 | dhis2 | DHIS2 Authenticated API | Reusable authenticated API pattern (api_key, bearer, basic) |
 | cloud | S3 Parquet Export | Pydantic models, pandas transform, parquet write to S3 (RustFS) |
+| cloud | DHIS2 GeoParquet Export | GeoDataFrame, GeoParquet, DHIS2 geometry to S3 |
 
 ## Makefile targets
 

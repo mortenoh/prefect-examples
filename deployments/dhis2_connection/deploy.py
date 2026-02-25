@@ -10,5 +10,5 @@ if __name__ == "__main__":
     dhis2_connection_flow.deploy(
         name="dhis2-connection",
         work_pool_name="default",
-        cron="*/15 * * * *",
+        cron="0 * * * *",
     )

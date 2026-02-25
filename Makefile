@@ -40,6 +40,8 @@ deploy: register-blocks create-blocks ## Register blocks, create instances, and 
 	cd deployments/dhis2_connection && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
 	cd deployments/dhis2_ou && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
 	cd deployments/dhis2_block_connection && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
+	cd deployments/s3_parquet_export && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
+	cd deployments/dhis2_geoparquet_export && PREFECT_API_URL=http://localhost:4200/api uv run prefect deploy --all
 
 register-blocks: ## Register custom block types with Prefect server
 	PREFECT_API_URL=http://localhost:4200/api uv run prefect block register -m prefect_dhis2

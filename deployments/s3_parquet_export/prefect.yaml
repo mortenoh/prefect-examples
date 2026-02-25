@@ -1,10 +1,10 @@
 pull:
   - prefect.deployments.steps.set_working_directory:
-      directory: /opt/prefect/deployments/dhis2_connection
+      directory: /opt/prefect/deployments/s3_parquet_export
 
 deployments:
-  - name: dhis2-connection
-    entrypoint: flow.py:dhis2_connection_flow
+  - name: s3-parquet-export
+    entrypoint: flow.py:s3_parquet_export_flow
     schedules:
       - cron: "0 * * * *"
         timezone: "UTC"

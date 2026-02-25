@@ -21,19 +21,19 @@ INSTANCES: list[dict[str, str]] = [
         "password": "district",
     },
     {
-        "name": "dhis2-stable-2-42-4",
+        "name": "dhis2-v42",
         "base_url": "https://play.im.dhis2.org/stable-2-42-4",
         "username": "admin",
         "password": "district",
     },
     {
-        "name": "dhis2-stable-2-41-7",
+        "name": "dhis2-v41",
         "base_url": "https://play.im.dhis2.org/stable-2-41-7",
         "username": "admin",
         "password": "district",
     },
     {
-        "name": "dhis2-stable-2-40-11",
+        "name": "dhis2-v40",
         "base_url": "https://play.im.dhis2.org/stable-2-40-11",
         "username": "admin",
         "password": "district",

@@ -1,44 +1,44 @@
 pull:
   - prefect.deployments.steps.set_working_directory:
-      directory: /opt/prefect/deployments/dhis2_block_connection
+      directory: /opt/prefect/deployments/dhis2_geoparquet_export
 
 deployments:
-  - name: dhis2-block-connection-dev
-    entrypoint: flow.py:dhis2_block_connection_flow
+  - name: dhis2-geoparquet-export-dev
+    entrypoint: flow.py:dhis2_geoparquet_export_flow
     parameters:
       instance: "dhis2-dev"
     schedules:
-      - cron: "* * * * *"
+      - cron: "0 * * * *"
         timezone: "UTC"
     work_pool:
       name: default
 
-  - name: dhis2-block-connection-v42
-    entrypoint: flow.py:dhis2_block_connection_flow
+  - name: dhis2-geoparquet-export-v42
+    entrypoint: flow.py:dhis2_geoparquet_export_flow
     parameters:
       instance: "dhis2-v42"
     schedules:
-      - cron: "* * * * *"
+      - cron: "0 * * * *"
         timezone: "UTC"
     work_pool:
       name: default
 
-  - name: dhis2-block-connection-v41
-    entrypoint: flow.py:dhis2_block_connection_flow
+  - name: dhis2-geoparquet-export-v41
+    entrypoint: flow.py:dhis2_geoparquet_export_flow
     parameters:
       instance: "dhis2-v41"
     schedules:
-      - cron: "* * * * *"
+      - cron: "0 * * * *"
         timezone: "UTC"
     work_pool:
       name: default
 
-  - name: dhis2-block-connection-v40
-    entrypoint: flow.py:dhis2_block_connection_flow
+  - name: dhis2-geoparquet-export-v40
+    entrypoint: flow.py:dhis2_geoparquet_export_flow
     parameters:
       instance: "dhis2-v40"
     schedules:
-      - cron: "* * * * *"
+      - cron: "0 * * * *"
         timezone: "UTC"
     work_pool:
       name: default

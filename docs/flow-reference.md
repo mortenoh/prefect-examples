@@ -2633,7 +2633,7 @@ pattern is reusable for any authenticated HTTP service.
 
 ---
 
-## Cloud Storage (111)
+## Cloud Storage
 
 ### S3 Parquet Export
 
@@ -2686,6 +2686,55 @@ converts validated models to dicts for pandas. `MinIOCredentials` and `S3Bucket`
 from prefect-aws provide the S3 client -- the same blocks work with AWS S3 or any
 S3-compatible service (MinIO, RustFS). If S3 is unavailable, the flow falls back
 to a local temp file.
+
+---
+
+### DHIS2 GeoParquet Export
+
+**What it demonstrates:** Fetch org units with geometry from DHIS2, build a
+GeoDataFrame with shapely, and export to S3-compatible storage as GeoParquet
+(OGC standard for geospatial data in Parquet format).
+
+**Airflow equivalent:** PythonOperator + S3Hook.upload_file() with GeoPandas.
+
+```python
+@task
+def build_geodataframe(org_units: list[dict[str, Any]]) -> gpd.GeoDataFrame:
+    rows = []
+    for ou in org_units:
+        geom = ou.get("geometry")
+        if not geom:
+            continue
+        rows.append({
+            "id": ou["id"],
+            "name": ou.get("name", ""),
+            "geometry": shape(geom),
+        })
+    return gpd.GeoDataFrame(rows, geometry="geometry", crs="EPSG:4326")
+
+@task
+def export_geoparquet(gdf: gpd.GeoDataFrame) -> bytes:
+    buf = io.BytesIO()
+    gdf.to_parquet(buf, engine="pyarrow", index=False)
+    return buf.getvalue()
+
+@flow(name="cloud_dhis2_geoparquet_export", log_prints=True)
+def dhis2_geoparquet_export_flow(instance: str = "dhis2") -> ExportReport:
+    creds = get_dhis2_credentials(instance)
+    client = creds.get_client()
+    org_units = fetch_org_units_with_geometry(client)
+    gdf = build_geodataframe(org_units)
+    data = export_geoparquet(gdf)
+    key, backend = upload_to_s3(data, s3_key)
+    report = build_report(gdf, data, key, backend)
+    return report
+```
+
+`shapely.geometry.shape()` converts DHIS2 GeoJSON geometry into Shapely objects.
+`GeoDataFrame.to_parquet()` writes OGC GeoParquet with embedded CRS metadata.
+The same S3 upload/fallback pattern from the S3 Parquet Export flow is reused.
+Multi-instance support via the `instance` parameter loads different DHIS2
+credentials blocks.
 
 ---
 
@@ -2758,4 +2807,39 @@ prefect deployment run dhis2_ou/dhis2-ou           # trigger run
 prefect deployment set-schedule <name> --cron "0 8 * * *"     # change schedule
 prefect deployment pause <name>                   # pause scheduling
 prefect deployment resume <name>                  # resume scheduling
+```
+
+### s3_parquet_export -- S3 Parquet Export
+
+**What it demonstrates:** Deployment wrapper for the S3 Parquet Export flow
+that generates sample sensor data, transforms with pandas, and writes parquet
+to S3-compatible storage.
+
+```python
+@flow(name="s3_parquet_export", log_prints=True)
+def s3_parquet_export_flow(n_records: int = 500) -> ExportResult:
+    readings = generate_records(n_records)
+    transform = transform_to_dataframe(readings)
+    upload = upload_to_s3(transform, s3_key)
+    result = verify_upload(upload, transform)
+    return result
+```
+
+### dhis2_geoparquet_export -- DHIS2 GeoParquet Export
+
+**What it demonstrates:** A deployment-ready flow that fetches DHIS2 org units
+with geometry, builds a GeoDataFrame, and exports GeoParquet to S3. Supports
+multi-instance deployment via the `instance` parameter.
+
+```python
+@flow(name="dhis2_geoparquet_export", log_prints=True)
+def dhis2_geoparquet_export_flow(instance: str = "dhis2") -> ExportReport:
+    creds = get_dhis2_credentials(instance)
+    client = creds.get_client()
+    org_units = fetch_org_units_with_geometry(client)
+    gdf = build_geodataframe(org_units)
+    data = export_geoparquet(gdf)
+    key, backend = upload_to_s3(data, s3_key)
+    report = build_report(gdf, data, key, backend)
+    return report
 ```

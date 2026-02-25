@@ -9,6 +9,7 @@ dependencies = [
     "prefect-dhis2",
     "pandas",
     "pyarrow",
+    "geopandas",
     "s3fs",
 ]
 
@@ -53,6 +54,10 @@ warn_unused_configs = true
 
 [[tool.mypy.overrides]]
 module = "prefect.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["geopandas", "geopandas.*", "shapely", "shapely.*"]
 ignore_missing_imports = true
 
 # ---------- pytest ----------
