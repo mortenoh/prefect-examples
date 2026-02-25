@@ -32,7 +32,7 @@ clean: ## Remove build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
 run: ## Run flow basics_hello_world
-	uv run python flows/basics/basics_hello_world.py
+	PREFECT_API_URL= uv run python flows/basics/basics_hello_world.py
 
 server: ## Start Prefect UI server (http://127.0.0.1:4200)
 	uv run prefect server start
