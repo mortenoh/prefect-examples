@@ -18,8 +18,9 @@ from enum import StrEnum
 from pathlib import Path
 
 import pandas as pd
-from prefect import flow, runtime, task
+from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
+from prefect.runtime import flow_run
 from prefect_aws import MinIOCredentials, S3Bucket
 from prefect_aws.client_parameters import AwsClientParameters
 from pydantic import BaseModel, Field, SecretStr, computed_field
@@ -315,7 +316,7 @@ def s3_parquet_export_flow(n_records: int = 500) -> ExportResult:
     Returns:
         ExportResult.
     """
-    flow_name = runtime.flow_run.name or "local"
+    flow_name = flow_run.name or "local"
     timestamp = pd.Timestamp.now().strftime("%Y%m%dT%H%M%S")
     s3_key = f"{flow_name}/{timestamp}.parquet"
 
