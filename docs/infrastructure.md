@@ -133,12 +133,12 @@ Copy the template and edit to taste:
 
 ```bash
 cp .env.example .env
-# edit .env and change PREFECT_AUTH, POSTGRES_PASSWORD, etc.
+# uncomment the PREFECT_SERVER_API_AUTH_STRING and PREFECT_API_AUTH_STRING lines
 ```
 
-Docker Compose reads the `.env` file automatically. The `compose.yml` maps
-`PREFECT_AUTH` to both `PREFECT_SERVER_API_AUTH_STRING` (server) and
-`PREFECT_API_AUTH_STRING` (worker), so all services share the same credential.
+Docker Compose loads `.env` into the server and worker containers via
+`env_file`. When the auth variables are commented out (the default), auth is
+disabled. Uncomment both to enable it.
 
 ### UI login
 
