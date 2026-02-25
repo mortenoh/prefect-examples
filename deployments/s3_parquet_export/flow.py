@@ -172,8 +172,8 @@ def upload_to_s3(transform: TransformResult, key: str) -> UploadResult:
     data = transform.parquet_data
     try:
         minio_creds = MinIOCredentials(
-            minio_root_user="prefect",
-            minio_root_password=SecretStr("prefect123"),
+            minio_root_user="admin",
+            minio_root_password=SecretStr("admin"),
         )
         bucket = S3Bucket(
             bucket_name="prefect-data",
@@ -203,8 +203,8 @@ def verify_upload(upload: UploadResult, transform: TransformResult) -> ExportRes
     elif upload.backend == StorageBackend.S3:
         try:
             minio_creds = MinIOCredentials(
-                minio_root_user="prefect",
-                minio_root_password=SecretStr("prefect123"),
+                minio_root_user="admin",
+                minio_root_password=SecretStr("admin"),
             )
             bucket = S3Bucket(
                 bucket_name="prefect-data",

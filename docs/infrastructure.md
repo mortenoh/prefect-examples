@@ -9,8 +9,9 @@ development workflow.
 ## Quick start
 
 ```bash
-make start          # start all services
-make deploy         # register deployments with the Prefect server
+cp .env.example .env  # configure credentials (optional -- enables auth)
+make start            # start all services
+make deploy           # register deployments with the Prefect server
 ```
 
 The Prefect UI is available at `http://localhost:4200`.
@@ -24,7 +25,7 @@ The `compose.yml` defines four services:
 ```mermaid
 graph LR
     W[Prefect Worker] -->|polls| S[Prefect Server :4200]
-    S -->|reads/writes| P[(PostgreSQL :5432)]
+    S -->|reads/writes| P[(PostgreSQL)]
     S -->|stores results| R[RustFS :9000]
 ```
 
@@ -33,10 +34,10 @@ graph LR
 | Setting | Value |
 |---|---|
 | Image | `postgres:17-alpine` |
-| Port | `5432` |
 | User / Password / DB | `prefect` / `prefect` / `prefect` |
 
-Stores Prefect server state (flow runs, deployments, blocks, etc.). A
+Stores Prefect server state (flow runs, deployments, blocks, etc.). The
+database port is not exposed to the host (internal Docker network only). A
 healthcheck ensures the server waits for the database to be ready.
 
 ### Prefect Server
@@ -69,7 +70,7 @@ the server (`flows/`, `src/`, `deployments/`).
 |---|---|
 | Image | `rustfs/rustfs:latest` |
 | Ports | `9000` (API), `9001` (console) |
-| Access Key / Secret Key | `prefect` / `prefect123` |
+| Access Key / Secret Key | `admin` / `admin` |
 
 S3-compatible object storage for flow result persistence and artifact storage.
 
@@ -107,6 +108,100 @@ The worker additionally sets:
 | Variable | Value | Purpose |
 |---|---|---|
 | `PREFECT_API_URL` | `http://prefect-server:4200/api` | Connect worker to server |
+
+---
+
+## Authentication
+
+Prefect 3 self-hosted supports HTTP Basic Auth via environment variables. When
+enabled, the server requires a username and password for all API and UI access.
+
+### How it works
+
+| Variable | Where | Purpose |
+|---|---|---|
+| `PREFECT_SERVER_API_AUTH_STRING` | Server | Enables auth and defines the `user:password` credential |
+| `PREFECT_API_AUTH_STRING` | Clients (worker, CLI) | Supplies credentials when calling the server API |
+
+Both variables use the format `username:password`. When
+`PREFECT_SERVER_API_AUTH_STRING` is unset or empty, authentication is disabled
+(the default).
+
+### Setting credentials
+
+Copy the template and edit to taste:
+
+```bash
+cp .env.example .env
+# edit .env and change PREFECT_AUTH, POSTGRES_PASSWORD, etc.
+```
+
+Docker Compose reads the `.env` file automatically. The `compose.yml` maps
+`PREFECT_AUTH` to both `PREFECT_SERVER_API_AUTH_STRING` (server) and
+`PREFECT_API_AUTH_STRING` (worker), so all services share the same credential.
+
+### UI login
+
+When auth is enabled, the Prefect UI shows a browser-native Basic Auth login
+prompt. Enter the same username and password from `PREFECT_AUTH`.
+
+### CLI usage
+
+For local CLI commands that target the Docker server, export the auth variable:
+
+```bash
+export PREFECT_API_URL=http://localhost:4200/api
+export PREFECT_API_AUTH_STRING=admin:changeme
+
+prefect deployment ls
+prefect flow-run ls
+```
+
+Or inline:
+
+```bash
+PREFECT_API_AUTH_STRING=admin:changeme prefect deployment ls
+```
+
+The Makefile targets (`deploy`, `register-blocks`, `create-blocks`) forward
+`PREFECT_API_AUTH_STRING` from the shell environment automatically.
+
+### CSRF protection
+
+Prefect 3 also supports CSRF token protection. Enable it with:
+
+```
+PREFECT_SERVER_CSRF_PROTECTION_ENABLED=true
+```
+
+This adds a CSRF token requirement to state-changing API requests. The Prefect
+client handles token exchange automatically.
+
+### Standalone server (no Docker)
+
+When running the server outside Docker via `make server`, pass the auth string
+directly:
+
+```bash
+PREFECT_SERVER_API_AUTH_STRING=admin:changeme make server
+```
+
+### Limitations
+
+Basic Auth protects the API with a single shared credential. For more advanced
+requirements:
+
+| Feature | Availability |
+|---|---|
+| HTTP Basic Auth | Prefect OSS (this setup) |
+| RBAC (role-based access) | Prefect Cloud only |
+| SSO / OIDC | Prefect Cloud only |
+| JWT / OAuth2 | Reverse proxy (nginx/Caddy/Traefik with oauth2-proxy) |
+
+For comparison, Airflow ships with built-in RBAC and Flask-Login for
+multi-user access control. Prefect OSS provides only basic auth; teams
+needing per-user permissions should use Prefect Cloud or add a reverse proxy
+with an identity provider.
 
 ---
 

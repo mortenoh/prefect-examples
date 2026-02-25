@@ -146,8 +146,8 @@ def upload_to_s3(data: bytes, key: str) -> tuple[str, StorageBackend]:
     """
     try:
         minio_creds = MinIOCredentials(
-            minio_root_user="prefect",
-            minio_root_password=SecretStr("prefect123"),
+            minio_root_user="admin",
+            minio_root_password=SecretStr("admin"),
         )
         bucket = S3Bucket(
             bucket_name="prefect-data",

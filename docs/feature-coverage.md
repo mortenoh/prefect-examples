@@ -35,6 +35,7 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | Task runners (ThreadPool) | Yes | Task Runners | `ThreadPoolTaskRunner` |
 | Pydantic models | Yes | Pydantic Models, Pydantic Validation | Type-safe data passing |
 | S3 storage (prefect-aws) | Yes | S3 Parquet Export, DHIS2 GeoParquet Export | `S3Bucket`, `MinIOCredentials` |
+| Basic auth | Yes | Docker Compose stack | `PREFECT_SERVER_API_AUTH_STRING` / `PREFECT_API_AUTH_STRING` |
 
 ## Gaps -- features not yet covered
 
@@ -66,3 +67,5 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | **Custom event triggers** | Complex event-driven patterns with compound triggers | Advanced |
 | **Work pool priority** | Priority-based flow run scheduling across pools | Intermediate |
 | **Flow run infrastructure overrides** | Per-run infrastructure customization | Intermediate |
+| **Reverse proxy auth (SSO/OIDC)** | oauth2-proxy + nginx/Caddy/Traefik for multi-user auth | Advanced |
+| **RBAC** | Role-based access control (Prefect Cloud only) | N/A |

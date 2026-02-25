@@ -2673,7 +2673,7 @@ def transform_to_dataframe(readings: list[SensorReading]) -> TransformResult:
 
 @task
 def upload_to_s3(transform: TransformResult, key: str) -> UploadResult:
-    minio_creds = MinIOCredentials(minio_root_user="prefect", ...)
+    minio_creds = MinIOCredentials(minio_root_user="admin", ...)
     bucket = S3Bucket(bucket_name="prefect-data", credentials=minio_creds,
                       aws_client_parameters=AwsClientParameters(endpoint_url=...))
     bucket.upload_from_file_object(io.BytesIO(transform.parquet_data), key)
