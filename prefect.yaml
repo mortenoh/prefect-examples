@@ -312,6 +312,12 @@ deployments:
       name: default
     schedules: []
 
+  - name: core-remote-result-storage
+    entrypoint: flows/core/core_remote_result_storage.py:remote_result_storage_flow
+    work_pool:
+      name: default
+    schedules: []
+
   - name: core-result-persistence
     entrypoint: flows/core/core_result_persistence.py:result_persistence_flow
     work_pool:

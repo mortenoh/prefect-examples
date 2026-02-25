@@ -16,6 +16,7 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | `allow_failure` | Yes | Advanced State Handling | Downstream continues after failure |
 | Parameters | Yes | Parameterized Flows | Typed defaults, runtime overrides |
 | Results / persistence | Yes | Task Results, Result Persistence | `persist_result`, `result_storage_key` |
+| Remote result storage | Yes | Remote Result Storage | `result_storage=S3Bucket(...)` on tasks/flows |
 | Artifacts | Yes | Markdown Artifacts, Table and Link Artifacts | Markdown, tables, links in UI |
 | Tags | Yes | Tags | Decorator and context-manager |
 | Custom run names | Yes | Task Run Names, Flow Run Names | Templates and callables |
@@ -46,7 +47,6 @@ Prefect 3 features covered by this example repository, and gaps still to fill.
 | **Automations and triggers** | Event-driven flow execution, deployment triggers, state-change reactions | Advanced | Core Prefect 3 differentiator for reactive orchestration |
 | **Global concurrency limits** | Cross-flow resource throttling via API (vs local `concurrency()`) | Intermediate | Important for shared-resource coordination across deployments |
 | **Webhooks** | Receive external HTTP events, transform to Prefect events via Jinja2 templates | Intermediate | Enables integration with external systems (GitHub, Slack, CI) |
-| **Remote result storage** | Store task results in S3/GCS/Azure instead of local filesystem | Intermediate | Required for production distributed execution |
 | **Rate limits** | `prefect.concurrency` API-level rate limiting for tasks and flows | Intermediate | Prevents overwhelming external APIs in production |
 
 ### Medium priority (commonly used integrations)
