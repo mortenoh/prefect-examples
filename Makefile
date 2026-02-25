@@ -25,7 +25,7 @@ fmt: ## Auto-format with ruff
 	uv run ruff check --fix .
 
 test: ## Run tests
-	uv run pytest
+	PREFECT_API_URL= uv run pytest
 
 clean: ## Remove build artifacts
 	rm -rf __pycache__ .mypy_cache .pytest_cache .ruff_cache dist build *.egg-info
