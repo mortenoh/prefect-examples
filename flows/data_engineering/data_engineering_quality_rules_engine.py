@@ -11,6 +11,7 @@ Prefect approach:    Rule registry pattern with @task dispatchers and
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -338,4 +339,5 @@ def quality_rules_engine_flow(rules_config: list[dict[str, Any]] | None = None) 
 
 
 if __name__ == "__main__":
+    load_dotenv()
     quality_rules_engine_flow()

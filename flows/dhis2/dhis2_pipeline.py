@@ -12,6 +12,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -249,4 +250,5 @@ def dhis2_pipeline_flow() -> Dhis2PipelineResult:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     dhis2_pipeline_flow()

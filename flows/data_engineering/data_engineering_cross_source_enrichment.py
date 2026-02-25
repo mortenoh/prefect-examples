@@ -10,6 +10,7 @@ Prefect approach:    Multiple enrichment tasks per record, None return
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -210,4 +211,5 @@ def cross_source_enrichment_flow() -> EnrichmentReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     cross_source_enrichment_flow()

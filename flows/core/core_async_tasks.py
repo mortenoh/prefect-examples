@@ -9,6 +9,7 @@ Prefect approach:    async def tasks and flows, awaited sequentially.
 import asyncio
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -57,4 +58,5 @@ async def async_tasks_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     asyncio.run(async_tasks_flow())

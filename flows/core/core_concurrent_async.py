@@ -11,6 +11,7 @@ import asyncio
 import time
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -71,4 +72,5 @@ async def concurrent_async_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     asyncio.run(concurrent_async_flow())

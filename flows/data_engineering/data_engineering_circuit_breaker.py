@@ -11,6 +11,7 @@ Prefect approach:    State machine in a Pydantic model, deterministic
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -223,4 +224,5 @@ def circuit_breaker_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     circuit_breaker_flow()

@@ -9,6 +9,7 @@ Prefect approach:    Python context managers and try/finally.
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -75,4 +76,5 @@ def context_managers_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     context_managers_flow()

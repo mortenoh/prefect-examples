@@ -8,6 +8,7 @@ Prefect approach:    Pydantic field_validator replaces manual schema checking.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel, field_validator
 
@@ -132,4 +133,5 @@ def pydantic_validation_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     pydantic_validation_flow()

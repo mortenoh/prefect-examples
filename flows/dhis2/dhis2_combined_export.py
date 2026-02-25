@@ -13,6 +13,7 @@ import csv
 import json
 from pathlib import Path
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -183,4 +184,5 @@ def dhis2_combined_export_flow(output_dir: str | None = None) -> CombinedExportR
 
 
 if __name__ == "__main__":
+    load_dotenv()
     dhis2_combined_export_flow()

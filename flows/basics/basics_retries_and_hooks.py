@@ -8,6 +8,7 @@ Prefect approach:    retries/retry_delay_seconds on @task; state hooks.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 _attempt_counter: dict[str, int] = {}
@@ -62,4 +63,5 @@ def retries_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     retries_flow()

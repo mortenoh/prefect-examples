@@ -11,6 +11,7 @@ Prefect approach:    Simulate monthly sunrise/sunset, compute day lengths,
 import math
 import statistics
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -211,4 +212,5 @@ def daylight_analysis_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     daylight_analysis_flow()

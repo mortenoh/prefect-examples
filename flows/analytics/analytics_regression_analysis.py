@@ -11,6 +11,7 @@ Prefect approach:    Simulate health data, log-transform spending, regress
 import math
 import statistics
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -278,4 +279,5 @@ def regression_analysis_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     regression_analysis_flow()

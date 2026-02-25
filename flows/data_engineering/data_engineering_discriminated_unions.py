@@ -9,6 +9,7 @@ Prefect approach:    Literal discriminator field, union type, dispatch @task.
 
 from typing import Annotated, Any, Literal
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel, Field
 
@@ -235,4 +236,5 @@ def discriminated_unions_flow(raw_events: list[dict[str, Any]] | None = None) ->
 
 
 if __name__ == "__main__":
+    load_dotenv()
     discriminated_unions_flow()

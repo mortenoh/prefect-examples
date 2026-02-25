@@ -8,6 +8,7 @@ Prefect approach:    while-loop polling with time.sleep().
 
 import time
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -62,4 +63,5 @@ def polling_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     polling_flow()

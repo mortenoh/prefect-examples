@@ -8,6 +8,7 @@ Prefect approach:    .map() with list unpacking and result collection.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -95,4 +96,5 @@ def advanced_map_patterns_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     advanced_map_patterns_flow()

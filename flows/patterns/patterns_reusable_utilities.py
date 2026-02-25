@@ -11,6 +11,7 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -145,4 +146,5 @@ def reusable_utilities_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     reusable_utilities_flow()

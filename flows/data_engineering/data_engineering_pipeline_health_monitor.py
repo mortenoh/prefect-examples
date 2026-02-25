@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_table_artifact
 from pydantic import BaseModel
@@ -302,4 +303,5 @@ def pipeline_health_monitor_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     pipeline_health_monitor_flow()

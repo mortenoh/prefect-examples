@@ -10,6 +10,7 @@ Prefect approach:    Pydantic config models, stage dispatcher @task.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -235,4 +236,5 @@ def config_driven_pipeline_flow(raw_config: dict[str, Any] | None = None) -> Pip
 
 
 if __name__ == "__main__":
+    load_dotenv()
     config_driven_pipeline_flow()

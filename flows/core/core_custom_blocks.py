@@ -7,6 +7,7 @@ Prefect approach:    Subclass Block from prefect.blocks.core for typed,
                      reusable configuration objects.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.blocks.core import Block
 
@@ -97,4 +98,5 @@ def custom_blocks_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     custom_blocks_flow()

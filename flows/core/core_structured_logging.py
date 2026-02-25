@@ -8,6 +8,7 @@ Prefect approach:    get_run_logger() for structured logs, log_prints=True
                      for print() capture, extra dict for context fields.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, get_run_logger, task
 
 
@@ -79,4 +80,5 @@ def structured_logging_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     structured_logging_flow()

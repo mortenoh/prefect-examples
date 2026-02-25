@@ -11,6 +11,7 @@ Prefect approach:    Simulate daily exchange rates, compute log returns, rolling
 import math
 import statistics
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -284,4 +285,5 @@ def financial_time_series_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     financial_time_series_flow()

@@ -6,6 +6,7 @@ Airflow equivalent: PythonOperator with python_callable.
 Prefect approach:    @task decorator — any Python function becomes a task.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -33,4 +34,5 @@ def python_tasks_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     python_tasks_flow()

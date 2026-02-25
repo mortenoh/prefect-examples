@@ -8,6 +8,7 @@ Prefect approach:    Simulate readings, classify each city, count threshold
                      exceedances, and generate advisories with a markdown artifact.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -258,4 +259,5 @@ def air_quality_index_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     air_quality_index_flow()

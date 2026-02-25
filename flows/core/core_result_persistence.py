@@ -10,6 +10,7 @@ Prefect approach:    persist_result=True on @task/@flow,
 import statistics
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -85,4 +86,5 @@ def result_persistence_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     result_persistence_flow()

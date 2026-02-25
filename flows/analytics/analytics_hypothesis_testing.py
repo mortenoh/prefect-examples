@@ -13,6 +13,7 @@ import statistics
 from collections.abc import Sequence
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -274,4 +275,5 @@ def hypothesis_testing_flow(days: int = 365) -> HypothesisReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     hypothesis_testing_flow()

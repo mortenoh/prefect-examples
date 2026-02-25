@@ -9,6 +9,7 @@ Prefect approach:    pause_flow_run() requires a server; here we simulate
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -107,4 +108,5 @@ def interactive_flows_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     interactive_flows_flow()

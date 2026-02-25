@@ -29,6 +29,7 @@ from enum import StrEnum
 from pathlib import Path
 
 import pandas as pd
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.runtime import flow_run
@@ -294,4 +295,5 @@ def s3_parquet_export_flow(n_records: int = 500) -> ExportResult:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     s3_parquet_export_flow()

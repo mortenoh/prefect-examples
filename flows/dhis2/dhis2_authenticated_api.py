@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import base64
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.blocks.core import Block
@@ -196,4 +197,5 @@ def dhis2_authenticated_api_flow() -> AuthReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     dhis2_authenticated_api_flow()

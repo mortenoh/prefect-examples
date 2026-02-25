@@ -6,6 +6,7 @@ Airflow equivalent: custom operators / shared utils.
 Prefect approach:    regular Python imports — tasks are just functions.
 """
 
+from dotenv import load_dotenv
 from prefect import flow
 
 from prefect_examples.tasks import print_message, square_number
@@ -20,4 +21,5 @@ def reusable_tasks_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     reusable_tasks_flow()

@@ -9,6 +9,7 @@ Prefect approach:    Python factory functions that return @task-decorated callab
 from collections.abc import Callable
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -95,4 +96,5 @@ def task_factories_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     task_factories_flow()

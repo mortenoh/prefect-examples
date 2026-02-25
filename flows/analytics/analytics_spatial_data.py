@@ -8,6 +8,7 @@ Prefect approach:    Simulate spatial data, build features, assemble collection,
                      compute bounding box, and produce summary.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -194,4 +195,5 @@ def spatial_data_flow() -> SpatialReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     spatial_data_flow()

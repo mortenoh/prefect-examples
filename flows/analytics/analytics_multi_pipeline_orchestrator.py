@@ -11,6 +11,7 @@ Prefect approach:    Generate data, run 4 independent pipelines, aggregate
 
 import time
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -241,4 +242,5 @@ def multi_pipeline_orchestrator_flow() -> OrchestratorResult:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     multi_pipeline_orchestrator_flow()

@@ -10,6 +10,7 @@ Prefect approach:    Pure @task functions for FK checks, Pydantic models for
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -182,4 +183,5 @@ def cross_dataset_validation_flow() -> CrossValidationReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     cross_dataset_validation_flow()

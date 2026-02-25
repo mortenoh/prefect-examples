@@ -12,6 +12,7 @@ Prefect approach:    Ingest -> transform (filter, enrich, dedup) -> build
 import datetime
 import hashlib
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -250,4 +251,5 @@ def data_lineage_flow() -> LineageReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     data_lineage_flow()

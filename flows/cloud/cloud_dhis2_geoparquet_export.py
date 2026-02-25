@@ -19,6 +19,7 @@ from typing import Any
 
 import geopandas as gpd
 import pandas as pd
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.runtime import flow_run
@@ -253,4 +254,5 @@ def dhis2_geoparquet_export_flow(instance: str = "dhis2") -> ExportReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     dhis2_geoparquet_export_flow()

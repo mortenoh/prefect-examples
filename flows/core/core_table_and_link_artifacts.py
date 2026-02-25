@@ -9,6 +9,7 @@ Prefect approach:    create_table_artifact() and create_link_artifact()
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_link_artifact, create_table_artifact
 
@@ -78,4 +79,5 @@ def table_and_link_artifacts_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     table_and_link_artifacts_flow()

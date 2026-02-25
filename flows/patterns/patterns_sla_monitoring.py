@@ -9,6 +9,7 @@ Prefect approach:    time.monotonic() for timing, threshold comparison.
 import time
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -104,4 +105,5 @@ def sla_monitoring_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     sla_monitoring_flow()

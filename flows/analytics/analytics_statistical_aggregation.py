@@ -10,6 +10,7 @@ Prefect approach:    Generate weather data, fan-out to 3 parallel aggregations
 
 import statistics
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -235,4 +236,5 @@ def statistical_aggregation_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     statistical_aggregation_flow()

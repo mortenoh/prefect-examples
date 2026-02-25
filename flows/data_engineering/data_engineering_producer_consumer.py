@@ -13,6 +13,7 @@ import json
 import tempfile
 from pathlib import Path
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -202,4 +203,5 @@ def producer_consumer_flow(work_dir: str | None = None) -> list[ConsumerResult]:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     producer_consumer_flow()

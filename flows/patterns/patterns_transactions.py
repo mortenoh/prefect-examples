@@ -6,6 +6,7 @@ Airflow equivalent: No direct equivalent -- Prefect-specific feature.
 Prefect approach:    transaction() context manager for atomic operations.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.transactions import transaction
 
@@ -81,4 +82,5 @@ def transactions_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     transactions_flow()

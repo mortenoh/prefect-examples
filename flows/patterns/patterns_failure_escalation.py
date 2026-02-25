@@ -8,6 +8,7 @@ Prefect approach:    retries with on_failure hooks for escalation logging.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -97,4 +98,5 @@ def failure_escalation_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     failure_escalation_flow()

@@ -8,6 +8,7 @@ Prefect approach:    timeout_seconds on @task and @flow decorators.
 
 import time
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -72,4 +73,5 @@ def task_timeouts_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     task_timeouts_flow()

@@ -8,6 +8,7 @@ Prefect approach:    httpx.post() in tasks and flow hooks.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -96,4 +97,5 @@ def webhook_notifications_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     webhook_notifications_flow()

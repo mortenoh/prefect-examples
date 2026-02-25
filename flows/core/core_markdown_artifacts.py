@@ -10,6 +10,7 @@ Prefect approach:    create_markdown_artifact() to publish formatted reports
 import datetime
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 
@@ -82,4 +83,5 @@ def markdown_artifacts_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     markdown_artifacts_flow()

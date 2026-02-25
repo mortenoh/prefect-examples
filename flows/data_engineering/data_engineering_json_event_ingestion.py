@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -234,4 +235,5 @@ def json_event_ingestion_flow(work_dir: str | None = None, event_count: int = 5)
 
 
 if __name__ == "__main__":
+    load_dotenv()
     json_event_ingestion_flow()

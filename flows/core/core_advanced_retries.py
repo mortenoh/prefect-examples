@@ -10,6 +10,7 @@ Prefect approach:    retry_delay_seconds (list), retry_jitter_factor,
 Builds on: Flow 012 (basic retries).
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 _attempt_counters: dict[str, int] = {}
@@ -118,4 +119,5 @@ def advanced_retries_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     advanced_retries_flow()

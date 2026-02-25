@@ -9,6 +9,7 @@ dependencies = [
     "prefect-dhis2",
     "pandas",
     "pyarrow",
+    "python-dotenv",
     "geopandas",
     "s3fs",
 ]

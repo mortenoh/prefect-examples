@@ -9,15 +9,11 @@ Prefect approach:    NotificationBlock subclasses with unified notify(body, subj
 import os
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.blocks.notifications import CustomWebhookNotificationBlock, SlackWebhook
 from prefect.types import SecretDict
 from pydantic import SecretStr
-
-SLACK_WEBHOOK_URL = os.environ.get(
-    "SLACK_WEBHOOK_URL", "https://hooks.slack.com/services/T00/B00/xxxx"
-)
-
 
 # ---------------------------------------------------------------------------
 # Tasks
@@ -37,7 +33,8 @@ def configure_notification_blocks() -> dict[str, Any]:
         Summary dict describing the configured channels.
     """
     # SlackWebhook -- url must be a SecretStr
-    slack = SlackWebhook(url=SecretStr(SLACK_WEBHOOK_URL))
+    slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL", "https://hooks.slack.com/services/T00/B00/xxxx")
+    slack = SlackWebhook(url=SecretStr(slack_webhook_url))
 
     # CustomWebhookNotificationBlock -- flexible for any HTTP endpoint
     custom = CustomWebhookNotificationBlock(  # type: ignore[call-arg]
@@ -174,4 +171,5 @@ def notification_blocks_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     notification_blocks_flow()

@@ -9,6 +9,7 @@ Prefect approach:    cache_policy on @task (INPUTS, TASK_SOURCE, cache_key_fn).
 import datetime
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.cache_policies import INPUTS, TASK_SOURCE
 from prefect.context import TaskRunContext
@@ -98,4 +99,5 @@ def task_caching_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     task_caching_flow()

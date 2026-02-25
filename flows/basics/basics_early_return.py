@@ -6,6 +6,7 @@ Airflow equivalent: ShortCircuitOperator.
 Prefect approach:    Python return statement.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -67,4 +68,5 @@ def early_return_flow(skip: bool = False) -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     early_return_flow()

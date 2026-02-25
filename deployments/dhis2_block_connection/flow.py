@@ -19,6 +19,7 @@ Three ways to register this deployment:
     python deployments/dhis2_block_connection/deploy.py
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.runtime import deployment
@@ -100,4 +101,5 @@ def dhis2_block_connection_flow(instance: str = "dhis2") -> ConnectionReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     dhis2_block_connection_flow()

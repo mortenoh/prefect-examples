@@ -21,6 +21,7 @@ Three ways to register this deployment:
 
 from __future__ import annotations
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.runtime import deployment
@@ -85,4 +86,5 @@ def dhis2_ou_flow() -> OrgUnitReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     dhis2_ou_flow()

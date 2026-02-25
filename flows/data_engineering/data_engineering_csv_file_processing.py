@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -244,4 +245,5 @@ def csv_file_processing_flow(work_dir: str | None = None) -> CsvProcessingResult
 
 
 if __name__ == "__main__":
+    load_dotenv()
     csv_file_processing_flow()

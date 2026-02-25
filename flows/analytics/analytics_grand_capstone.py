@@ -18,6 +18,7 @@ import tempfile
 import time
 from pathlib import Path
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -508,4 +509,5 @@ def _generate_capstone_csv(path: Path) -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     grand_capstone_flow()

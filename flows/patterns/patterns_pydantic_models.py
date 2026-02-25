@@ -9,6 +9,7 @@ Prefect approach:    Pydantic models flow naturally between tasks.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -118,4 +119,5 @@ def pydantic_models_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     pydantic_models_flow()

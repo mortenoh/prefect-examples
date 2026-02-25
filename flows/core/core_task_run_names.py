@@ -8,6 +8,7 @@ Prefect approach:    task_run_name as a template string or callable on @task.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.runtime import task_run
 
@@ -79,4 +80,5 @@ def task_run_names_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     task_run_names_flow()

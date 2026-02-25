@@ -10,6 +10,7 @@ Prefect approach:    Simulated pagination, itertools-style chunking,
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -191,4 +192,5 @@ def api_pagination_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     api_pagination_flow()

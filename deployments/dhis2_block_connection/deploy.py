@@ -6,6 +6,7 @@ Usage:
     PREFECT_API_URL=http://localhost:4200/api uv run python deployments/dhis2_block_connection/deploy.py
 """
 
+from dotenv import load_dotenv
 from flow import dhis2_block_connection_flow
 
 INSTANCES = [
@@ -16,6 +17,7 @@ INSTANCES = [
 ]
 
 if __name__ == "__main__":
+    load_dotenv()
     for name, instance in INSTANCES:
         dhis2_block_connection_flow.deploy(
             name=name,

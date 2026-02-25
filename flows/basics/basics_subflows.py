@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -56,4 +57,5 @@ def pipeline_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     pipeline_flow()

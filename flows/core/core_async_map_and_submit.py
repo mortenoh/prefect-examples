@@ -9,6 +9,7 @@ Prefect approach:    .map() and .submit() work with async tasks for
 
 import asyncio
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -77,4 +78,5 @@ async def async_map_and_submit_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     asyncio.run(async_map_and_submit_flow())

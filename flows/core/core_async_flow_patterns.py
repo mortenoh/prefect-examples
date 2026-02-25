@@ -10,6 +10,7 @@ Prefect approach:    Sync tasks called normally, async tasks awaited,
 
 import asyncio
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -80,4 +81,5 @@ async def async_flow_patterns_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     asyncio.run(async_flow_patterns_flow())

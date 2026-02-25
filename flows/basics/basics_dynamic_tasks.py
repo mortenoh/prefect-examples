@@ -6,6 +6,7 @@ Airflow equivalent: dynamic task mapping (expand()).
 Prefect approach:    .map() for dynamic fan-out.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -42,4 +43,5 @@ def dynamic_tasks_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     dynamic_tasks_flow()

@@ -10,6 +10,7 @@ Prefect approach:    create_progress_artifact() and update_progress_artifact()
 import time
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact, create_progress_artifact, update_progress_artifact
 
@@ -57,10 +58,7 @@ def publish_summary(batch_results: list[dict[str, Any]]) -> str:
     Returns:
         The markdown content that was published.
     """
-    rows = "\n".join(
-        f"| {r['label']} | {r['item_count']} | {r['duration']}s |"
-        for r in batch_results
-    )
+    rows = "\n".join(f"| {r['label']} | {r['item_count']} | {r['duration']}s |" for r in batch_results)
     total_items = sum(r["item_count"] for r in batch_results)
 
     markdown = f"""# Batch Processing Summary
@@ -99,4 +97,5 @@ def progress_artifacts_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     progress_artifacts_flow()

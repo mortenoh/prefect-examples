@@ -9,6 +9,7 @@ Prefect approach:    Flow parameters for date ranges, gap detection logic.
 import datetime
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -110,4 +111,5 @@ def backfill_patterns_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     backfill_patterns_flow()

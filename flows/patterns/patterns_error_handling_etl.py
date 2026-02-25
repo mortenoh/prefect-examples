@@ -8,6 +8,7 @@ Prefect approach:    Try/except in tasks with Pydantic result models.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -112,4 +113,5 @@ def error_handling_etl_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     error_handling_etl_flow()

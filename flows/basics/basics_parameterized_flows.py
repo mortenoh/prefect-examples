@@ -8,6 +8,7 @@ Prefect approach:    typed function parameters with defaults.
 
 import datetime
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -48,4 +49,5 @@ def parameterized_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     parameterized_flow()

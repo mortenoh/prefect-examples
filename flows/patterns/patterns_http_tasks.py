@@ -9,6 +9,7 @@ Prefect approach:    httpx in a @task -- no special operator needed.
 from typing import Any
 
 import httpx
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -88,4 +89,5 @@ def http_tasks_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     http_tasks_flow()

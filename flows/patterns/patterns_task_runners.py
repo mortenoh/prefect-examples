@@ -9,6 +9,7 @@ Prefect approach:    ThreadPoolTaskRunner for I/O, default for CPU tasks.
 import time
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.task_runners import ThreadPoolTaskRunner
 
@@ -111,4 +112,5 @@ def task_runners_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     task_runners_flow()

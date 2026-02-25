@@ -8,6 +8,7 @@ Prefect approach:    allow_failure, return_state=True, state inspection.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import allow_failure, flow, task
 
 # ---------------------------------------------------------------------------
@@ -98,4 +99,5 @@ def advanced_state_handling_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     advanced_state_handling_flow()

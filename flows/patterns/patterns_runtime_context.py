@@ -8,6 +8,7 @@ Prefect approach:    prefect.runtime for flow_run and task_run metadata.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.runtime import flow_run, task_run
 
@@ -80,4 +81,5 @@ def runtime_context_flow(env: str = "dev", batch_size: int = 100) -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     runtime_context_flow()

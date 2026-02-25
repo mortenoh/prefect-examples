@@ -8,6 +8,7 @@ Prefect approach:    Pure functions for logic, thin @task wrappers.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -127,4 +128,5 @@ def testable_flow_patterns_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     testable_flow_patterns_flow()

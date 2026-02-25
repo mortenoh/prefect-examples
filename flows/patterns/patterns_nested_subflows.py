@@ -8,6 +8,7 @@ Prefect approach:    @flow calling @flow for hierarchical grouping.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -172,4 +173,5 @@ def nested_subflows_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     nested_subflows_flow()

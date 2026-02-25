@@ -7,6 +7,7 @@ Airflow equivalent: Multi-city forecast, geocoding (DAGs 081, 086).
 Prefect approach:    Chained .map() with deterministic simulation.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -176,4 +177,5 @@ def multi_source_forecast_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     multi_source_forecast_flow()

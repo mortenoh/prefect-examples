@@ -11,6 +11,7 @@ Prefect approach:    Build 3 dimension tables, a fact table, normalize,
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -294,4 +295,5 @@ def star_schema_flow() -> StarSchemaReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     star_schema_flow()

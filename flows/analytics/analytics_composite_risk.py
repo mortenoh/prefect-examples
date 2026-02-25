@@ -9,6 +9,7 @@ Prefect approach:    Simulate marine + flood data, normalize, compute weighted
                      composite (60/40), classify, and produce a markdown report.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -254,4 +255,5 @@ def composite_risk_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     composite_risk_flow()

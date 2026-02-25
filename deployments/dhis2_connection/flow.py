@@ -20,6 +20,7 @@ Three ways to register this deployment:
 
 import os
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.blocks.notifications import SlackWebhook
@@ -107,4 +108,5 @@ def dhis2_connection_flow() -> ConnectionReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     dhis2_connection_flow()

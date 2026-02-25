@@ -11,6 +11,7 @@ Prefect approach:    Generate source data, transform each record (add size
 import datetime
 import hashlib
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -198,4 +199,5 @@ def data_transfer_flow() -> TransferResult:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     data_transfer_flow()

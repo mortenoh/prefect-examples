@@ -10,6 +10,7 @@ Prefect approach:    Define templates with stage slots, instantiate with
                      overrides, execute, and compare results.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -221,4 +222,5 @@ def pipeline_template_flow() -> FactoryReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     pipeline_template_flow()

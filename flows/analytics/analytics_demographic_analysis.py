@@ -8,6 +8,7 @@ Prefect approach:    Simulate nested country data, flatten to relational tables,
                      build bridge tables and border graph edges, rank countries.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -256,4 +257,5 @@ def demographic_analysis_flow() -> DemographicReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     demographic_analysis_flow()

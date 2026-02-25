@@ -8,6 +8,7 @@ Prefect approach:    tags= on @task, tags() context manager for runtime tagging.
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, tags, task
 
 
@@ -73,4 +74,5 @@ def tags_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     tags_flow()

@@ -14,6 +14,7 @@ import csv
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -197,4 +198,5 @@ def dhis2_org_units_flow(output_dir: str | None = None) -> OrgUnitReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     dhis2_org_units_flow()

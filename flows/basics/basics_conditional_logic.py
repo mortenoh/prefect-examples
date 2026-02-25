@@ -6,6 +6,7 @@ Airflow equivalent: BranchPythonOperator.
 Prefect approach:    native Python if/elif/else.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -59,4 +60,5 @@ def conditional_logic_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     conditional_logic_flow()

@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect_aws import MinIOCredentials, S3Bucket
 from prefect_aws.client_parameters import AwsClientParameters
@@ -177,4 +178,5 @@ def remote_result_storage_flow(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     remote_result_storage_flow()

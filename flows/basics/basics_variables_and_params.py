@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.variables import Variable
 
@@ -60,4 +61,5 @@ def variables_flow(environment: str = "dev") -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     variables_flow()

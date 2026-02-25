@@ -13,6 +13,7 @@ import json
 import time
 from pathlib import Path
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -187,4 +188,5 @@ def parallel_export_flow(output_dir: str | None = None) -> ExportSummary:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     parallel_export_flow()

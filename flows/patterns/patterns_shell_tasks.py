@@ -9,6 +9,7 @@ Prefect approach:    subprocess.run() inside a @task -- no special operator.
 import subprocess
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 # ---------------------------------------------------------------------------
@@ -83,4 +84,5 @@ def shell_tasks_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     shell_tasks_flow()

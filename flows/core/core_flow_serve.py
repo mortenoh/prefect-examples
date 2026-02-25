@@ -17,6 +17,7 @@ Notes:
 import datetime
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -80,6 +81,7 @@ def flow_serve_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     # Run the flow directly (not served) for local testing.
     # To serve: flow_serve_flow.serve(name="037-flow-serve", cron="*/5 * * * *")
     flow_serve_flow()

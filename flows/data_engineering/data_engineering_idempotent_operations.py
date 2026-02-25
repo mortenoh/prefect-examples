@@ -11,6 +11,7 @@ import datetime
 import hashlib
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -215,4 +216,5 @@ def idempotent_operations_flow() -> IdempotencyReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     idempotent_operations_flow()

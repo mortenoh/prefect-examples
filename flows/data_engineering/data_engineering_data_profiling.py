@@ -11,6 +11,7 @@ Prefect approach:    Column-level profiling with @task dispatchers, Pydantic
 import statistics
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
@@ -273,4 +274,5 @@ def data_profiling_flow(dataset_name: str = "sample", rows: int = 50) -> Dataset
 
 
 if __name__ == "__main__":
+    load_dotenv()
     data_profiling_flow()

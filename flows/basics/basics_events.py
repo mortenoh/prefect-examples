@@ -6,6 +6,7 @@ Airflow equivalent: custom XCom + trigger rules.
 Prefect approach:    emit_event() for signaling; automations for event-driven triggers.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.events import emit_event
 
@@ -41,4 +42,5 @@ def events_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     events_flow()

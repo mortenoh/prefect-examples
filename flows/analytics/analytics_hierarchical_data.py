@@ -8,6 +8,7 @@ Prefect approach:    Simulate nested hierarchy, flatten, compute level stats,
                      identify roots and leaves.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -265,4 +266,5 @@ def hierarchical_data_flow() -> HierarchyReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     hierarchical_data_flow()

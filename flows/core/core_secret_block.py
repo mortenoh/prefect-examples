@@ -9,6 +9,7 @@ Prefect approach:    Secret block from prefect.blocks.system with graceful
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.blocks.system import Secret
 
@@ -67,4 +68,5 @@ def secret_block_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     secret_block_flow()

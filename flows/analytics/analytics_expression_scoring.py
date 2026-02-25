@@ -10,6 +10,7 @@ Prefect approach:    Simulate expressions with #{...} operands, parse with
 
 import re
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -252,4 +253,5 @@ def expression_scoring_flow() -> ScoringReport:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     expression_scoring_flow()

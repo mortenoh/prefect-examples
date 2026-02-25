@@ -16,6 +16,7 @@ Schedule classes (for reference):
 
 import datetime
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -121,4 +122,5 @@ def schedules_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     schedules_flow()

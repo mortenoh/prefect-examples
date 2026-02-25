@@ -8,6 +8,7 @@ Prefect approach:    concurrency() context manager with named limits.
 
 import time
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.concurrency.sync import concurrency
 
@@ -40,4 +41,5 @@ def concurrency_limits_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     concurrency_limits_flow()

@@ -23,6 +23,7 @@ Key concepts:
 
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -91,6 +92,7 @@ def work_pools_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     # Run directly for local testing.
     # For production: deploy to a work pool (see docstring).
     work_pools_flow()

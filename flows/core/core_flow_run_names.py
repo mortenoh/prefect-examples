@@ -8,6 +8,7 @@ Prefect approach:    flow_run_name as template string or callable on @flow.
 
 import datetime
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.runtime import flow_run
 
@@ -84,4 +85,5 @@ def flow_run_names_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     flow_run_names_flow()

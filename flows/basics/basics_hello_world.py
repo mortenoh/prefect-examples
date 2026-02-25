@@ -8,6 +8,7 @@ Prefect approach:    @task functions called in order inside a @flow.
 
 import subprocess
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -36,4 +37,5 @@ def hello_world() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     hello_world()

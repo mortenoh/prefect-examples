@@ -6,6 +6,7 @@ Airflow equivalent: >> operator / set_downstream.
 Prefect approach:    return-value wiring; .submit() for parallelism.
 """
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 
@@ -62,4 +63,5 @@ def task_dependencies_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     task_dependencies_flow()

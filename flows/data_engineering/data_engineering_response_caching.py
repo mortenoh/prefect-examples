@@ -11,6 +11,7 @@ import hashlib
 import time
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -193,4 +194,5 @@ def response_caching_flow() -> CacheStats:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     response_caching_flow()

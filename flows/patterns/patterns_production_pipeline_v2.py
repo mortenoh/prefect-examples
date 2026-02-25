@@ -10,6 +10,7 @@ Prefect approach:    Compose all Phase 3 features into a realistic pipeline.
 import datetime
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, get_run_logger, tags, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.transactions import transaction
@@ -283,4 +284,5 @@ def production_pipeline_v2_flow() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     production_pipeline_v2_flow()

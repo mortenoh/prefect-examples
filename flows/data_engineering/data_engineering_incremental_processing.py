@@ -15,6 +15,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
 
@@ -218,4 +219,5 @@ def _generate_sample_data(directory: Path) -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     incremental_processing_flow()
