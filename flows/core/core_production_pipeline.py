@@ -8,12 +8,28 @@ Prefect approach:    Compose Phase 2 features into a realistic pipeline.
 """
 
 import datetime
-from typing import Any
 
 from dotenv import load_dotenv
 from prefect import flow, get_run_logger, tags, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.cache_policies import INPUTS
+from pydantic import BaseModel
+
+# ---------------------------------------------------------------------------
+# Models
+# ---------------------------------------------------------------------------
+
+
+class ProductionRecord(BaseModel):
+    """A single record flowing through the production pipeline."""
+
+    id: int
+    name: str
+    value: int
+    valid: bool = False
+    enriched: bool = False
+    enriched_at: str = ""
+
 
 # ---------------------------------------------------------------------------
 # Tasks
@@ -21,22 +37,22 @@ from prefect.cache_policies import INPUTS
 
 
 @task(retries=2, retry_delay_seconds=1)
-def validate(record: dict[str, Any]) -> dict[str, Any]:
+def validate(record: ProductionRecord) -> ProductionRecord:
     """Validate a record with automatic retries.
 
     Args:
         record: A raw data record.
 
     Returns:
-        The record with a "valid" flag.
+        The record with the valid flag set.
     """
     logger = get_run_logger()
-    logger.info("Validating record %s", record.get("id"))
-    return {**record, "valid": True}
+    logger.info("Validating record %s", record.id)
+    return record.model_copy(update={"valid": True})
 
 
 @task(cache_policy=INPUTS)
-def enrich(record: dict[str, Any]) -> dict[str, Any]:
+def enrich(record: ProductionRecord) -> ProductionRecord:
     """Enrich a record with metadata, cached by input.
 
     Args:
@@ -45,12 +61,13 @@ def enrich(record: dict[str, Any]) -> dict[str, Any]:
     Returns:
         The record with enrichment metadata.
     """
-    enriched = {
-        **record,
-        "enriched": True,
-        "enriched_at": datetime.datetime.now(datetime.UTC).isoformat(),
-    }
-    print(f"Enriched record {record.get('id')}")
+    enriched = record.model_copy(
+        update={
+            "enriched": True,
+            "enriched_at": datetime.datetime.now(datetime.UTC).isoformat(),
+        }
+    )
+    print(f"Enriched record {record.id}")
     return enriched
 
 
@@ -81,31 +98,31 @@ def notify(summary: str) -> None:
 
 
 @flow(name="core_extract", log_prints=True)
-def extract_stage() -> list[dict[str, Any]]:
+def extract_stage() -> list[ProductionRecord]:
     """Extract records from the source system.
 
     Returns:
-        A list of raw record dicts.
+        A list of raw ProductionRecord objects.
     """
     records = [
-        {"id": 1, "name": "Alice", "value": 100},
-        {"id": 2, "name": "Bob", "value": 250},
-        {"id": 3, "name": "Charlie", "value": 175},
-        {"id": 4, "name": "Diana", "value": 300},
-        {"id": 5, "name": "Eve", "value": 125},
+        ProductionRecord(id=1, name="Alice", value=100),
+        ProductionRecord(id=2, name="Bob", value=250),
+        ProductionRecord(id=3, name="Charlie", value=175),
+        ProductionRecord(id=4, name="Diana", value=300),
+        ProductionRecord(id=5, name="Eve", value=125),
     ]
     print(f"Extracted {len(records)} records")
     return records
 
 
 @flow(name="core_transform", log_prints=True)
-def transform_stage(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def transform_stage(records: list[ProductionRecord]) -> list[ProductionRecord]:
     """Validate and enrich records using Phase 2 features.
 
     Uses retries on validate, caching on enrich, and mapped execution.
 
     Args:
-        records: List of raw record dicts.
+        records: List of raw ProductionRecord objects.
 
     Returns:
         List of validated and enriched records.
@@ -118,18 +135,18 @@ def transform_stage(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 @flow(name="core_load", log_prints=True, persist_result=True)
-def load_stage(records: list[dict[str, Any]]) -> str:
+def load_stage(records: list[ProductionRecord]) -> str:
     """Load processed records and return a summary.
 
     Args:
-        records: List of enriched record dicts.
+        records: List of enriched ProductionRecord objects.
 
     Returns:
         A summary string.
     """
-    valid_count = sum(1 for r in records if r.get("valid"))
-    enriched_count = sum(1 for r in records if r.get("enriched"))
-    total_value = sum(r.get("value", 0) for r in records)
+    valid_count = sum(1 for r in records if r.valid)
+    enriched_count = sum(1 for r in records if r.enriched)
+    total_value = sum(r.value for r in records)
     summary = (
         f"Loaded {len(records)} records: {valid_count} valid, {enriched_count} enriched, total value={total_value}"
     )

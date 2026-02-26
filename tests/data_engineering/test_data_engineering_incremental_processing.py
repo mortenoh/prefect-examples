@@ -20,6 +20,7 @@ _spec.loader.exec_module(_mod)
 
 ProcessingManifest = _mod.ProcessingManifest
 IncrementalResult = _mod.IncrementalResult
+FileResult = _mod.FileResult
 load_manifest = _mod.load_manifest
 scan_directory = _mod.scan_directory
 identify_new_files = _mod.identify_new_files
@@ -77,12 +78,13 @@ def test_process_file(tmp_path: Path) -> None:
     path = tmp_path / "test.csv"
     _make_csv(path, rows=4)
     result = process_file.fn(path)
-    assert result["records"] == 4
+    assert isinstance(result, FileResult)
+    assert result.records == 4
 
 
 def test_update_manifest(tmp_path: Path) -> None:
     manifest = ProcessingManifest()
-    results = [{"filename": "a.csv", "records": 5}]
+    results = [FileResult(filename="a.csv", records=5)]
     updated = update_manifest.fn(manifest, results, tmp_path / "manifest.json")
     assert updated.total_processed == 1
     assert "a.csv" in updated.processed_files

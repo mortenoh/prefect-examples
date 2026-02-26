@@ -55,6 +55,16 @@ class PipelineResult(BaseModel):
     results: list[StageResult]
 
 
+class StageContext(BaseModel):
+    """Inter-stage context passed between pipeline stages."""
+
+    stage: str = ""
+    records: list[dict[str, Any]] = []
+    count: int = 0
+    target: str = ""
+    rejected: int = 0
+
+
 # ---------------------------------------------------------------------------
 # Tasks
 # ---------------------------------------------------------------------------
@@ -76,22 +86,22 @@ def parse_config(raw: dict[str, Any]) -> PipelineConfig:
 
 
 @task
-def execute_extract(params: dict[str, Any]) -> dict[str, Any]:
+def execute_extract(params: dict[str, Any]) -> StageContext:
     """Simulate an extract stage.
 
     Args:
         params: Stage parameters.
 
     Returns:
-        Extract result.
+        StageContext with extracted records.
     """
     count = params.get("count", 10)
     records = [{"id": i, "value": i * 10} for i in range(1, count + 1)]
-    return {"stage": "extract", "records": records, "count": count}
+    return StageContext(stage="extract", records=records, count=count)
 
 
 @task
-def execute_validate(params: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+def execute_validate(params: dict[str, Any], context: StageContext) -> StageContext:
     """Simulate a validate stage.
 
     Args:
@@ -99,16 +109,20 @@ def execute_validate(params: dict[str, Any], context: dict[str, Any]) -> dict[st
         context: Data from previous stages.
 
     Returns:
-        Validation result.
+        StageContext with validated records.
     """
-    records = context.get("records", [])
     min_val = params.get("min_value", 0)
-    valid = [r for r in records if r.get("value", 0) >= min_val]
-    return {"stage": "validate", "records": valid, "count": len(valid), "rejected": len(records) - len(valid)}
+    valid = [r for r in context.records if r.get("value", 0) >= min_val]
+    return StageContext(
+        stage="validate",
+        records=valid,
+        count=len(valid),
+        rejected=len(context.records) - len(valid),
+    )
 
 
 @task
-def execute_transform(params: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+def execute_transform(params: dict[str, Any], context: StageContext) -> StageContext:
     """Simulate a transform stage.
 
     Args:
@@ -116,16 +130,15 @@ def execute_transform(params: dict[str, Any], context: dict[str, Any]) -> dict[s
         context: Data from previous stages.
 
     Returns:
-        Transform result.
+        StageContext with transformed records.
     """
-    records = context.get("records", [])
     multiplier = params.get("multiplier", 1.0)
-    transformed = [{**r, "value": r["value"] * multiplier} for r in records]
-    return {"stage": "transform", "records": transformed, "count": len(transformed)}
+    transformed = [{**r, "value": r["value"] * multiplier} for r in context.records]
+    return StageContext(stage="transform", records=transformed, count=len(transformed))
 
 
 @task
-def execute_load(params: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+def execute_load(params: dict[str, Any], context: StageContext) -> StageContext:
     """Simulate a load stage.
 
     Args:
@@ -133,15 +146,14 @@ def execute_load(params: dict[str, Any], context: dict[str, Any]) -> dict[str, A
         context: Data from previous stages.
 
     Returns:
-        Load result.
+        StageContext with load metadata.
     """
-    records = context.get("records", [])
     target = params.get("target", "default_table")
-    return {"stage": "load", "target": target, "count": len(records), "records": records}
+    return StageContext(stage="load", target=target, count=len(context.records), records=context.records)
 
 
 @task
-def dispatch_stage(stage: StageConfig, context: dict[str, Any]) -> StageResult:
+def dispatch_stage(stage: StageConfig, context: StageContext) -> StageResult:
     """Dispatch a stage to its handler based on task_type.
 
     Args:
@@ -161,15 +173,15 @@ def dispatch_stage(stage: StageConfig, context: dict[str, Any]) -> StageResult:
     if handler is None:
         return StageResult(stage_name=stage.name, status="error", details=f"Unknown task type: {stage.task_type}")
 
-    result: dict[str, Any] = (
+    result: StageContext = (
         handler.fn(stage.params) if stage.task_type == "extract" else handler.fn(stage.params, context)  # type: ignore[attr-defined]
     )
 
     return StageResult(
         stage_name=stage.name,
         status="completed",
-        records_in=context.get("count", 0),
-        records_out=result.get("count", 0),
+        records_in=context.count,
+        records_out=result.count,
         details=f"Processed by {stage.task_type}",
     )
 
@@ -203,7 +215,7 @@ def config_driven_pipeline_flow(raw_config: dict[str, Any] | None = None) -> Pip
     config = parse_config(raw_config)
 
     results: list[StageResult] = []
-    context: dict[str, Any] = {}
+    context = StageContext()
     skipped = 0
 
     for stage in config.stages:

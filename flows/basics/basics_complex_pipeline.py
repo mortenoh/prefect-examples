@@ -9,10 +9,26 @@ Prefect approach:    combine subflows, .map(), result passing, hooks.
 from __future__ import annotations
 
 import datetime
-from typing import Any
 
 from dotenv import load_dotenv
 from prefect import flow, task
+from pydantic import BaseModel
+
+# ---------------------------------------------------------------------------
+# Models
+# ---------------------------------------------------------------------------
+
+
+class PipelineRecord(BaseModel):
+    """A single record flowing through the pipeline."""
+
+    id: int
+    name: str
+    score: int
+    valid: bool = False
+    enriched: bool = False
+    processed_at: str = ""
+
 
 # ---------------------------------------------------------------------------
 # Tasks
@@ -20,36 +36,37 @@ from prefect import flow, task
 
 
 @task
-def validate_record(record: dict[str, Any]) -> dict[str, Any]:
+def validate_record(record: PipelineRecord) -> PipelineRecord:
     """Mark a record as valid after basic checks.
 
     Args:
         record: A single data record.
 
     Returns:
-        The record with a "valid" flag added.
+        The record with the valid flag set.
     """
-    validated = {**record, "valid": True}
-    print(f"Validated record {record.get('id')}")
+    validated = record.model_copy(update={"valid": True})
+    print(f"Validated record {record.id}")
     return validated
 
 
 @task
-def enrich_record(record: dict[str, Any]) -> dict[str, Any]:
+def enrich_record(record: PipelineRecord) -> PipelineRecord:
     """Add enrichment metadata to a validated record.
 
     Args:
         record: A validated data record.
 
     Returns:
-        The record with "enriched" flag and "processed_at" timestamp.
+        The record with enriched flag and processed_at timestamp.
     """
-    enriched = {
-        **record,
-        "enriched": True,
-        "processed_at": datetime.datetime.now(datetime.UTC).isoformat(),
-    }
-    print(f"Enriched record {record.get('id')}")
+    enriched = record.model_copy(
+        update={
+            "enriched": True,
+            "processed_at": datetime.datetime.now(datetime.UTC).isoformat(),
+        }
+    )
+    print(f"Enriched record {record.id}")
     return enriched
 
 
@@ -69,28 +86,28 @@ def notify(summary: str) -> None:
 
 
 @flow(name="basics_extract", log_prints=True)
-def extract_stage() -> list[dict[str, Any]]:
+def extract_stage() -> list[PipelineRecord]:
     """Extract sample records from the source system.
 
     Returns:
-        A list of raw record dictionaries.
+        A list of raw PipelineRecord objects.
     """
     records = [
-        {"id": 1, "name": "Alice", "score": 88},
-        {"id": 2, "name": "Bob", "score": 95},
-        {"id": 3, "name": "Charlie", "score": 72},
-        {"id": 4, "name": "Diana", "score": 64},
+        PipelineRecord(id=1, name="Alice", score=88),
+        PipelineRecord(id=2, name="Bob", score=95),
+        PipelineRecord(id=3, name="Charlie", score=72),
+        PipelineRecord(id=4, name="Diana", score=64),
     ]
     print(f"Extracted {len(records)} records")
     return records
 
 
 @flow(name="basics_transform", log_prints=True)
-def transform_stage(raw: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def transform_stage(raw: list[PipelineRecord]) -> list[PipelineRecord]:
     """Validate and enrich raw records using mapped tasks.
 
     Args:
-        raw: List of raw record dictionaries.
+        raw: List of raw PipelineRecord objects.
 
     Returns:
         List of validated and enriched records.
@@ -103,17 +120,17 @@ def transform_stage(raw: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 @flow(name="basics_load", log_prints=True)
-def load_stage(data: list[dict[str, Any]]) -> str:
+def load_stage(data: list[PipelineRecord]) -> str:
     """Persist processed records and return a summary.
 
     Args:
-        data: List of enriched record dictionaries.
+        data: List of enriched PipelineRecord objects.
 
     Returns:
         A summary string describing the loaded data.
     """
-    valid_count = sum(1 for r in data if r.get("valid"))
-    enriched_count = sum(1 for r in data if r.get("enriched"))
+    valid_count = sum(1 for r in data if r.valid)
+    enriched_count = sum(1 for r in data if r.enriched)
     summary = f"Loaded {len(data)} records ({valid_count} valid, {enriched_count} enriched)"
     print(summary)
     return summary

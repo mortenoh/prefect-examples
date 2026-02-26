@@ -13,6 +13,8 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["analytics_star_schema"] = _mod
 _spec.loader.exec_module(_mod)
 
+CountryInput = _mod.CountryInput
+IndicatorInput = _mod.IndicatorInput
 DimCountry = _mod.DimCountry
 DimTime = _mod.DimTime
 DimIndicator = _mod.DimIndicator
@@ -29,7 +31,7 @@ star_schema_flow = _mod.star_schema_flow
 
 
 def test_build_country_dimension() -> None:
-    data = [{"name": "A", "region": "R1", "population": 1000}]
+    data = [CountryInput(name="A", region="R1", population=1000)]
     dims = build_country_dimension.fn(data)
     assert len(dims) == 1
     assert dims[0].key == 1
@@ -37,9 +39,9 @@ def test_build_country_dimension() -> None:
 
 def test_surrogate_key_uniqueness() -> None:
     data = [
-        {"name": "A", "region": "R1", "population": 1000},
-        {"name": "B", "region": "R2", "population": 2000},
-        {"name": "C", "region": "R1", "population": 3000},
+        CountryInput(name="A", region="R1", population=1000),
+        CountryInput(name="B", region="R2", population=2000),
+        CountryInput(name="C", region="R1", population=3000),
     ]
     dims = build_country_dimension.fn(data)
     keys = [d.key for d in dims]
@@ -55,9 +57,9 @@ def test_build_time_dimension() -> None:
 
 
 def test_build_fact_table() -> None:
-    countries = build_country_dimension.fn([{"name": "A", "region": "R", "population": 1000}])
+    countries = build_country_dimension.fn([CountryInput(name="A", region="R", population=1000)])
     times = build_time_dimension.fn(2020, 2022)
-    indicators = build_indicator_dimension.fn([{"name": "X", "unit": "u", "higher_is_better": True}])
+    indicators = build_indicator_dimension.fn([IndicatorInput(name="X", unit="u", higher_is_better=True)])
     facts = build_fact_table.fn(countries, times, indicators)
     assert len(facts) == 3  # 1 country * 3 years * 1 indicator
 
@@ -79,14 +81,14 @@ def test_min_max_normalize_inverted() -> None:
 def test_composite_index_ordering() -> None:
     countries = build_country_dimension.fn(
         [
-            {"name": "A", "region": "R", "population": 1000},
-            {"name": "B", "region": "R", "population": 2000},
+            CountryInput(name="A", region="R", population=1000),
+            CountryInput(name="B", region="R", population=2000),
         ]
     )
     times = build_time_dimension.fn(2022, 2022)
     indicators = build_indicator_dimension.fn(
         [
-            {"name": "X", "unit": "u", "higher_is_better": True},
+            IndicatorInput(name="X", unit="u", higher_is_better=True),
         ]
     )
     facts = build_fact_table.fn(countries, times, indicators)

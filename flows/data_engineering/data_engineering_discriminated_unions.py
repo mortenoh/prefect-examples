@@ -61,6 +61,14 @@ Event = Annotated[
 ]
 
 
+class ProcessingSummary(BaseModel):
+    """Summary of event processing results."""
+
+    total_events: int
+    by_type: dict[str, int]
+    all_processed: bool
+
+
 # ---------------------------------------------------------------------------
 # Tasks
 # ---------------------------------------------------------------------------
@@ -163,23 +171,23 @@ def route_event(event: Event) -> ProcessingResult:
 
 
 @task
-def summarize_processing(results: list[ProcessingResult]) -> dict[str, Any]:
+def summarize_processing(results: list[ProcessingResult]) -> ProcessingSummary:
     """Summarise processing results by event type.
 
     Args:
         results: List of processing results.
 
     Returns:
-        Summary dict.
+        ProcessingSummary.
     """
     by_type: dict[str, int] = {}
     for r in results:
         by_type[r.event_type] = by_type.get(r.event_type, 0) + 1
-    return {
-        "total_events": len(results),
-        "by_type": by_type,
-        "all_processed": all(r.status == "processed" for r in results),
-    }
+    return ProcessingSummary(
+        total_events=len(results),
+        by_type=by_type,
+        all_processed=all(r.status == "processed" for r in results),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -188,14 +196,14 @@ def summarize_processing(results: list[ProcessingResult]) -> dict[str, Any]:
 
 
 @flow(name="data_engineering_discriminated_unions", log_prints=True)
-def discriminated_unions_flow(raw_events: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+def discriminated_unions_flow(raw_events: list[dict[str, Any]] | None = None) -> ProcessingSummary:
     """Process heterogeneous events using discriminated unions.
 
     Args:
         raw_events: Raw event dicts. Uses defaults if None.
 
     Returns:
-        Processing summary dict.
+        ProcessingSummary.
     """
     if raw_events is None:
         raw_events = [
@@ -231,7 +239,7 @@ def discriminated_unions_flow(raw_events: list[dict[str, Any]] | None = None) ->
     events = parse_events(raw_events)
     results = [route_event(event) for event in events]
     summary = summarize_processing(results)
-    print(f"Processed {summary['total_events']} events: {summary['by_type']}")
+    print(f"Processed {summary.total_events} events: {summary.by_type}")
     return summary
 
 

@@ -13,7 +13,6 @@ import datetime
 import json
 import tempfile
 from pathlib import Path
-from typing import Any
 
 from dotenv import load_dotenv
 from prefect import flow, task
@@ -38,6 +37,13 @@ class IncrementalResult(BaseModel):
     new_files: int
     skipped_files: int
     records_processed: int
+
+
+class FileResult(BaseModel):
+    """Result of processing a single file."""
+
+    filename: str
+    records: int
 
 
 # ---------------------------------------------------------------------------
@@ -97,29 +103,29 @@ def identify_new_files(all_files: list[Path], manifest: ProcessingManifest) -> l
 
 
 @task
-def process_file(path: Path) -> dict[str, Any]:
+def process_file(path: Path) -> FileResult:
     """Process a single file and return record count.
 
     Args:
         path: Path to the file.
 
     Returns:
-        Dict with filename and record count.
+        FileResult with filename and record count.
     """
     with open(path, newline="") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
     print(f"Processed {path.name}: {len(rows)} records")
-    return {"filename": path.name, "records": len(rows)}
+    return FileResult(filename=path.name, records=len(rows))
 
 
 @task
-def update_manifest(manifest: ProcessingManifest, results: list[dict[str, Any]], path: Path) -> ProcessingManifest:
+def update_manifest(manifest: ProcessingManifest, results: list[FileResult], path: Path) -> ProcessingManifest:
     """Update and save the manifest with newly processed files.
 
     Args:
         manifest: Current manifest.
-        results: List of processing results.
+        results: List of FileResult objects.
         path: Path to save the manifest.
 
     Returns:
@@ -127,7 +133,7 @@ def update_manifest(manifest: ProcessingManifest, results: list[dict[str, Any]],
     """
     now = datetime.datetime.now(datetime.UTC).isoformat()
     for r in results:
-        manifest.processed_files[r["filename"]] = now
+        manifest.processed_files[r.filename] = now
     manifest.total_processed = len(manifest.processed_files)
     manifest.last_updated = now
     path.write_text(json.dumps(manifest.model_dump(), indent=2))
@@ -188,7 +194,7 @@ def incremental_processing_flow(work_dir: str | None = None) -> IncrementalResul
     if new_files:
         futures = process_file.map(new_files)
         results = [f.result() for f in futures]
-        total_records = sum(r["records"] for r in results)
+        total_records = sum(r.records for r in results)
     else:
         results = []
         total_records = 0

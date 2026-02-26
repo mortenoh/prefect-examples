@@ -17,6 +17,7 @@ sys.modules["data_engineering_config_driven_pipeline"] = _mod
 _spec.loader.exec_module(_mod)
 
 StageConfig = _mod.StageConfig
+StageContext = _mod.StageContext
 PipelineConfig = _mod.PipelineConfig
 StageResult = _mod.StageResult
 PipelineResult = _mod.PipelineResult
@@ -42,25 +43,28 @@ def test_parse_config() -> None:
 
 def test_execute_extract() -> None:
     result = execute_extract.fn({"count": 5})
-    assert result["count"] == 5
-    assert len(result["records"]) == 5
+    assert isinstance(result, StageContext)
+    assert result.count == 5
+    assert len(result.records) == 5
 
 
 def test_execute_validate() -> None:
-    context = {"records": [{"id": 1, "value": 10}, {"id": 2, "value": 100}]}
+    context = StageContext(records=[{"id": 1, "value": 10}, {"id": 2, "value": 100}])
     result = execute_validate.fn({"min_value": 50}, context)
-    assert result["count"] == 1
+    assert isinstance(result, StageContext)
+    assert result.count == 1
 
 
 def test_execute_transform() -> None:
-    context = {"records": [{"id": 1, "value": 10}]}
+    context = StageContext(records=[{"id": 1, "value": 10}])
     result = execute_transform.fn({"multiplier": 2.0}, context)
-    assert result["records"][0]["value"] == 20
+    assert isinstance(result, StageContext)
+    assert result.records[0]["value"] == 20
 
 
 def test_dispatch_unknown_type() -> None:
     stage = StageConfig(name="bad", task_type="nonexistent")
-    result = dispatch_stage.fn(stage, {})
+    result = dispatch_stage.fn(stage, StageContext())
     assert result.status == "error"
 
 

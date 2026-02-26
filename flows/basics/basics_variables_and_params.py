@@ -9,42 +9,53 @@ Prefect approach:    Variable.get()/set() + flow parameters.
 from __future__ import annotations
 
 import json
-from typing import Any
 
 from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.variables import Variable
+from pydantic import BaseModel
+
+# ---------------------------------------------------------------------------
+# Models
+# ---------------------------------------------------------------------------
+
+
+class AppConfig(BaseModel):
+    """Application configuration loaded from a Prefect Variable."""
+
+    debug: bool = False
+    batch_size: int = 10
 
 
 @task
-def read_config() -> dict[str, Any]:
+def read_config() -> AppConfig:
     """Set and retrieve an example config variable.
 
     Writes a JSON config to a Prefect Variable, reads it back, and
-    returns the parsed dictionary.
+    returns the parsed model.
 
     Returns:
-        Parsed configuration dictionary.
+        Parsed AppConfig.
     """
     Variable.set("example_config", '{"debug": true, "batch_size": 100}', overwrite=True)
     raw = Variable.get("example_config", default="{}")
-    config: dict[str, Any] = json.loads(str(raw))
+    config = AppConfig(**json.loads(str(raw)))
     print(f"Loaded config: {config}")
     return config
 
 
 @task
-def process_with_config(config: dict[str, Any], env: str) -> str:
+def process_with_config(config: AppConfig, env: str) -> str:
     """Use the configuration to drive processing behaviour.
 
     Args:
-        config: Configuration dictionary with keys like "debug" and "batch_size".
+        config: Application configuration.
         env: The target environment name.
 
     Returns:
         A summary string describing the processing parameters.
     """
-    summary = f"env={env}, debug={config.get('debug', False)}, batch_size={config.get('batch_size', 10)}"
+    summary = f"env={env}, debug={config.debug}, batch_size={config.batch_size}"
     print(f"Processing with: {summary}")
     return summary
 

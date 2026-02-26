@@ -8,33 +8,51 @@ Prefect approach:    Prefect is natively taskflow-first.
 
 from __future__ import annotations
 
-from typing import Any
-
 from dotenv import load_dotenv
 from prefect import flow, task
+from pydantic import BaseModel
+
+# ---------------------------------------------------------------------------
+# Models
+# ---------------------------------------------------------------------------
+
+
+class User(BaseModel):
+    """A single user record."""
+
+    name: str
+    age: int
+    active: bool
+
+
+class ExtractPayload(BaseModel):
+    """Payload returned by the extract step and consumed by transform/load."""
+
+    users: list[User]
+    timestamp: str
 
 
 @task
-def extract() -> dict[str, Any]:
+def extract() -> ExtractPayload:
     """Simulate data extraction from an external source.
 
     Returns:
         Raw payload with a user list and a timestamp.
     """
-    raw = {
-        "users": [
-            {"name": "Alice", "age": 30, "active": True},
-            {"name": "Bob", "age": 17, "active": True},
-            {"name": "Charlie", "age": 25, "active": False},
+    raw = ExtractPayload(
+        users=[
+            User(name="Alice", age=30, active=True),
+            User(name="Bob", age=17, active=True),
+            User(name="Charlie", age=25, active=False),
         ],
-        "timestamp": "2024-01-15T10:30:00Z",
-    }
-    print(f"Extracted {len(raw['users'])} users")
+        timestamp="2024-01-15T10:30:00Z",
+    )
+    print(f"Extracted {len(raw.users)} users")
     return raw
 
 
 @task
-def transform(raw: dict[str, Any]) -> dict[str, Any]:
+def transform(raw: ExtractPayload) -> ExtractPayload:
     """Filter to active adults and upper-case their names.
 
     Args:
@@ -43,14 +61,18 @@ def transform(raw: dict[str, Any]) -> dict[str, Any]:
     Returns:
         Transformed payload with filtered and cleaned users.
     """
-    users = [{**u, "name": u["name"].upper()} for u in raw["users"] if u["active"] and u["age"] >= 18]
-    transformed = {"users": users, "timestamp": raw["timestamp"]}
+    users = [
+        user.model_copy(update={"name": user.name.upper()})
+        for user in raw.users
+        if user.active and user.age >= 18
+    ]
+    transformed = ExtractPayload(users=users, timestamp=raw.timestamp)
     print(f"Transformed down to {len(users)} users")
     return transformed
 
 
 @task
-def load(data: dict[str, Any]) -> str:
+def load(data: ExtractPayload) -> str:
     """Persist the transformed data (simulated).
 
     Args:
@@ -59,7 +81,7 @@ def load(data: dict[str, Any]) -> str:
     Returns:
         A summary string describing what was loaded.
     """
-    summary = f"Loaded {len(data['users'])} users (ts={data['timestamp']})"
+    summary = f"Loaded {len(data.users)} users (ts={data.timestamp})"
     print(summary)
     return summary
 

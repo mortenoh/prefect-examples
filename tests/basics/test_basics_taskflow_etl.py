@@ -1,10 +1,10 @@
-"""Tests for flow 004 — Taskflow / ETL."""
+"""Tests for flow 004 -- Taskflow / ETL."""
 
 import importlib.util
 import sys
 from pathlib import Path
 
-# Digit-prefixed filenames can't be imported normally — use importlib.
+# Digit-prefixed filenames can't be imported normally -- use importlib.
 _spec = importlib.util.spec_from_file_location(
     "basics_taskflow_etl",
     Path(__file__).resolve().parent.parent.parent / "flows" / "basics" / "basics_taskflow_etl.py",
@@ -14,22 +14,24 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["basics_taskflow_etl"] = _mod
 _spec.loader.exec_module(_mod)
 
+ExtractPayload = _mod.ExtractPayload
 extract = _mod.extract
 transform = _mod.transform
 load = _mod.load
 taskflow_etl_flow = _mod.taskflow_etl_flow
 
 
-def test_extract_returns_dict() -> None:
+def test_extract_returns_payload() -> None:
     result = extract.fn()
-    assert isinstance(result, dict)
+    assert isinstance(result, ExtractPayload)
+    assert len(result.users) == 3
 
 
 def test_transform() -> None:
     raw = extract.fn()
     result = transform.fn(raw)
-    assert "users" in result
-    assert "timestamp" in result
+    assert isinstance(result, ExtractPayload)
+    assert result.timestamp == raw.timestamp
 
 
 def test_load() -> None:

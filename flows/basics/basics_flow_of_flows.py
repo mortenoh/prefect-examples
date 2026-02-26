@@ -8,55 +8,85 @@ Prefect approach:    subflow calls; run_deployment() for deployed flows.
 
 from __future__ import annotations
 
-from typing import Any
-
 from dotenv import load_dotenv
 from prefect import flow, task
+from pydantic import BaseModel
+
+# ---------------------------------------------------------------------------
+# Models
+# ---------------------------------------------------------------------------
+
+
+class Record(BaseModel):
+    """A single data record with an optional normalised value."""
+
+    id: int
+    value: int
+    normalised: float = 0.0
+
+
+class RawData(BaseModel):
+    """Raw data payload from the source system."""
+
+    source: str
+    records: list[Record]
+
+
+class ProcessedData(BaseModel):
+    """Processed data payload with aggregates and enriched records."""
+
+    source: str
+    record_count: int
+    total_value: int
+    records: list[Record]
 
 
 @task
-def fetch_raw_data() -> dict[str, Any]:
+def fetch_raw_data() -> RawData:
     """Simulate fetching raw data from an external source.
 
     Returns:
-        A raw data payload with records and metadata.
+        A RawData payload with records and metadata.
     """
-    data = {
-        "source": "api-v2",
-        "records": [
-            {"id": 1, "value": 10},
-            {"id": 2, "value": 20},
-            {"id": 3, "value": 30},
+    data = RawData(
+        source="api-v2",
+        records=[
+            Record(id=1, value=10),
+            Record(id=2, value=20),
+            Record(id=3, value=30),
         ],
-    }
-    print(f"Fetched {len(data['records'])} raw records from {data['source']}")
+    )
+    print(f"Fetched {len(data.records)} raw records from {data.source}")
     return data
 
 
 @task
-def process_data(raw: dict[str, Any]) -> dict[str, Any]:
+def process_data(raw: RawData) -> ProcessedData:
     """Clean and aggregate raw records.
 
     Args:
         raw: The raw data payload from ingestion.
 
     Returns:
-        Processed payload with totals and cleaned records.
+        ProcessedData with totals and normalised records.
     """
-    records = raw["records"]
-    total = sum(r["value"] for r in records)
-    processed = {
-        "source": raw["source"],
-        "record_count": len(records),
-        "total_value": total,
-        "records": [{**r, "normalised": r["value"] / total} for r in records],
-    }
-    print(f"Processed {processed['record_count']} records, total value: {total}")
+    total = sum(r.value for r in raw.records)
+    records = [
+        r.model_copy(update={"normalised": r.value / total})
+        for r in raw.records
+    ]
+    processed = ProcessedData(
+        source=raw.source,
+        record_count=len(records),
+        total_value=total,
+        records=records,
+    )
+    print(f"Processed {processed.record_count} records, total value: {total}")
     return processed
 
 
 @task
-def build_report(data: dict[str, Any]) -> str:
+def build_report(data: ProcessedData) -> str:
     """Generate a human-readable report summary.
 
     Args:
@@ -65,7 +95,7 @@ def build_report(data: dict[str, Any]) -> str:
     Returns:
         A formatted report string.
     """
-    report = f"Report — source: {data['source']}, records: {data['record_count']}, total: {data['total_value']}"
+    report = f"Report -- source: {data.source}, records: {data.record_count}, total: {data.total_value}"
     print(report)
     return report
 
@@ -76,27 +106,27 @@ def build_report(data: dict[str, Any]) -> str:
 
 
 @flow(name="basics_ingest", log_prints=True)
-def ingest_flow() -> dict[str, Any]:
+def ingest_flow() -> RawData:
     """Ingest raw data from the source system."""
     return fetch_raw_data()
 
 
 @flow(name="basics_transform", log_prints=True)
-def transform_flow(raw: dict[str, Any]) -> dict[str, Any]:
+def transform_flow(raw: RawData) -> ProcessedData:
     """Transform and enrich raw data.
 
     Args:
-        raw: Raw data payload from ingestion.
+        raw: RawData payload from ingestion.
     """
     return process_data(raw)
 
 
 @flow(name="basics_report", log_prints=True)
-def report_flow(data: dict[str, Any]) -> str:
+def report_flow(data: ProcessedData) -> str:
     """Generate a summary report from processed data.
 
     Args:
-        data: Processed data payload.
+        data: ProcessedData payload.
     """
     return build_report(data)
 

@@ -9,8 +9,6 @@ Prefect approach:    Build 3 dimension tables, a fact table, normalize,
                      compute composite index, and rank countries.
 """
 
-from typing import Any
-
 from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
@@ -18,6 +16,22 @@ from pydantic import BaseModel
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
+
+
+class CountryInput(BaseModel):
+    """Raw country input data."""
+
+    name: str
+    region: str
+    population: int
+
+
+class IndicatorInput(BaseModel):
+    """Raw indicator input data."""
+
+    name: str
+    unit: str
+    higher_is_better: bool
 
 
 class DimCountry(BaseModel):
@@ -77,18 +91,18 @@ class StarSchemaReport(BaseModel):
 
 
 @task
-def build_country_dimension(data: list[dict[str, Any]]) -> list[DimCountry]:
+def build_country_dimension(data: list[CountryInput]) -> list[DimCountry]:
     """Build country dimension table with surrogate keys.
 
     Args:
-        data: Raw country data.
+        data: Raw country input data.
 
     Returns:
         List of DimCountry.
     """
     dims: list[DimCountry] = []
     for i, d in enumerate(data, 1):
-        dims.append(DimCountry(key=i, name=d["name"], region=d["region"], population=d["population"]))
+        dims.append(DimCountry(key=i, name=d.name, region=d.region, population=d.population))
     print(f"Built country dimension: {len(dims)} records")
     return dims
 
@@ -112,18 +126,18 @@ def build_time_dimension(start_year: int, end_year: int) -> list[DimTime]:
 
 
 @task
-def build_indicator_dimension(indicators: list[dict[str, Any]]) -> list[DimIndicator]:
+def build_indicator_dimension(indicators: list[IndicatorInput]) -> list[DimIndicator]:
     """Build indicator dimension table.
 
     Args:
-        indicators: Raw indicator definitions.
+        indicators: Raw indicator input data.
 
     Returns:
         List of DimIndicator.
     """
     dims: list[DimIndicator] = []
     for i, ind in enumerate(indicators, 1):
-        dims.append(DimIndicator(key=i, name=ind["name"], unit=ind["unit"], higher_is_better=ind["higher_is_better"]))
+        dims.append(DimIndicator(key=i, name=ind.name, unit=ind.unit, higher_is_better=ind.higher_is_better))
     return dims
 
 
@@ -268,16 +282,16 @@ def star_schema_flow() -> StarSchemaReport:
         StarSchemaReport.
     """
     country_data = [
-        {"name": "Norway", "region": "Nordic", "population": 5400000},
-        {"name": "Sweden", "region": "Nordic", "population": 10400000},
-        {"name": "Finland", "region": "Nordic", "population": 5500000},
-        {"name": "Denmark", "region": "Nordic", "population": 5800000},
-        {"name": "Germany", "region": "Central", "population": 83000000},
+        CountryInput(name="Norway", region="Nordic", population=5400000),
+        CountryInput(name="Sweden", region="Nordic", population=10400000),
+        CountryInput(name="Finland", region="Nordic", population=5500000),
+        CountryInput(name="Denmark", region="Nordic", population=5800000),
+        CountryInput(name="Germany", region="Central", population=83000000),
     ]
     indicator_defs = [
-        {"name": "life_expectancy", "unit": "years", "higher_is_better": True},
-        {"name": "infant_mortality", "unit": "per_1000", "higher_is_better": False},
-        {"name": "health_spending", "unit": "pct_gdp", "higher_is_better": True},
+        IndicatorInput(name="life_expectancy", unit="years", higher_is_better=True),
+        IndicatorInput(name="infant_mortality", unit="per_1000", higher_is_better=False),
+        IndicatorInput(name="health_spending", unit="pct_gdp", higher_is_better=True),
     ]
     weights = {"life_expectancy": 0.4, "infant_mortality": 0.35, "health_spending": 0.25}
 
