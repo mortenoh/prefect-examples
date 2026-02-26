@@ -219,7 +219,8 @@ with an identity provider.
 | `make deploy` | register-blocks + create-blocks + `prefect deploy --all` | Register blocks, create instances, and deploy all flows |
 | `make register-blocks` | `prefect block register -m prefect_dhis2` | Register custom block types with the server |
 | `make create-blocks` | `uv run python scripts/create_blocks.py` | Create DHIS2 credentials block instances for all known servers |
-| `make server` | `uv run prefect server start` | Start a standalone server (no Docker) |
+| `make server` | Server + worker | Start Prefect server and a process worker (no Docker) |
+| `make deploy-local` | `prefect deploy --all` | Deploy all flows from root `prefect.yaml` to local server |
 
 To run services in the background, add `-d`:
 
@@ -244,49 +245,90 @@ docker compose down -v
 
 ## Deployment workflow
 
-### 1. Start the stack
+There are two ways to run deployments locally: **Docker Compose** (production-like)
+and **standalone** (lightweight, no Docker).
+
+### Option A: Docker Compose (production-like)
+
+#### 1. Start the stack
 
 ```bash
 make start
 ```
 
-Wait for the healthchecks to pass. The Prefect UI will be available at
-`http://localhost:4200`.
+This brings up PostgreSQL, the Prefect server, a worker, and object storage.
+Wait for the healthchecks to pass. The UI will be at `http://localhost:4200`.
 
-### 2. Deploy flows
+#### 2. Deploy flows
 
 ```bash
 make deploy
 ```
 
-This registers the deployments from `deployments/dhis2_connection/` and
-`deployments/dhis2_ou/` with the Prefect server. Each deployment has its own
-`prefect.yaml` that defines the entrypoint, schedule, and work pool.
+This registers custom block types, creates block instances, and deploys flows
+from the `deployments/` directories. Each deployment has its own `prefect.yaml`.
 
-### 3. Verify in the UI
+### Option B: Standalone (no Docker)
 
-Open `http://localhost:4200` and navigate to the Deployments page. You should
-see:
-
-- **dhis2-connection** -- runs every 15 minutes
-- **dhis2-ou** -- runs every 15 minutes
-
-### 4. Trigger a manual run
+#### 1. Start server and worker
 
 ```bash
-PREFECT_API_URL=http://localhost:4200/api \
-  uv run prefect deployment run dhis2_connection/dhis2-connection
+make server
+```
+
+This starts both the Prefect server and a process worker in a single terminal.
+The UI will be at `http://localhost:4200`. Press Ctrl+C to stop both.
+
+#### 2. Deploy all flows
+
+```bash
+make deploy-local
+```
+
+This creates the `default` work pool (if needed) and deploys all flows from the
+root `prefect.yaml`. The root `prefect.yaml` is auto-generated from the `flows/`
+directory and covers all example flows.
+
+### Verify in the UI
+
+Open `http://localhost:4200` and navigate to the Deployments page.
+
+### Trigger a manual run
+
+**CLI:**
+
+```bash
+prefect deployment run dhis2_org_units/dhis2-org-units
+```
+
+**REST API (curl):**
+
+```bash
+# Look up deployment by flow name and deployment name
+curl -s http://localhost:4200/api/deployments/name/dhis2_org_units/dhis2-org-units
+
+# Trigger a run (requires deployment ID)
+DEPLOY_ID=$(curl -s http://localhost:4200/api/deployments/name/dhis2_org_units/dhis2-org-units | python3 -c "import sys,json;print(json.load(sys.stdin)['id'])")
+
+curl -s -X POST "http://localhost:4200/api/deployments/$DEPLOY_ID/create_flow_run" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+# With parameter overrides
+curl -s -X POST "http://localhost:4200/api/deployments/$DEPLOY_ID/create_flow_run" \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"output_dir": "/tmp/org-units"}}'
 ```
 
 Or use the "Run" button in the UI.
 
-### 5. Monitor
+### Monitor
 
 The Flow Runs page in the UI shows run status, logs, artifacts, and task-level
 details. Use the CLI for a quick check:
 
 ```bash
-PREFECT_API_URL=http://localhost:4200/api uv run prefect flow-run ls
+prefect flow-run ls
 ```
 
 ---

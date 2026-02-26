@@ -35,8 +35,12 @@ clean: ## Remove build artifacts
 run: ## Run flow basics_hello_world
 	PREFECT_API_URL= uv run python flows/basics/basics_hello_world.py
 
-server: ## Start Prefect UI server (http://127.0.0.1:4200)
-	uv run prefect server start
+server: ## Start Prefect server + worker (http://127.0.0.1:4200)
+	uv run prefect work-pool create default --type process 2>/dev/null || true
+	trap 'kill 0' EXIT; \
+	uv run prefect server start & \
+	sleep 3 && uv run prefect worker start --pool default & \
+	wait
 
 start: ## Start Prefect stack (PostgreSQL + Server + Worker + RustFS)
 	docker compose up --build

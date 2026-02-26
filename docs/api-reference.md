@@ -103,10 +103,46 @@ curl -s -X POST http://localhost:4200/api/deployments/ \
 curl -s http://localhost:4200/api/deployments/<DEPLOYMENT_ID>
 ```
 
+**Read a deployment by name**
+
+Look up a deployment using the flow name and deployment name instead of an ID:
+
+```bash
+curl -s http://localhost:4200/api/deployments/name/<FLOW_NAME>/<DEPLOYMENT_NAME>
+```
+
+Example:
+
+```bash
+curl -s http://localhost:4200/api/deployments/name/dhis2_org_units/dhis2-org-units
+```
+
 **Trigger a deployment run**
 
 ```bash
 curl -s -X POST http://localhost:4200/api/deployments/<DEPLOYMENT_ID>/create_flow_run \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+**Trigger a deployment run with parameters**
+
+```bash
+curl -s -X POST http://localhost:4200/api/deployments/<DEPLOYMENT_ID>/create_flow_run \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"output_dir": "/tmp/results", "batch_size": 500}}'
+```
+
+**Trigger by name (two-step)**
+
+The `create_flow_run` endpoint requires a deployment ID. Combine the name lookup
+with the trigger in a single command:
+
+```bash
+DEPLOY_ID=$(curl -s http://localhost:4200/api/deployments/name/dhis2_org_units/dhis2-org-units \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)['id'])")
+
+curl -s -X POST "http://localhost:4200/api/deployments/$DEPLOY_ID/create_flow_run" \
   -H "Content-Type: application/json" \
   -d '{}'
 ```

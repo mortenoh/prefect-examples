@@ -122,7 +122,7 @@ def generate_yaml(entries: list[dict[str, str]]) -> str:
     lines.append("")
     lines.append("pull:")
     lines.append("  - prefect.deployments.steps.set_working_directory:")
-    lines.append("      directory: .")
+    lines.append(f"      directory: {ROOT}")
     lines.append("")
     lines.append("deployments:")
 

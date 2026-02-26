@@ -3,7 +3,7 @@
 
 pull:
   - prefect.deployments.steps.set_working_directory:
-      directory: .
+      directory: /Users/morteoh/dev/prefect-examples
 
 deployments:
   - name: analytics-air-quality-index
