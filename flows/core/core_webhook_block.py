@@ -58,10 +58,12 @@ def create_post_webhook() -> dict[str, Any]:
     webhook = Webhook(
         method="POST",
         url=SecretStr("https://api.example.com/events"),
-        headers=SecretDict({
-            "Content-Type": "application/json",
-            "Authorization": "Bearer placeholder-token",
-        }),
+        headers=SecretDict(
+            {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer placeholder-token",
+            }
+        ),
     )
     summary = {
         "method": webhook.method,
