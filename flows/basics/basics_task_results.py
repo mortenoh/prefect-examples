@@ -50,9 +50,7 @@ def consume_metrics(metrics: Metrics) -> str:
         A formatted summary string.
     """
     summary = (
-        f"Total: {metrics.total}, "
-        f"Average: {metrics.average}, "
-        f"Items ({len(metrics.items)}): {', '.join(metrics.items)}"
+        f"Total: {metrics.total}, Average: {metrics.average}, Items ({len(metrics.items)}): {', '.join(metrics.items)}"
     )
     print(summary)
     return summary

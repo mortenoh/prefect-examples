@@ -62,9 +62,7 @@ def transform(raw: ExtractPayload) -> ExtractPayload:
         Transformed payload with filtered and cleaned users.
     """
     users = [
-        user.model_copy(update={"name": user.name.upper()})
-        for user in raw.users
-        if user.active and user.age >= 18
+        user.model_copy(update={"name": user.name.upper()}) for user in raw.users if user.active and user.age >= 18
     ]
     transformed = ExtractPayload(users=users, timestamp=raw.timestamp)
     print(f"Transformed down to {len(users)} users")

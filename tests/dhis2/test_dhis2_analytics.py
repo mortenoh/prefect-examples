@@ -26,20 +26,22 @@ write_analytics_csv = _mod.write_analytics_csv
 analytics_report = _mod.analytics_report
 dhis2_analytics_flow = _mod.dhis2_analytics_flow
 
-SAMPLE_ANALYTICS_RESPONSE = Dhis2AnalyticsResponse.model_validate({
-    "headers": [
-        {"name": "dx", "column": "Data"},
-        {"name": "ou", "column": "Organisation unit"},
-        {"name": "pe", "column": "Period"},
-        {"name": "value", "column": "Value"},
-    ],
-    "rows": [
-        ["fbfJHSPpUQD", "ImspTQPwCqd", "2024Q1", "1234.5"],
-        ["fbfJHSPpUQD", "ImspTQPwCqd", "2024Q2", "2345.6"],
-        ["cYeuwXTCPkU", "ImspTQPwCqd", "2024Q1", "567.8"],
-        ["cYeuwXTCPkU", "ImspTQPwCqd", "2024Q2", "890.1"],
-    ],
-})
+SAMPLE_ANALYTICS_RESPONSE = Dhis2AnalyticsResponse.model_validate(
+    {
+        "headers": [
+            {"name": "dx", "column": "Data"},
+            {"name": "ou", "column": "Organisation unit"},
+            {"name": "pe", "column": "Period"},
+            {"name": "value", "column": "Value"},
+        ],
+        "rows": [
+            ["fbfJHSPpUQD", "ImspTQPwCqd", "2024Q1", "1234.5"],
+            ["fbfJHSPpUQD", "ImspTQPwCqd", "2024Q2", "2345.6"],
+            ["cYeuwXTCPkU", "ImspTQPwCqd", "2024Q1", "567.8"],
+            ["cYeuwXTCPkU", "ImspTQPwCqd", "2024Q2", "890.1"],
+        ],
+    }
+)
 
 
 def test_build_query_defaults() -> None:

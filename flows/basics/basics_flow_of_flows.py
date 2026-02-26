@@ -71,10 +71,7 @@ def process_data(raw: RawData) -> ProcessedData:
         ProcessedData with totals and normalised records.
     """
     total = sum(r.value for r in raw.records)
-    records = [
-        r.model_copy(update={"normalised": r.value / total})
-        for r in raw.records
-    ]
+    records = [r.model_copy(update={"normalised": r.value / total}) for r in raw.records]
     processed = ProcessedData(
         source=raw.source,
         record_count=len(records),

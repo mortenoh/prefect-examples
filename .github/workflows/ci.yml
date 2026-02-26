@@ -20,11 +20,8 @@ jobs:
 
       - run: make sync
 
-      - name: Ruff format check
-        run: uv run ruff format --check .
-
-      - name: Lint
-        run: make lint
+      - name: Check
+        run: make check
 
   test:
     runs-on: ubuntu-latest
