@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-from prefect_examples.dhis2 import Dhis2Credentials
+from prefect_examples.dhis2 import Dhis2Credentials, Dhis2ServerInfo
 
 _spec = importlib.util.spec_from_file_location(
     "dhis2_pipeline",
@@ -28,7 +28,7 @@ validate_metadata = _mod.validate_metadata
 build_dashboard = _mod.build_dashboard
 dhis2_pipeline_flow = _mod.dhis2_pipeline_flow
 
-SAMPLE_SYSTEM_INFO = {"version": "2.43-SNAPSHOT", "revision": "abc123"}
+SAMPLE_SYSTEM_INFO = Dhis2ServerInfo(version="2.43-SNAPSHOT", revision="abc123")
 SAMPLE_ORG_UNITS = [
     {"id": "OU1", "name": "National", "level": 1, "parent": None},
     {"id": "OU2", "name": "Region", "level": 2, "parent": {"id": "OU1"}},

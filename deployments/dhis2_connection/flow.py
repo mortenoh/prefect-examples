@@ -27,7 +27,7 @@ from prefect.blocks.notifications import SlackWebhook
 from prefect.runtime import deployment
 from pydantic import BaseModel, SecretStr
 
-from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials, get_dhis2_credentials
+from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials, Dhis2ServerInfo, get_dhis2_credentials
 
 
 class ConnectionReport(BaseModel):
@@ -39,10 +39,10 @@ class ConnectionReport(BaseModel):
 
 
 @task
-def verify_connection(client: Dhis2Client) -> dict:
-    data = client.get_server_info()
-    print(f"Connected to DHIS2 v{data.get('version', 'unknown')}")
-    return data
+def verify_connection(client: Dhis2Client) -> Dhis2ServerInfo:
+    info = client.get_server_info()
+    print(f"Connected to DHIS2 v{info.version or 'unknown'}")
+    return info
 
 
 @task
@@ -55,14 +55,14 @@ def fetch_org_unit_count(client: Dhis2Client) -> int:
 @task
 def build_report(
     creds: Dhis2Credentials,
-    server_info: dict,
+    server_info: Dhis2ServerInfo,
     org_unit_count: int,
 ) -> ConnectionReport:
     return ConnectionReport(
         deployment_name=deployment.name or "local",
         host=creds.base_url,
         username=creds.username,
-        server_version=server_info.get("version", "unknown"),
+        server_version=server_info.version or "unknown",
         org_unit_count=org_unit_count,
     )
 

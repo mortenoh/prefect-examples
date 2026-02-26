@@ -62,7 +62,7 @@ def extract_users(config: PipelineConfig) -> list[UserRecord]:
         {"name": "Bob", "email": "bob@example.com", "age": 25},
         {"name": "Charlie", "email": "charlie@example.com", "age": 35},
     ]
-    users = [UserRecord(**r) for r in raw[: config.batch_size]]  # type: ignore[arg-type]
+    users = [UserRecord(**r) for r in raw[: config.batch_size]]
     print(f"Extracted {len(users)} users from {config.source}")
     return users
 

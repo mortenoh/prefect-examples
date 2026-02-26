@@ -14,6 +14,8 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["dhis2_connection"] = _mod
 _spec.loader.exec_module(_mod)
 
+from prefect_examples.dhis2 import Dhis2ServerInfo  # noqa: E402
+
 Dhis2Client = _mod.Dhis2Client
 Dhis2Credentials = _mod.Dhis2Credentials
 Dhis2ApiResponse = _mod.Dhis2ApiResponse
@@ -46,7 +48,7 @@ def test_connection_info() -> None:
 
 @patch.object(Dhis2Client, "get_server_info")
 def test_verify_response(mock_info: MagicMock) -> None:
-    mock_info.return_value = {"version": "2.43-SNAPSHOT"}
+    mock_info.return_value = Dhis2ServerInfo(version="2.43-SNAPSHOT")
     client = MagicMock(spec=Dhis2Client)
     client.get_server_info = mock_info
     response = verify_connection.fn(client, "https://play.im.dhis2.org/dev")
@@ -75,7 +77,7 @@ def test_display_connection() -> None:
 @patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(mock_get_client: MagicMock) -> None:
     mock_client = MagicMock(spec=Dhis2Client)
-    mock_client.get_server_info.return_value = {"version": "2.40.0"}
+    mock_client.get_server_info.return_value = Dhis2ServerInfo(version="2.40.0")
     mock_client.fetch_metadata.return_value = [{"id": "a"}, {"id": "b"}]
     mock_get_client.return_value = mock_client
     state = dhis2_connection_flow(return_state=True)

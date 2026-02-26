@@ -71,8 +71,8 @@ def connect_and_verify(client: Dhis2Client, base_url: str) -> Dhis2ApiResponse:
     Returns:
         Dhis2ApiResponse from verification.
     """
-    data: dict[str, Any] = client.get_server_info()
-    print(f"Connected to {base_url}, DHIS2 v{data.get('version', 'unknown')}")
+    info = client.get_server_info()
+    print(f"Connected to {base_url}, DHIS2 v{info.version or 'unknown'}")
     return Dhis2ApiResponse(endpoint="system/info", record_count=1)
 
 

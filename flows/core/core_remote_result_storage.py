@@ -42,7 +42,7 @@ def create_s3_storage() -> str | None:
             credentials=creds,
             aws_client_parameters=AwsClientParameters(
                 endpoint_url="http://localhost:9000",
-            ),  # type: ignore[call-arg]
+            ),
         )
         # Verify S3 connectivity before registering the block --
         # .save() only stores config in the Prefect server, it does not

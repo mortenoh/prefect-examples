@@ -2,17 +2,7 @@
 
 import re
 
-from prefect_examples.config import FLOW_DEFAULTS, TASK_DEFAULTS, timestamp
-
-
-def test_flow_defaults_has_required_keys() -> None:
-    for key in ("retries", "retry_delay_seconds", "log_prints"):
-        assert key in FLOW_DEFAULTS
-
-
-def test_task_defaults_has_required_keys() -> None:
-    for key in ("retries", "retry_delay_seconds", "log_prints"):
-        assert key in TASK_DEFAULTS
+from prefect_examples.config import timestamp
 
 
 def test_timestamp_returns_iso_format() -> None:

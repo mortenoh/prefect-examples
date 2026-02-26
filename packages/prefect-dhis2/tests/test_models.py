@@ -40,7 +40,7 @@ class TestDhis2ApiResponse:
 
     def test_deserialization(self) -> None:
         data = {"endpoint": "/api/programs", "record_count": 3, "status_code": 201}
-        resp = Dhis2ApiResponse(**data)  # type: ignore[arg-type]
+        resp = Dhis2ApiResponse(**data)
         assert resp.endpoint == "/api/programs"
         assert resp.record_count == 3
         assert resp.status_code == 201

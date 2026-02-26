@@ -14,7 +14,7 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["dhis2_analytics"] = _mod
 _spec.loader.exec_module(_mod)
 
-from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials  # noqa: E402
+from prefect_examples.dhis2 import Dhis2AnalyticsResponse, Dhis2Client, Dhis2Credentials  # noqa: E402
 
 AnalyticsQuery = _mod.AnalyticsQuery
 AnalyticsRow = _mod.AnalyticsRow
@@ -26,7 +26,7 @@ write_analytics_csv = _mod.write_analytics_csv
 analytics_report = _mod.analytics_report
 dhis2_analytics_flow = _mod.dhis2_analytics_flow
 
-SAMPLE_ANALYTICS_RESPONSE = {
+SAMPLE_ANALYTICS_RESPONSE = Dhis2AnalyticsResponse.model_validate({
     "headers": [
         {"name": "dx", "column": "Data"},
         {"name": "ou", "column": "Organisation unit"},
@@ -39,7 +39,7 @@ SAMPLE_ANALYTICS_RESPONSE = {
         ["cYeuwXTCPkU", "ImspTQPwCqd", "2024Q1", "567.8"],
         ["cYeuwXTCPkU", "ImspTQPwCqd", "2024Q2", "890.1"],
     ],
-}
+})
 
 
 def test_build_query_defaults() -> None:
@@ -64,9 +64,8 @@ def test_fetch_analytics(mock_fetch: MagicMock) -> None:
     client.fetch_analytics = mock_fetch
     query = build_query.fn()
     response = fetch_analytics.fn(client, query)
-    assert "headers" in response
-    assert "rows" in response
-    assert len(response["rows"]) == 4
+    assert len(response.headers) == 4
+    assert len(response.rows) == 4
 
 
 def test_parse_analytics() -> None:

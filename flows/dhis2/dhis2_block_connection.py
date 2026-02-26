@@ -9,8 +9,6 @@ Prefect approach:    One Block type, multiple saved instances by name.
 
 from __future__ import annotations
 
-from typing import Any
-
 from dotenv import load_dotenv
 from prefect import flow, task
 from pydantic import BaseModel
@@ -75,8 +73,8 @@ def verify_connection(client: Dhis2Client, base_url: str) -> Dhis2ApiResponse:
     Returns:
         Dhis2ApiResponse from the system/info endpoint.
     """
-    data: dict[str, Any] = client.get_server_info()
-    print(f"Verified: DHIS2 v{data.get('version', 'unknown')} at {base_url}")
+    info = client.get_server_info()
+    print(f"Verified: DHIS2 v{info.version or 'unknown'} at {base_url}")
     return Dhis2ApiResponse(endpoint="system/info", record_count=1)
 
 

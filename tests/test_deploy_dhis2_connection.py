@@ -14,6 +14,8 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["deploy_dhis2_connection"] = _mod
 _spec.loader.exec_module(_mod)
 
+from prefect_examples.dhis2 import Dhis2ServerInfo  # noqa: E402
+
 Dhis2Client = _mod.Dhis2Client
 Dhis2Credentials = _mod.Dhis2Credentials
 ConnectionReport = _mod.ConnectionReport
@@ -26,18 +28,18 @@ dhis2_connection_flow = _mod.dhis2_connection_flow
 def _mock_client_with_side_effect() -> MagicMock:
     """Create a mock Dhis2Client that dispatches based on the method."""
     mock_client = MagicMock(spec=Dhis2Client)
-    mock_client.get_server_info.return_value = {"version": "2.43-SNAPSHOT"}
+    mock_client.get_server_info.return_value = Dhis2ServerInfo(version="2.43-SNAPSHOT")
     mock_client.fetch_metadata.return_value = [{"id": "OU1"}, {"id": "OU2"}]
     return mock_client
 
 
 @patch.object(Dhis2Client, "get_server_info")
 def test_verify_connection(mock_info: MagicMock) -> None:
-    mock_info.return_value = {"version": "2.43-SNAPSHOT", "revision": "abc123"}
+    mock_info.return_value = Dhis2ServerInfo(version="2.43-SNAPSHOT", revision="abc123")
     client = MagicMock(spec=Dhis2Client)
     client.get_server_info = mock_info
     result = verify_connection.fn(client)
-    assert result["version"] == "2.43-SNAPSHOT"
+    assert result.version == "2.43-SNAPSHOT"
 
 
 @patch.object(Dhis2Client, "fetch_metadata")
@@ -51,7 +53,7 @@ def test_fetch_org_unit_count(mock_fetch: MagicMock) -> None:
 
 def test_build_report() -> None:
     creds = Dhis2Credentials()
-    server_info = {"version": "2.43"}
+    server_info = Dhis2ServerInfo(version="2.43")
     report = build_report.fn(creds, server_info, 5)
     assert isinstance(report, ConnectionReport)
     assert report.server_version == "2.43"

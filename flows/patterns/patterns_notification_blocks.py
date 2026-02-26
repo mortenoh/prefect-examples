@@ -37,7 +37,7 @@ def configure_notification_blocks() -> dict[str, Any]:
     slack = SlackWebhook(url=SecretStr(slack_webhook_url))
 
     # CustomWebhookNotificationBlock -- flexible for any HTTP endpoint
-    custom = CustomWebhookNotificationBlock(  # type: ignore[call-arg]
+    custom = CustomWebhookNotificationBlock(
         name="ops-webhook",
         url="https://monitoring.example.com/alerts",
         method="POST",
@@ -76,7 +76,7 @@ def demonstrate_template_resolution() -> dict[str, Any]:
     Returns:
         The resolved request dict (method, url, json, headers, ...).
     """
-    block = CustomWebhookNotificationBlock(  # type: ignore[call-arg]
+    block = CustomWebhookNotificationBlock(
         name="template-demo",
         url="https://api.example.com/notify?token={{api_token}}",
         method="POST",

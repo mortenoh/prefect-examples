@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Any
 
 from dotenv import load_dotenv
 from prefect import flow, task
@@ -19,6 +18,7 @@ from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
 
 from prefect_examples.dhis2 import (
+    Dhis2AnalyticsResponse,
     Dhis2Client,
     get_dhis2_credentials,
 )
@@ -89,7 +89,7 @@ def build_query(
 
 
 @task
-def fetch_analytics(client: Dhis2Client, query: AnalyticsQuery) -> dict[str, Any]:
+def fetch_analytics(client: Dhis2Client, query: AnalyticsQuery) -> Dhis2AnalyticsResponse:
     """Fetch analytics data from the DHIS2 API.
 
     Args:
@@ -97,29 +97,28 @@ def fetch_analytics(client: Dhis2Client, query: AnalyticsQuery) -> dict[str, Any
         query: Analytics query.
 
     Returns:
-        Raw analytics response dict with "headers" and "rows".
+        Parsed analytics response with headers and rows.
     """
     data = client.fetch_analytics(query.dimension, query.filter_param)
-    row_count = len(data.get("rows", []))
-    print(f"Fetched analytics: {row_count} rows")
+    print(f"Fetched analytics: {len(data.rows)} rows")
     return data
 
 
 @task
-def parse_analytics(response: dict[str, Any]) -> list[AnalyticsRow]:
+def parse_analytics(response: Dhis2AnalyticsResponse) -> list[AnalyticsRow]:
     """Parse headers+rows analytics response into typed records.
 
     Maps column names from headers to row values.
 
     Args:
-        response: Raw analytics response.
+        response: Parsed analytics response.
 
     Returns:
         List of AnalyticsRow.
     """
-    headers = [h["name"] for h in response["headers"]]
+    headers = [h.name for h in response.headers]
     rows: list[AnalyticsRow] = []
-    for row_data in response["rows"]:
+    for row_data in response.rows:
         record = dict(zip(headers, row_data, strict=True))
         rows.append(
             AnalyticsRow(

@@ -15,7 +15,7 @@ from typing import Any
 
 import httpx
 from prefect.blocks.core import Block
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 # ---------------------------------------------------------------------------
 # API Client
@@ -59,12 +59,11 @@ class Dhis2Client:
         """Close the underlying HTTP client."""
         self._http.close()
 
-    def get_server_info(self) -> dict[str, Any]:
+    def get_server_info(self) -> Dhis2ServerInfo:
         """Fetch /api/system/info -- version, revision, etc."""
         resp = self._http.get("/system/info")
         resp.raise_for_status()
-        result: dict[str, Any] = resp.json()
-        return result
+        return Dhis2ServerInfo.model_validate(resp.json())
 
     def fetch_metadata(
         self,
@@ -94,7 +93,7 @@ class Dhis2Client:
         self,
         dimension: list[str],
         filter_param: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> Dhis2AnalyticsResponse:
         """Fetch analytics data with dimension parameters.
 
         Args:
@@ -102,15 +101,14 @@ class Dhis2Client:
             filter_param: Optional filter parameter (e.g. "pe:LAST_4_QUARTERS").
 
         Returns:
-            Raw analytics response dict with "headers" and "rows".
+            Parsed analytics response with headers and rows.
         """
         params: dict[str, Any] = {"dimension": dimension}
         if filter_param:
             params["filter"] = filter_param
         resp = self._http.get("/analytics", params=params)
         resp.raise_for_status()
-        result: dict[str, Any] = resp.json()
-        return result
+        return Dhis2AnalyticsResponse.model_validate(resp.json())
 
 
 # ---------------------------------------------------------------------------
@@ -150,6 +148,38 @@ class Dhis2Credentials(Block):
 # ---------------------------------------------------------------------------
 # Response models
 # ---------------------------------------------------------------------------
+
+
+class Dhis2ServerInfo(BaseModel):
+    """Parsed /api/system/info response."""
+
+    version: str = ""
+    revision: str = ""
+    build_time: str = Field(default="", validation_alias="buildTime")
+    server_date: str = Field(default="", validation_alias="serverDate")
+
+    model_config = ConfigDict(extra="allow")
+
+
+class AnalyticsHeader(BaseModel):
+    """A single header entry from an analytics response."""
+
+    name: str
+    column: str = ""
+    value_type: str = Field(default="", validation_alias="valueType")
+
+    model_config = ConfigDict(extra="allow")
+
+
+class Dhis2AnalyticsResponse(BaseModel):
+    """Parsed analytics API response."""
+
+    headers: list[AnalyticsHeader] = []
+    rows: list[list[str]] = []
+    height: int = 0
+    width: int = 0
+
+    model_config = ConfigDict(extra="allow")
 
 
 class Dhis2ApiResponse(BaseModel):
