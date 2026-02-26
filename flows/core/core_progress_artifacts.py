@@ -9,6 +9,7 @@ Prefect approach:    create_progress_artifact() and update_progress_artifact()
 
 import time
 from typing import Any
+from uuid import UUID
 
 from dotenv import load_dotenv
 from prefect import flow, task
@@ -30,7 +31,7 @@ def process_batch(items: list[str], label: str) -> dict[str, Any]:
         Summary dict with batch label, item count, and duration.
     """
     start = time.monotonic()
-    artifact_id = create_progress_artifact(
+    artifact_id: UUID = create_progress_artifact(  # type: ignore[assignment]
         progress=0.0,
         key=f"batch-progress-{label}",
         description=f"Processing batch: {label}",

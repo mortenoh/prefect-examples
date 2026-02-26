@@ -11,7 +11,8 @@ PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT ?= false
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
+		sed 's/^[^:]*://' | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 sync: ## Install dependencies
 	uv sync
