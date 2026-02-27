@@ -58,7 +58,8 @@ enriched = enrich_record.map(validated)
 ```
 
 **See:** [Dynamic Tasks](flow-reference.md#dynamic-tasks),
-[Complex Pipeline](flow-reference.md#complex-pipeline)
+[Complex Pipeline](flow-reference.md#complex-pipeline),
+[WorldPop Country Comparison](flow-reference.md#worldpop-country-comparison)
 
 ## Error handling with `allow_failure` and retries
 
@@ -90,7 +91,8 @@ def pipeline():
 ```
 
 **See:** [State Handlers](flow-reference.md#state-handlers),
-[Retries and Hooks](flow-reference.md#retries-and-hooks)
+[Retries and Hooks](flow-reference.md#retries-and-hooks),
+[WorldPop Dataset Catalog](flow-reference.md#worldpop-dataset-catalog)
 
 ## Polling with while loops
 
@@ -116,7 +118,8 @@ future_b = poll_condition.submit(name="sensor-B")
 process([future_a.result(), future_b.result()])
 ```
 
-**See:** [Polling Tasks](flow-reference.md#polling-tasks)
+**See:** [Polling Tasks](flow-reference.md#polling-tasks),
+[WorldPop Population Stats](flow-reference.md#worldpop-population-stats)
 
 ## Concurrency limits
 

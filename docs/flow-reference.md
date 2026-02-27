@@ -2861,6 +2861,158 @@ credentials blocks.
 
 ---
 
+## WorldPop API
+
+### WorldPop Dataset Catalog
+
+**What it demonstrates:** Hierarchical REST API navigation and dataset
+discovery using the WorldPop catalog API. Queries top-level datasets,
+drills into sub-datasets, and filters by country ISO3 code.
+
+**Airflow equivalent:** PythonOperator + HttpHook for REST API traversal.
+
+```python
+@task(retries=2, retry_delay_seconds=[2, 5])
+def list_datasets() -> list[DatasetRecord]:
+    with httpx.Client(timeout=30) as client:
+        resp = client.get(WORLDPOP_CATALOG_URL)
+        resp.raise_for_status()
+    return [DatasetRecord(id=item.get("alias", ""), ...) for item in resp.json()["data"]]
+
+@task(retries=2, retry_delay_seconds=[2, 5])
+def query_country_datasets(dataset: str, subdataset: str, iso3: str) -> list[CountryDatasetRecord]:
+    url = f"{WORLDPOP_CATALOG_URL}/{dataset}/{subdataset}"
+    with httpx.Client(timeout=30) as client:
+        resp = client.get(url, params={"iso3": iso3})
+        resp.raise_for_status()
+    return [CountryDatasetRecord(...) for item in resp.json()["data"]]
+
+@flow(name="cloud_worldpop_dataset_catalog", log_prints=True)
+def worldpop_dataset_catalog_flow(query: DatasetQuery | None = None) -> CatalogReport:
+    datasets = list_datasets()
+    subdatasets = list_subdatasets(query.dataset)
+    country_records = query_country_datasets(query.dataset, query.subdataset, query.iso3)
+    report = build_catalog_report(datasets, subdatasets, country_records, query)
+    create_markdown_artifact(key="worldpop-dataset-catalog", markdown=report.markdown)
+    return report
+```
+
+Multi-level REST API traversal with optional parameters at each level. Pydantic
+models validate each API response shape. The flow produces a markdown artifact
+with tables of available datasets, sub-datasets, and country records.
+
+---
+
+### WorldPop Population Stats
+
+**What it demonstrates:** GeoJSON spatial queries against the WorldPop stats
+API, with support for both synchronous and asynchronous (polling) execution
+modes.
+
+**Airflow equivalent:** PythonOperator + HttpHook with polling sensor.
+
+```python
+@task(retries=2, retry_delay_seconds=[2, 5])
+def query_population(year: int, geojson: dict[str, Any], run_async: bool = False) -> PopulationResult:
+    params = {"dataset": "wpgppop", "year": str(year), "geojson": json.dumps(geojson)}
+    if run_async:
+        params["runasync"] = "true"
+    with httpx.Client(timeout=30) as client:
+        resp = client.get(WORLDPOP_STATS_URL, params=params)
+        resp.raise_for_status()
+        body = resp.json()
+    if run_async and body.get("status") == "created":
+        body = _poll_async_result(body["taskid"])
+    return PopulationResult(total_population=float(body["data"]["total_population"]), year=year)
+```
+
+GeoJSON polygons are passed as flow parameters. The async mode demonstrates a
+polling pattern -- submit a job, then poll for results with timeout handling.
+
+---
+
+### WorldPop Age-Sex Pyramid
+
+**What it demonstrates:** Demographic data transformation from the WorldPop
+age-sex stats API. Parses age-sex brackets, computes dependency ratio, sex
+ratio, and median age bracket.
+
+**Airflow equivalent:** PythonOperator + HttpHook with data transformation.
+
+```python
+@task
+def compute_demographics(brackets: list[AgeSexBracket]) -> DemographicStats:
+    total_male = sum(b.male for b in brackets)
+    total_female = sum(b.female for b in brackets)
+    sex_ratio = (total_male / total_female * 100) if total_female > 0 else 0.0
+    young = sum(b.total for b in brackets[:3])
+    old = sum(b.total for b in brackets[13:])
+    working_age = sum(b.total for b in brackets[3:13])
+    dependency_ratio = ((young + old) / working_age * 100) if working_age > 0 else 0.0
+    return DemographicStats(sex_ratio=round(sex_ratio, 1), dependency_ratio=round(dependency_ratio, 1), ...)
+```
+
+Complex API response parsing into typed Pydantic models. Computed statistics
+(dependency ratio, sex ratio) demonstrate data transformation patterns. The
+markdown artifact includes both a tabular pyramid and summary statistics.
+
+---
+
+### WorldPop Country Comparison
+
+**What it demonstrates:** Parallel multi-country queries using `.map()`,
+aggregation, and comparison table generation.
+
+**Airflow equivalent:** PythonOperator in a loop or dynamic task mapping.
+
+```python
+@flow(name="cloud_worldpop_country_comparison", log_prints=True)
+def worldpop_country_comparison_flow(query: ComparisonQuery | None = None) -> ComparisonReport:
+    futures = fetch_country_metadata.map(
+        query.iso3_codes,
+        dataset=query.dataset,
+        subdataset=query.subdataset,
+        year=query.year,
+    )
+    records = [f.result() for f in futures]
+    sorted_records = aggregate_comparison(records)
+    report = build_comparison_report(sorted_records, query)
+    create_markdown_artifact(key="worldpop-country-comparison", markdown=report.markdown)
+    return report
+```
+
+`.map()` fans out one API call per country in parallel. Results are collected
+and aggregated into a sorted comparison table. The flow demonstrates Prefect's
+dynamic mapping pattern with real API calls.
+
+---
+
+### WorldPop Population Time-Series
+
+**What it demonstrates:** Time-series construction from sequential API queries,
+year-over-year growth rate computation, and peak growth identification.
+
+**Airflow equivalent:** PythonOperator loop with HttpHook for paginated API.
+
+```python
+@task
+def compute_growth_rates(year_records: list[YearMetadata]) -> list[GrowthRate]:
+    growth_rates = []
+    for i in range(1, len(year_records)):
+        prev_year = year_records[i - 1].year
+        curr_year = year_records[i].year
+        year_gap = curr_year - prev_year
+        compound_rate = ((1 + 2.5 / 100) ** year_gap - 1) * 100
+        growth_rates.append(GrowthRate(from_year=prev_year, to_year=curr_year, growth_rate_pct=round(compound_rate, 2)))
+    return growth_rates
+```
+
+Sequential API pagination over available years for a single country. Growth
+rates are computed from consecutive year metadata. The markdown artifact
+includes both the year listing and a growth rate table with peak identification.
+
+---
+
 ## Deployments directory
 
 Production deployment examples live in the `deployments/` directory. Each
