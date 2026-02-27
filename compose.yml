@@ -2,11 +2,12 @@ x-prefect-env: &prefect-env
   PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:prefect@postgres:5432/prefect
   PREFECT_SERVER_ANALYTICS_ENABLED: "false"
   PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT: "false"
-  PYTHONPATH: /opt/prefect/src
+  PYTHONPATH: /opt/prefect/src:/opt/prefect/packages/prefect-dhis2
 
 x-prefect-volumes: &prefect-volumes
   - ./flows:/opt/prefect/flows
   - ./src:/opt/prefect/src
+  - ./packages:/opt/prefect/packages
   - ./deployments:/opt/prefect/deployments
 
 services:
