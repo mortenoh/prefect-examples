@@ -1,23 +1,11 @@
-"""DHIS2 World Bank Population Report -- deployment-ready flow.
+"""DHIS2 World Bank Population Import.
 
-Fetches total population (SP.POP.TOTL) from the World Bank API for a set
-of countries and years, resolves matching DHIS2 organisation units, and
-produces a markdown report.
+Fetches total population (SP.POP.TOTL) from the World Bank API, ensures
+the target data element and data set exist in DHIS2, and imports the
+population data as data values.
 
-Three ways to register this deployment:
-
-1. CLI::
-
-    cd deployments/dhis2_worldbank_import
-    prefect deploy --all
-
-2. Declarative (prefect.yaml in this directory)::
-
-    See prefect.yaml
-
-3. Python::
-
-    python deployments/dhis2_worldbank_import/deploy.py
+Airflow equivalent: PythonOperator chain with World Bank fetch + DHIS2 setup.
+Prefect approach:   typed models, retry-enabled tasks, markdown artifact.
 """
 
 from __future__ import annotations
@@ -78,8 +66,12 @@ class Dhis2DataSet(BaseModel):
     name: str = Field(description="Display name")
     shortName: str = Field(description="Short name")
     periodType: str = Field(default="Yearly", description="Period type")
-    dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
-    organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
+    dataSetElements: list[Dhis2DataSetElement] = Field(
+        default_factory=list, description="Data elements in the set"
+    )
+    organisationUnits: list[Dhis2Ref] = Field(
+        default_factory=list, description="Assigned org units"
+    )
 
 
 class PopulationQuery(BaseModel):
@@ -99,21 +91,31 @@ class CountryPopulation(BaseModel):
     population: int = Field(description="Total population")
 
 
-class OrgUnitMapping(BaseModel):
-    """Mapping from ISO3 code to a DHIS2 organisation unit."""
+class OrgUnit(BaseModel):
+    """A DHIS2 organisation unit."""
 
-    iso3: str = Field(description="Country ISO3 code")
-    org_unit_uid: str = Field(description="DHIS2 organisation unit UID")
-    org_unit_name: str = Field(default="", description="Organisation unit display name")
+    id: str = Field(description="DHIS2 UID")
+    name: str = Field(default="", description="Display name")
 
 
-class PopulationReport(BaseModel):
-    """Summary report of World Bank population data and DHIS2 org unit mapping."""
+class DataValue(BaseModel):
+    """A single DHIS2 data value."""
+
+    dataElement: str = Field(description="Data element UID")
+    period: str = Field(description="Period (e.g. '2023' for Yearly)")
+    orgUnit: str = Field(description="Organisation unit UID")
+    value: str = Field(description="Value as string")
+
+
+class ImportResult(BaseModel):
+    """Summary of a DHIS2 data value import."""
 
     dhis2_url: str = Field(description="Target DHIS2 instance URL")
-    record_count: int = Field(default=0, description="Population records fetched")
-    org_units_resolved: int = Field(default=0, description="Org units matched in DHIS2")
-    org_units_requested: int = Field(default=0, description="Org units requested")
+    org_unit: OrgUnit = Field(description="Level 1 org unit used as target")
+    imported: int = Field(default=0, description="Records imported")
+    updated: int = Field(default=0, description="Records updated")
+    ignored: int = Field(default=0, description="Records ignored")
+    total: int = Field(default=0, description="Total records sent")
     markdown: str = Field(default="", description="Markdown summary")
 
 
@@ -123,33 +125,40 @@ class PopulationReport(BaseModel):
 
 
 @task
-def ensure_dhis2_metadata(client: Dhis2Client) -> dict[str, Any]:
+def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
     """Ensure the population data element and data set exist in DHIS2.
 
-    Fetches level-1 org units, builds the metadata payload, and POSTs to
-    /api/metadata.  Uses CREATE_AND_UPDATE so this is idempotent.
+    Fetches the level-1 org unit, creates the DE and DS if needed, and
+    returns the org unit to use as the data target.
 
     Args:
         client: Authenticated DHIS2 client.
 
     Returns:
-        Raw DHIS2 metadata import summary.
+        Level-1 OrgUnit.
     """
-    level1_ous = client.fetch_metadata("organisationUnits", fields="id,name", filters=["level:eq:1"])
-    level1_refs = [Dhis2Ref(id=ou["id"]) for ou in level1_ous]
+    level1_ous = client.fetch_metadata(
+        "organisationUnits", fields="id,name", filters=["level:eq:1"]
+    )
+    if not level1_ous:
+        msg = "No level-1 organisation unit found in DHIS2"
+        raise ValueError(msg)
+
+    org_unit = OrgUnit(id=level1_ous[0]["id"], name=level1_ous[0].get("name", ""))
+    print(f"Level 1 org unit: {org_unit.name} ({org_unit.id})")
 
     data_element = Dhis2DataElement(
         id=DATA_ELEMENT_UID,
         name="Prefect - Population",
-        shortName="Prefect - Pop",
+        shortName="PR - Population",
     )
     data_set = Dhis2DataSet(
         id=DATA_SET_UID,
         name="Prefect - Population",
-        shortName="Prefect - Pop",
+        shortName="PR - Population",
         periodType="Yearly",
         dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
-        organisationUnits=level1_refs,
+        organisationUnits=[Dhis2Ref(id=org_unit.id)],
     )
 
     payload: dict[str, Any] = {
@@ -157,17 +166,19 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> dict[str, Any]:
         "dataSets": [data_set.model_dump()],
     }
 
-    print(f"Metadata payload: {payload}")
     result = client.post_metadata(payload)
-    print(f"Metadata response: {result}")
     stats = result.get("stats", {})
+    status = result.get("status", "UNKNOWN")
     print(
-        f"Metadata sync: created={stats.get('created', 0)}, "
+        f"Metadata sync: status={status}, "
+        f"created={stats.get('created', 0)}, "
         f"updated={stats.get('updated', 0)}, "
-        f"ignored={stats.get('ignored', 0)}, "
-        f"org units={len(level1_refs)}"
+        f"ignored={stats.get('ignored', 0)}"
     )
-    return result
+    if status not in ("OK", "WARNING"):
+        print(f"Metadata response: {result}")
+
+    return org_unit
 
 
 @task(retries=2, retry_delay_seconds=[2, 5])
@@ -177,9 +188,6 @@ def fetch_population_data(
     end_year: int,
 ) -> list[CountryPopulation]:
     """Fetch total population from the World Bank for multiple countries.
-
-    Uses indicator SP.POP.TOTL with semicolon-joined country codes for a
-    single batch request.
 
     Args:
         iso3_codes: List of ISO3 country codes.
@@ -227,102 +235,103 @@ def fetch_population_data(
 
 
 @task
-def resolve_org_units(
-    client: Dhis2Client,
-    iso3_codes: list[str],
-) -> dict[str, OrgUnitMapping]:
-    """Resolve ISO3 codes to DHIS2 organisation unit UIDs.
+def build_data_values(
+    org_unit: OrgUnit,
+    populations: list[CountryPopulation],
+) -> list[DataValue]:
+    """Transform population records into DHIS2 data values.
 
     Args:
-        client: Authenticated DHIS2 client.
-        iso3_codes: ISO3 codes to resolve.
+        org_unit: Target organisation unit.
+        populations: Fetched population records.
 
     Returns:
-        Dict mapping ISO3 code to OrgUnitMapping.
+        List of DataValue objects ready for import.
     """
-    raw = client.fetch_organisation_units_by_code(iso3_codes)
-    mapping: dict[str, OrgUnitMapping] = {}
-    for ou in raw:
-        code = ou.get("code", "")
-        mapping[code] = OrgUnitMapping(
-            iso3=code,
-            org_unit_uid=ou["id"],
-            org_unit_name=ou.get("name", ""),
+    values = [
+        DataValue(
+            dataElement=DATA_ELEMENT_UID,
+            period=str(pop.year),
+            orgUnit=org_unit.id,
+            value=str(pop.population),
         )
-
-    resolved = set(mapping.keys())
-    missing = set(iso3_codes) - resolved
-    if missing:
-        logger.warning("Unresolved ISO3 codes (no matching org unit): %s", sorted(missing))
-        print(f"WARNING: {len(missing)} ISO3 codes not found in DHIS2: {sorted(missing)}")
-
-    print(f"Resolved {len(mapping)}/{len(iso3_codes)} org units")
-    return mapping
+        for pop in populations
+    ]
+    print(f"Built {len(values)} data values for org unit {org_unit.name} ({org_unit.id})")
+    return values
 
 
 @task
-def build_report(
+def import_to_dhis2(
+    client: Dhis2Client,
     dhis2_url: str,
-    query: PopulationQuery,
-    populations: list[CountryPopulation],
-    org_unit_map: dict[str, OrgUnitMapping],
-) -> PopulationReport:
-    """Build a markdown report from population data and org unit mappings.
+    org_unit: OrgUnit,
+    data_values: list[DataValue],
+) -> ImportResult:
+    """POST data values to DHIS2 and return the import summary.
 
     Args:
+        client: Authenticated DHIS2 client.
         dhis2_url: DHIS2 instance base URL.
-        query: The original query parameters.
-        populations: Fetched population records.
-        org_unit_map: Resolved org unit mappings.
+        org_unit: Target organisation unit.
+        data_values: Data values to import.
 
     Returns:
-        PopulationReport with markdown summary.
+        ImportResult with counts and markdown summary.
     """
+    if not data_values:
+        print("No data values to import")
+        return ImportResult(
+            dhis2_url=dhis2_url,
+            org_unit=org_unit,
+            markdown="*No data values to import.*",
+        )
+
+    payload = {"dataValues": [dv.model_dump() for dv in data_values]}
+    result = client.post_data_values(payload)
+
+    counts = result.get("importCount", {})
+    imported = counts.get("imported", 0)
+    updated = counts.get("updated", 0)
+    ignored = counts.get("ignored", 0)
+
+    print(
+        f"DHIS2 import: imported={imported}, updated={updated}, "
+        f"ignored={ignored}, status={result.get('status', 'UNKNOWN')}"
+    )
+    if result.get("status") not in ("SUCCESS", "WARNING"):
+        print(f"Import response: {result}")
+
     lines = [
-        "## World Bank Population Report",
+        "## DHIS2 World Bank Population Import",
         "",
         f"**DHIS2 target:** {dhis2_url}",
-        f"**Countries:** {', '.join(query.iso3_codes)}",
-        f"**Period:** {query.start_year}-{query.end_year}",
+        f"**Org unit:** {org_unit.name} (`{org_unit.id}`)",
+        f"**Data element:** `{DATA_ELEMENT_UID}` | **Data set:** `{DATA_SET_UID}`",
         "",
+        "### Import Summary",
+        "",
+        "| Imported | Updated | Ignored | Total |",
+        "|---------|---------|---------|-------|",
+        f"| {imported} | {updated} | {ignored} | {len(data_values)} |",
+        "",
+        "### Data Values",
+        "",
+        "| Period | Value |",
+        "|--------|-------|",
     ]
-
-    if populations:
-        lines.append("### Population Data")
-        lines.append("")
-        lines.append("| Country | ISO3 | Year | Population |")
-        lines.append("|---------|------|------|-----------|")
-        for pop in sorted(populations, key=lambda p: (p.iso3, p.year)):
-            lines.append(f"| {pop.country_name} | {pop.iso3} | {pop.year} | {pop.population:,} |")
-        lines.append("")
-    else:
-        lines.append("*No population data returned from World Bank.*")
-        lines.append("")
-
-    lines.append("### DHIS2 Org Unit Mapping")
+    for dv in sorted(data_values, key=lambda d: d.period):
+        lines.append(f"| {dv.period} | {int(dv.value):,} |")
     lines.append("")
-    if org_unit_map:
-        lines.append("| ISO3 | Org Unit | UID |")
-        lines.append("|------|----------|-----|")
-        for code in sorted(org_unit_map):
-            ou = org_unit_map[code]
-            lines.append(f"| {ou.iso3} | {ou.org_unit_name} | {ou.org_unit_uid} |")
-    else:
-        lines.append("*No matching org units found in DHIS2.*")
 
-    lines.append("")
-    lines.append(f"**Resolved:** {len(org_unit_map)}/{len(query.iso3_codes)} org units")
-
-    markdown = "\n".join(lines)
-
-    print(f"Report: {len(populations)} records, {len(org_unit_map)}/{len(query.iso3_codes)} org units resolved")
-
-    return PopulationReport(
+    return ImportResult(
         dhis2_url=dhis2_url,
-        record_count=len(populations),
-        org_units_resolved=len(org_unit_map),
-        org_units_requested=len(query.iso3_codes),
-        markdown=markdown,
+        org_unit=org_unit,
+        imported=imported,
+        updated=updated,
+        ignored=ignored,
+        total=len(data_values),
+        markdown="\n".join(lines),
     )
 
 
@@ -334,14 +343,14 @@ def build_report(
 @flow(name="dhis2_worldbank_import", log_prints=True)
 def dhis2_worldbank_import_flow(
     query: PopulationQuery | None = None,
-) -> PopulationReport:
-    """Fetch World Bank population data and report with DHIS2 org unit mapping.
+) -> ImportResult:
+    """Fetch World Bank population data and import into DHIS2.
 
     Args:
         query: Query parameters. Uses demo defaults if not provided.
 
     Returns:
-        PopulationReport with markdown.
+        ImportResult with counts and markdown summary.
     """
     if query is None:
         query = PopulationQuery(
@@ -354,13 +363,13 @@ def dhis2_worldbank_import_flow(
     print(f"DHIS2 target: {creds.base_url}")
     client = creds.get_client()
 
-    ensure_dhis2_metadata(client)
+    org_unit = ensure_dhis2_metadata(client)
     populations = fetch_population_data(query.iso3_codes, query.start_year, query.end_year)
-    org_unit_map = resolve_org_units(client, query.iso3_codes)
-    report = build_report(creds.base_url, query, populations, org_unit_map)
+    data_values = build_data_values(org_unit, populations)
+    result = import_to_dhis2(client, creds.base_url, org_unit, data_values)
 
-    create_markdown_artifact(key="dhis2-worldbank-import", markdown=report.markdown)
-    return report
+    create_markdown_artifact(key="dhis2-worldbank-import", markdown=result.markdown)
+    return result
 
 
 if __name__ == "__main__":
