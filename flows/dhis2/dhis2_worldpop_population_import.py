@@ -303,20 +303,24 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
     return org_units, CocMapping(male=male_coc_uid, female=female_coc_uid)
 
 
-def _poll_async_result(task_id: str) -> dict[str, Any]:
+def _poll_async_result(task_id: str, form_data: dict[str, str]) -> dict[str, Any]:
     """Poll the WorldPop async task endpoint until completion or timeout.
+
+    The WorldPop API requires the original request parameters alongside the
+    taskid when polling for results.
 
     Args:
         task_id: WorldPop async task identifier.
+        form_data: Original form data (dataset, year, geojson) to re-send.
 
     Returns:
         Final API response body.
     """
-    url = f"{WORLDPOP_STATS_URL}?taskid={task_id}"
+    poll_data = {**form_data, "taskid": task_id}
     start = time.monotonic()
     with httpx.Client(timeout=30) as client:
         while time.monotonic() - start < POLL_TIMEOUT_SECONDS:
-            resp = client.get(url)
+            resp = client.post(WORLDPOP_STATS_URL, data=poll_data)
             resp.raise_for_status()
             body = resp.json()
             status = body.get("status", "")
@@ -356,7 +360,7 @@ def fetch_worldpop_population(org_unit: OrgUnitGeo, year: int) -> WorldPopResult
     if body.get("status") == "created":
         task_id = body.get("taskid", "")
         print(f"Async task created for {org_unit.name}: {task_id}, polling...")
-        body = _poll_async_result(task_id)
+        body = _poll_async_result(task_id, data)
 
     pyramid = body.get("data", {}).get("agesexpyramid", {})
 

@@ -248,14 +248,14 @@ def test_fetch_worldpop_population_async(mock_client_cls: MagicMock) -> None:
     mock_resp_finished.raise_for_status = MagicMock()
 
     # First Client context: initial POST returns "created"
-    # Second Client context (polling): GET returns "finished"
+    # Second Client context (polling): POST returns "finished"
     mock_http_initial = MagicMock()
     mock_http_initial.post.return_value = mock_resp_created
     mock_http_initial.__enter__ = MagicMock(return_value=mock_http_initial)
     mock_http_initial.__exit__ = MagicMock(return_value=False)
 
     mock_http_poll = MagicMock()
-    mock_http_poll.get.return_value = mock_resp_finished
+    mock_http_poll.post.return_value = mock_resp_finished
     mock_http_poll.__enter__ = MagicMock(return_value=mock_http_poll)
     mock_http_poll.__exit__ = MagicMock(return_value=False)
 
