@@ -2759,6 +2759,35 @@ health expenditure, TB incidence, measles immunization, stunting, and more.
 
 ---
 
+### DHIS2 WorldPop Population Import
+
+**What it demonstrates:** Reads org unit polygon boundaries from DHIS2, queries
+the WorldPop age-sex API for gridded population estimates, and writes
+sex-disaggregated results back using DHIS2 category combinations.
+
+**Airflow equivalent:** PythonOperator chain with geometry fetch + WorldPop query + DHIS2 POST.
+
+```python
+@flow(name="dhis2_worldpop_population_import", log_prints=True)
+def dhis2_worldpop_population_import_flow(query: ImportQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units, coc_mapping = ensure_dhis2_metadata(client)
+    for ou in org_units:
+        results.append(fetch_worldpop_population(ou, query.year))
+    data_values = build_data_values(results, query.year, coc_mapping)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_values)
+    create_markdown_artifact(key="dhis2-worldpop-population-import", markdown=result.markdown)
+```
+
+Four tasks form a pipeline: (1) ensure category options, category, category
+combo, data element, and data set exist in DHIS2 -- then resolve auto-generated
+categoryOptionCombo UIDs, (2) query the WorldPop `wpgpas` API for each org unit
+polygon, summing M_0..M_16 for male and F_0..F_16 for female totals, (3) build
+data values with categoryOptionCombo disaggregation (2 per org unit), (4) POST
+all values in a single import. Org units with Point geometry are skipped.
+
+---
+
 ## Connection Patterns
 
 ### Environment-Based Configuration
@@ -3347,4 +3376,23 @@ def dhis2_geoparquet_export_flow(instance: str = "dhis2") -> ExportReport:
     key, backend = upload_to_s3(data, s3_key)
     report = build_report(gdf, data, key, backend)
     return report
+```
+
+### dhis2_worldpop_population_import -- DHIS2 WorldPop Population Import
+
+**What it demonstrates:** Deployment wrapper for the WorldPop population import
+flow that reads org unit polygon geometry from DHIS2, queries the WorldPop
+age-sex API, and writes sex-disaggregated population values back using category
+combinations.
+
+```python
+@flow(name="dhis2_worldpop_population_import", log_prints=True)
+def dhis2_worldpop_population_import_flow(query: ImportQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units, coc_mapping = ensure_dhis2_metadata(client)
+    for ou in org_units:
+        results.append(fetch_worldpop_population(ou, query.year))
+    data_values = build_data_values(results, query.year, coc_mapping)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_values)
+    return result
 ```
