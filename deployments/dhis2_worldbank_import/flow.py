@@ -157,7 +157,9 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> dict[str, Any]:
         "dataSets": [data_set.model_dump()],
     }
 
+    print(f"Metadata payload: {payload}")
     result = client.post_metadata(payload)
+    print(f"Metadata response: {result}")
     stats = result.get("stats", {})
     print(
         f"Metadata sync: created={stats.get('created', 0)}, "
@@ -349,6 +351,7 @@ def dhis2_worldbank_import_flow(
         )
 
     creds = get_dhis2_credentials()
+    print(f"DHIS2 target: {creds.base_url}")
     client = creds.get_client()
 
     ensure_dhis2_metadata(client)
