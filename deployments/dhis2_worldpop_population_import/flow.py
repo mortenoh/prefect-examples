@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 WORLDPOP_STATS_URL = "https://api.worldpop.org/v1/services/stats"
-POLL_INTERVAL_SECONDS = 5
-POLL_TIMEOUT_SECONDS = 120
+POLL_INTERVAL_SECONDS = 10
+POLL_TIMEOUT_SECONDS = 600
 
 DATA_ELEMENT_UID = "PfWpPopEst1"
 DATA_SET_UID = "PfWpPopSet1"
@@ -318,12 +318,16 @@ def _poll_async_result(task_id: str, form_data: dict[str, str]) -> dict[str, Any
     """
     poll_data = {**form_data, "taskid": task_id}
     start = time.monotonic()
+    attempt = 0
     with httpx.Client(timeout=30) as client:
         while time.monotonic() - start < POLL_TIMEOUT_SECONDS:
+            attempt += 1
             resp = client.post(WORLDPOP_STATS_URL, data=poll_data)
             resp.raise_for_status()
             body = resp.json()
             status = body.get("status", "")
+            elapsed = int(time.monotonic() - start)
+            print(f"  Poll #{attempt} ({elapsed}s): status={status}")
             if status == "finished":
                 return body  # type: ignore[no-any-return]
             if status == "error":
