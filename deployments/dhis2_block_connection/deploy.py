@@ -22,6 +22,5 @@ if __name__ == "__main__":
         dhis2_block_connection_flow.deploy(
             name=name,
             work_pool_name="default",
-            cron="* * * * *",
             parameters={"instance": instance},
         )

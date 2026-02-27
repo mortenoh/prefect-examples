@@ -12,5 +12,4 @@ if __name__ == "__main__":
     dhis2_ou_flow.deploy(
         name="dhis2-ou",
         work_pool_name="default",
-        cron="0 * * * *",
     )

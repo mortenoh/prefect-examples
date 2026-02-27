@@ -22,6 +22,5 @@ if __name__ == "__main__":
         dhis2_geoparquet_export_flow.deploy(
             name=name,
             work_pool_name="default",
-            cron="0 * * * *",
             parameters={"instance": instance},
         )

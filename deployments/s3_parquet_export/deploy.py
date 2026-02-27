@@ -12,5 +12,4 @@ if __name__ == "__main__":
     s3_parquet_export_flow.deploy(
         name="s3-parquet-export",
         work_pool_name="default",
-        cron="0 * * * *",
     )

@@ -7,9 +7,6 @@ deployments:
     entrypoint: flow.py:dhis2_geoparquet_export_flow
     parameters:
       instance: "dhis2-dev"
-    schedules:
-      - cron: "0 * * * *"
-        timezone: "UTC"
     work_pool:
       name: default
 
@@ -17,9 +14,6 @@ deployments:
     entrypoint: flow.py:dhis2_geoparquet_export_flow
     parameters:
       instance: "dhis2-v42"
-    schedules:
-      - cron: "0 * * * *"
-        timezone: "UTC"
     work_pool:
       name: default
 
@@ -27,9 +21,6 @@ deployments:
     entrypoint: flow.py:dhis2_geoparquet_export_flow
     parameters:
       instance: "dhis2-v41"
-    schedules:
-      - cron: "0 * * * *"
-        timezone: "UTC"
     work_pool:
       name: default
 
@@ -37,8 +28,5 @@ deployments:
     entrypoint: flow.py:dhis2_geoparquet_export_flow
     parameters:
       instance: "dhis2-v40"
-    schedules:
-      - cron: "0 * * * *"
-        timezone: "UTC"
     work_pool:
       name: default

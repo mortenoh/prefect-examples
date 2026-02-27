@@ -12,5 +12,4 @@ if __name__ == "__main__":
     dhis2_worldbank_import_flow.deploy(
         name="dhis2-worldbank-import",
         work_pool_name="default",
-        cron="0 * * * *",
     )

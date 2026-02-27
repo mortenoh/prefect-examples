@@ -5,8 +5,5 @@ pull:
 deployments:
   - name: dhis2-connection
     entrypoint: flow.py:dhis2_connection_flow
-    schedules:
-      - cron: "0 * * * *"
-        timezone: "UTC"
     work_pool:
       name: default

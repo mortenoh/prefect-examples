@@ -5,8 +5,5 @@ pull:
 deployments:
   - name: s3-parquet-export
     entrypoint: flow.py:s3_parquet_export_flow
-    schedules:
-      - cron: "0 * * * *"
-        timezone: "UTC"
     work_pool:
       name: default
