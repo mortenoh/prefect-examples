@@ -674,6 +674,17 @@ def validate_users(users: list[UserRecord]) -> ProcessingResult:
 Pydantic replaces XCom serialisation pain with automatic validation, type safety,
 and clean `.model_dump()` for dict conversion.
 
+Using Pydantic models as **flow parameters** (not just task parameters) lets
+Prefect auto-generate rich parameter schemas. The deployment UI renders typed
+form fields instead of a freeform JSON editor, and
+`enforce_parameter_schema` validates inputs at runtime:
+
+```python
+@flow(name="config_driven_pipeline", log_prints=True)
+def config_driven_pipeline_flow(config: PipelineConfig | None = None) -> PipelineResult:
+    ...
+```
+
 **See:** [Pydantic Models](flow-reference.md#pydantic-models),
 [Pydantic Validation](flow-reference.md#pydantic-validation)
 

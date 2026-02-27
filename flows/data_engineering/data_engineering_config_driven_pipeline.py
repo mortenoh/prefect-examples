@@ -8,11 +8,11 @@ Airflow equivalent: API-triggered scheduling with config payload (DAG 109).
 Prefect approach:    Pydantic config models, stage dispatcher @task.
 """
 
-from typing import Any
+from typing import Any, Literal
 
 from dotenv import load_dotenv
 from prefect import flow, task
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
 # Models
@@ -22,18 +22,18 @@ from pydantic import BaseModel
 class StageConfig(BaseModel):
     """Configuration for a single pipeline stage."""
 
-    name: str
-    enabled: bool = True
-    task_type: str = "default"
-    params: dict[str, Any] = {}
+    name: str = Field(description="Stage identifier")
+    enabled: bool = Field(default=True, description="Whether to execute this stage")
+    task_type: Literal["extract", "validate", "transform", "load"] = Field(description="Handler type for this stage")
+    params: dict[str, Any] = Field(default={}, description="Handler-specific parameters")
 
 
 class PipelineConfig(BaseModel):
     """Configuration for the entire pipeline."""
 
-    name: str
-    stages: list[StageConfig]
-    fail_fast: bool = True
+    name: str = Field(description="Pipeline identifier")
+    stages: list[StageConfig] = Field(description="Ordered list of stages to execute")
+    fail_fast: bool = Field(default=True, description="Stop on first stage failure")
 
 
 class StageResult(BaseModel):
@@ -192,27 +192,25 @@ def dispatch_stage(stage: StageConfig, context: StageContext) -> StageResult:
 
 
 @flow(name="data_engineering_config_driven_pipeline", log_prints=True)
-def config_driven_pipeline_flow(raw_config: dict[str, Any] | None = None) -> PipelineResult:
+def config_driven_pipeline_flow(config: PipelineConfig | None = None) -> PipelineResult:
     """Execute a pipeline driven by configuration.
 
     Args:
-        raw_config: Pipeline config dict. Uses default if None.
+        config: Pipeline configuration. Uses default if None.
 
     Returns:
         PipelineResult.
     """
-    if raw_config is None:
-        raw_config = {
-            "name": "default_pipeline",
-            "stages": [
-                {"name": "extract", "task_type": "extract", "params": {"count": 20}},
-                {"name": "validate", "task_type": "validate", "params": {"min_value": 50}},
-                {"name": "transform", "task_type": "transform", "params": {"multiplier": 1.5}},
-                {"name": "load", "task_type": "load", "params": {"target": "output_table"}},
+    if config is None:
+        config = PipelineConfig(
+            name="default_pipeline",
+            stages=[
+                StageConfig(name="extract", task_type="extract", params={"count": 20}),
+                StageConfig(name="validate", task_type="validate", params={"min_value": 50}),
+                StageConfig(name="transform", task_type="transform", params={"multiplier": 1.5}),
+                StageConfig(name="load", task_type="load", params={"target": "output_table"}),
             ],
-        }
-
-    config = parse_config(raw_config)
+        )
 
     results: list[StageResult] = []
     context = StageContext()

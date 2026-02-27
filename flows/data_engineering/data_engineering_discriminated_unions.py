@@ -31,28 +31,28 @@ class EmailEvent(BaseModel):
     """An email event."""
 
     event_type: Literal["email"] = "email"
-    event_id: str
-    sender: str
-    recipient: str
-    subject: str
+    event_id: str = Field(description="Unique event identifier")
+    sender: str = Field(description="Sender email address")
+    recipient: str = Field(description="Recipient email address")
+    subject: str = Field(description="Email subject line")
 
 
 class WebhookEvent(BaseModel):
     """A webhook event."""
 
     event_type: Literal["webhook"] = "webhook"
-    event_id: str
-    source_url: str
-    payload_size: int
+    event_id: str = Field(description="Unique event identifier")
+    source_url: str = Field(description="Webhook source URL")
+    payload_size: int = Field(description="Payload size in bytes")
 
 
 class ScheduleEvent(BaseModel):
     """A schedule-triggered event."""
 
     event_type: Literal["schedule"] = "schedule"
-    event_id: str
-    cron_expression: str
-    job_name: str
+    event_id: str = Field(description="Unique event identifier")
+    cron_expression: str = Field(description="Cron schedule expression")
+    job_name: str = Field(description="Name of the scheduled job")
 
 
 Event = Annotated[
@@ -196,47 +196,45 @@ def summarize_processing(results: list[ProcessingResult]) -> ProcessingSummary:
 
 
 @flow(name="data_engineering_discriminated_unions", log_prints=True)
-def discriminated_unions_flow(raw_events: list[dict[str, Any]] | None = None) -> ProcessingSummary:
+def discriminated_unions_flow(events: list[Event] | None = None) -> ProcessingSummary:
     """Process heterogeneous events using discriminated unions.
 
     Args:
-        raw_events: Raw event dicts. Uses defaults if None.
+        events: Typed event objects. Uses defaults if None.
 
     Returns:
         ProcessingSummary.
     """
-    if raw_events is None:
-        raw_events = [
-            {
-                "event_type": "email",
-                "event_id": "e1",
-                "sender": "alice@example.com",
-                "recipient": "bob@example.com",
-                "subject": "Hello",
-            },
-            {
-                "event_type": "webhook",
-                "event_id": "w1",
-                "source_url": "https://api.example.com/hook",
-                "payload_size": 1024,
-            },
-            {"event_type": "schedule", "event_id": "s1", "cron_expression": "0 6 * * *", "job_name": "daily_report"},
-            {
-                "event_type": "email",
-                "event_id": "e2",
-                "sender": "charlie@example.com",
-                "recipient": "diana@example.com",
-                "subject": "Update",
-            },
-            {
-                "event_type": "webhook",
-                "event_id": "w2",
-                "source_url": "https://api.other.com/notify",
-                "payload_size": 512,
-            },
+    if events is None:
+        events = [
+            EmailEvent(
+                event_id="e1",
+                sender="alice@example.com",
+                recipient="bob@example.com",
+                subject="Hello",
+            ),
+            WebhookEvent(
+                event_id="w1",
+                source_url="https://api.example.com/hook",
+                payload_size=1024,
+            ),
+            ScheduleEvent(
+                event_id="s1",
+                cron_expression="0 6 * * *",
+                job_name="daily_report",
+            ),
+            EmailEvent(
+                event_id="e2",
+                sender="charlie@example.com",
+                recipient="diana@example.com",
+                subject="Update",
+            ),
+            WebhookEvent(
+                event_id="w2",
+                source_url="https://api.other.com/notify",
+                payload_size=512,
+            ),
         ]
-
-    events = parse_events(raw_events)
     results = [route_event(event) for event in events]
     summary = summarize_processing(results)
     print(f"Processed {summary.total_events} events: {summary.by_type}")

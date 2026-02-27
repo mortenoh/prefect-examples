@@ -62,10 +62,12 @@ def test_execute_transform() -> None:
     assert result.records[0]["value"] == 20
 
 
-def test_dispatch_unknown_type() -> None:
-    stage = StageConfig(name="bad", task_type="nonexistent")
-    result = dispatch_stage.fn(stage, StageContext())
-    assert result.status == "error"
+def test_invalid_task_type_rejected() -> None:
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        StageConfig(name="bad", task_type="nonexistent")
 
 
 def test_flow_default_config() -> None:
@@ -74,14 +76,14 @@ def test_flow_default_config() -> None:
 
 
 def test_flow_with_disabled_stage() -> None:
-    config = {
-        "name": "partial",
-        "stages": [
-            {"name": "extract", "task_type": "extract", "params": {"count": 5}},
-            {"name": "skip_me", "task_type": "transform", "enabled": False},
-            {"name": "load", "task_type": "load", "params": {"target": "test_table"}},
+    config = PipelineConfig(
+        name="partial",
+        stages=[
+            StageConfig(name="extract", task_type="extract", params={"count": 5}),
+            StageConfig(name="skip_me", task_type="transform", enabled=False),
+            StageConfig(name="load", task_type="load", params={"target": "test_table"}),
         ],
-    }
-    result = config_driven_pipeline_flow(raw_config=config)
+    )
+    result = config_driven_pipeline_flow(config=config)
     assert result.stages_executed == 2
     assert result.stages_skipped == 1

@@ -1774,22 +1774,21 @@ Duplicate requests hit the cache. TTL-based expiry prevents stale data.
 
 ### Config-Driven Pipeline
 
-**What it demonstrates:** Pipeline behaviour controlled entirely by a config
-dict: stage selection, parameter overrides, conditional execution.
+**What it demonstrates:** Pipeline behaviour controlled entirely by a typed
+`PipelineConfig` parameter: stage selection, parameter overrides, conditional
+execution. The flow accepts a Pydantic model directly so that Prefect can
+auto-generate a rich parameter schema for the UI.
 
 **Airflow equivalent:** API-triggered scheduling with config payload (DAG 109).
 
 ```python
-@task
-def dispatch_stage(stage: StageConfig, context: dict) -> StageResult:
-    handlers = {"extract": execute_extract, "validate": execute_validate, ...}
-    handler = handlers.get(stage.task_type)
-    result = handler.fn(stage.params, context)
-    return StageResult(stage_name=stage.name, status="completed", ...)
+@flow(name="data_engineering_config_driven_pipeline", log_prints=True)
+def config_driven_pipeline_flow(config: PipelineConfig | None = None) -> PipelineResult:
+    ...
 ```
 
-Different configs produce different pipeline runs through the same flow.
-Disabled stages are skipped automatically.
+Different `PipelineConfig` values produce different pipeline runs through the
+same flow. Disabled stages are skipped automatically.
 
 ---
 
@@ -1836,21 +1835,21 @@ testable and reproducible.
 ### Discriminated Unions
 
 **What it demonstrates:** Pydantic discriminated unions for type-safe
-polymorphic event dispatch.
+polymorphic event dispatch. The flow accepts a typed `list[Event]` directly,
+giving Prefect a rich parameter schema instead of freeform JSON.
 
 **Airflow equivalent:** Multi-API dashboard with heterogeneous sources (DAG 098).
 
 ```python
-class EmailEvent(BaseModel):
-    event_type: Literal["email"] = "email"
-    sender: str
-    recipient: str
-
 Event = Annotated[Union[EmailEvent, WebhookEvent, ScheduleEvent], Field(discriminator="event_type")]
+
+@flow(name="data_engineering_discriminated_unions", log_prints=True)
+def discriminated_unions_flow(events: list[Event] | None = None) -> ProcessingSummary:
+    ...
 ```
 
-The `event_type` literal field acts as a discriminator. `TypeAdapter` parses
-raw dicts into the correct typed model automatically.
+The `event_type` literal field acts as a discriminator. Passing typed model
+instances directly avoids manual dict parsing inside the flow.
 
 ---
 
