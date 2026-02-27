@@ -57,19 +57,24 @@ class Dhis2Client:
         self,
         endpoint: str,
         fields: str = ":owner",
+        filters: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         """Fetch all records from a metadata endpoint.
 
         Args:
             endpoint: API endpoint name (e.g. "organisationUnits").
             fields: The fields parameter for the DHIS2 API.
+            filters: Optional DHIS2 filter expressions (e.g. ["level:eq:1"]).
 
         Returns:
             List of metadata records as dicts.
         """
+        params: dict[str, str | list[str]] = {"paging": "false", "fields": fields}
+        if filters:
+            params["filter"] = filters
         resp = self._http.get(
             f"/{endpoint}",
-            params={"paging": "false", "fields": fields},
+            params=params,
         )
         resp.raise_for_status()
         data: dict[str, Any] = resp.json()
@@ -87,6 +92,20 @@ class Dhis2Client:
             Parsed DHIS2 import summary response.
         """
         resp = self._http.post("/dataValueSets", json=payload)
+        resp.raise_for_status()
+        result: dict[str, Any] = resp.json()
+        return result
+
+    def post_metadata(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """POST metadata to /metadata (importStrategy=CREATE_AND_UPDATE).
+
+        Args:
+            payload: JSON body with metadata arrays (e.g. dataElements, dataSets).
+
+        Returns:
+            Parsed DHIS2 metadata import summary.
+        """
+        resp = self._http.post("/metadata", json=payload)
         resp.raise_for_status()
         result: dict[str, Any] = resp.json()
         return result

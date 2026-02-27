@@ -17,12 +17,16 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["dhis2_worldbank_import"] = _mod
 _spec.loader.exec_module(_mod)
 
-from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials  # noqa: E402
+from prefect_dhis2 import Dhis2Client  # noqa: E402
+from prefect_dhis2.credentials import Dhis2Credentials  # noqa: E402
 
 PopulationQuery = _mod.PopulationQuery
 CountryPopulation = _mod.CountryPopulation
 OrgUnitMapping = _mod.OrgUnitMapping
 PopulationReport = _mod.PopulationReport
+Dhis2DataElement = _mod.Dhis2DataElement
+Dhis2DataSet = _mod.Dhis2DataSet
+ensure_dhis2_metadata = _mod.ensure_dhis2_metadata
 fetch_population_data = _mod.fetch_population_data
 resolve_org_units = _mod.resolve_org_units
 build_report = _mod.build_report
@@ -69,6 +73,15 @@ SAMPLE_ORG_UNITS = [
     {"id": "OU_LAO", "code": "LAO", "name": "Lao PDR"},
 ]
 
+SAMPLE_LEVEL1_ORG_UNITS = [
+    {"id": "ROOT_OU", "name": "Lao PDR"},
+]
+
+SAMPLE_METADATA_RESPONSE = {
+    "status": "OK",
+    "stats": {"created": 0, "updated": 2, "deleted": 0, "ignored": 0, "total": 2},
+}
+
 
 # ---------------------------------------------------------------------------
 # Model tests
@@ -85,9 +98,39 @@ def test_population_query_requires_iso3() -> None:
         PopulationQuery(start_year=2020, end_year=2023)
 
 
+def test_data_element_defaults() -> None:
+    de = Dhis2DataElement(id="abc12345678", name="Test", shortName="T")
+    assert de.domainType == "AGGREGATE"
+    assert de.valueType == "NUMBER"
+    assert de.aggregationType == "SUM"
+
+
+def test_data_set_period_type() -> None:
+    ds = Dhis2DataSet(id="abc12345678", name="Test", shortName="T", periodType="Yearly")
+    assert ds.periodType == "Yearly"
+
+
 # ---------------------------------------------------------------------------
 # Task tests
 # ---------------------------------------------------------------------------
+
+
+def test_ensure_dhis2_metadata() -> None:
+    mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.fetch_metadata.return_value = SAMPLE_LEVEL1_ORG_UNITS
+    mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
+
+    result = ensure_dhis2_metadata.fn(mock_client)
+
+    mock_client.fetch_metadata.assert_called_once_with("organisationUnits", fields="id,name", filters=["level:eq:1"])
+    mock_client.post_metadata.assert_called_once()
+    payload = mock_client.post_metadata.call_args[0][0]
+    assert len(payload["dataElements"]) == 1
+    assert payload["dataElements"][0]["name"] == "Prefect - Population"
+    assert len(payload["dataSets"]) == 1
+    assert payload["dataSets"][0]["periodType"] == "Yearly"
+    assert payload["dataSets"][0]["organisationUnits"] == [{"id": "ROOT_OU"}]
+    assert result["status"] == "OK"
 
 
 @patch("dhis2_worldbank_import.httpx.Client")
@@ -188,6 +231,8 @@ def test_build_report_empty() -> None:
 def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> None:
     # Mock DHIS2 client
     mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.fetch_metadata.return_value = SAMPLE_LEVEL1_ORG_UNITS
+    mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
     mock_client.fetch_organisation_units_by_code.return_value = SAMPLE_ORG_UNITS
     mock_get_client.return_value = mock_client
 

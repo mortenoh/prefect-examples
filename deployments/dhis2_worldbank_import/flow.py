@@ -29,12 +29,8 @@ import httpx
 from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
+from prefect_dhis2 import Dhis2Client, get_dhis2_credentials
 from pydantic import BaseModel, Field
-
-from prefect_examples.dhis2 import (
-    Dhis2Client,
-    get_dhis2_credentials,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +40,46 @@ logger = logging.getLogger(__name__)
 
 WORLDBANK_API_URL = "https://api.worldbank.org/v2"
 
+DATA_ELEMENT_UID = "PfPopTotal1"
+DATA_SET_UID = "PfPopDtSet1"
+
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
+
+
+class Dhis2Ref(BaseModel):
+    """A DHIS2 object reference (just an id)."""
+
+    id: str = Field(description="DHIS2 UID")
+
+
+class Dhis2DataElement(BaseModel):
+    """A DHIS2 data element for the metadata API."""
+
+    id: str = Field(description="Fixed UID")
+    name: str = Field(description="Display name")
+    shortName: str = Field(description="Short name")
+    domainType: str = Field(default="AGGREGATE", description="AGGREGATE or TRACKER")
+    valueType: str = Field(default="NUMBER", description="Value type")
+    aggregationType: str = Field(default="SUM", description="Aggregation type")
+
+
+class Dhis2DataSetElement(BaseModel):
+    """A data element assignment within a data set."""
+
+    dataElement: Dhis2Ref = Field(description="Data element reference")
+
+
+class Dhis2DataSet(BaseModel):
+    """A DHIS2 data set for the metadata API."""
+
+    id: str = Field(description="Fixed UID")
+    name: str = Field(description="Display name")
+    shortName: str = Field(description="Short name")
+    periodType: str = Field(default="Yearly", description="Period type")
+    dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
+    organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
 
 
 class PopulationQuery(BaseModel):
@@ -87,6 +120,52 @@ class PopulationReport(BaseModel):
 # ---------------------------------------------------------------------------
 # Tasks
 # ---------------------------------------------------------------------------
+
+
+@task
+def ensure_dhis2_metadata(client: Dhis2Client) -> dict[str, Any]:
+    """Ensure the population data element and data set exist in DHIS2.
+
+    Fetches level-1 org units, builds the metadata payload, and POSTs to
+    /api/metadata.  Uses CREATE_AND_UPDATE so this is idempotent.
+
+    Args:
+        client: Authenticated DHIS2 client.
+
+    Returns:
+        Raw DHIS2 metadata import summary.
+    """
+    level1_ous = client.fetch_metadata("organisationUnits", fields="id,name", filters=["level:eq:1"])
+    level1_refs = [Dhis2Ref(id=ou["id"]) for ou in level1_ous]
+
+    data_element = Dhis2DataElement(
+        id=DATA_ELEMENT_UID,
+        name="Prefect - Population",
+        shortName="Prefect - Pop",
+    )
+    data_set = Dhis2DataSet(
+        id=DATA_SET_UID,
+        name="Prefect - Population",
+        shortName="Prefect - Pop",
+        periodType="Yearly",
+        dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
+        organisationUnits=level1_refs,
+    )
+
+    payload: dict[str, Any] = {
+        "dataElements": [data_element.model_dump()],
+        "dataSets": [data_set.model_dump()],
+    }
+
+    result = client.post_metadata(payload)
+    stats = result.get("stats", {})
+    print(
+        f"Metadata sync: created={stats.get('created', 0)}, "
+        f"updated={stats.get('updated', 0)}, "
+        f"ignored={stats.get('ignored', 0)}, "
+        f"org units={len(level1_refs)}"
+    )
+    return result
 
 
 @task(retries=2, retry_delay_seconds=[2, 5])
@@ -272,6 +351,7 @@ def dhis2_worldbank_import_flow(
     creds = get_dhis2_credentials()
     client = creds.get_client()
 
+    ensure_dhis2_metadata(client)
     populations = fetch_population_data(query.iso3_codes, query.start_year, query.end_year)
     org_unit_map = resolve_org_units(client, query.iso3_codes)
     report = build_report(creds.base_url, query, populations, org_unit_map)

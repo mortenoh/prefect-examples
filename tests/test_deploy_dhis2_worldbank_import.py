@@ -14,16 +14,38 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["deploy_dhis2_worldbank_import"] = _mod
 _spec.loader.exec_module(_mod)
 
-from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials  # noqa: E402
+from prefect_dhis2 import Dhis2Client  # noqa: E402
+from prefect_dhis2.credentials import Dhis2Credentials  # noqa: E402
 
 PopulationQuery = _mod.PopulationQuery
 CountryPopulation = _mod.CountryPopulation
 OrgUnitMapping = _mod.OrgUnitMapping
 PopulationReport = _mod.PopulationReport
+ensure_dhis2_metadata = _mod.ensure_dhis2_metadata
 fetch_population_data = _mod.fetch_population_data
 resolve_org_units = _mod.resolve_org_units
 build_report = _mod.build_report
 dhis2_worldbank_import_flow = _mod.dhis2_worldbank_import_flow
+
+
+SAMPLE_METADATA_RESPONSE = {
+    "status": "OK",
+    "stats": {"created": 0, "updated": 2, "deleted": 0, "ignored": 0, "total": 2},
+}
+
+
+def test_ensure_dhis2_metadata() -> None:
+    mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.fetch_metadata.return_value = [{"id": "ROOT_OU", "name": "Lao PDR"}]
+    mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
+
+    result = ensure_dhis2_metadata.fn(mock_client)
+
+    payload = mock_client.post_metadata.call_args[0][0]
+    assert payload["dataElements"][0]["name"] == "Prefect - Population"
+    assert payload["dataSets"][0]["periodType"] == "Yearly"
+    assert payload["dataSets"][0]["organisationUnits"] == [{"id": "ROOT_OU"}]
+    assert result["status"] == "OK"
 
 
 @patch("httpx.Client")
@@ -92,6 +114,8 @@ def test_build_report() -> None:
 @patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(mock_get_client: MagicMock, mock_httpx_client_cls: MagicMock) -> None:
     mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.fetch_metadata.return_value = [{"id": "ROOT_OU", "name": "Lao PDR"}]
+    mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
     mock_client.fetch_organisation_units_by_code.return_value = [
         {"id": "OU_LAO", "code": "LAO", "name": "Lao PDR"},
     ]
