@@ -84,7 +84,7 @@ SAMPLE_WORLDPOP_TASK_RESPONSE = {
 def test_ensure_dhis2_metadata() -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
-        SAMPLE_OU_WITH_GEOM,
+        SAMPLE_OU_WITH_GEOM,  # level-2 org units
         [],  # no existing category options
         SAMPLE_COCS,
     ]
@@ -176,7 +176,7 @@ def test_import_to_dhis2() -> None:
 def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
-        SAMPLE_OU_WITH_GEOM,
+        SAMPLE_OU_WITH_GEOM,  # level-2 org units
         [],  # no existing category options
         SAMPLE_COCS,
     ]

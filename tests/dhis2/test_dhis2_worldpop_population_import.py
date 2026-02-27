@@ -169,7 +169,7 @@ def test_import_query_validation() -> None:
 def test_ensure_dhis2_metadata() -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
-        SAMPLE_OU_WITH_GEOM,  # level-1 org units
+        SAMPLE_OU_WITH_GEOM,  # level-2 org units
         [],  # no existing Male/Female category options
         SAMPLE_COCS,  # categoryOptionCombos
     ]
@@ -207,7 +207,7 @@ def test_ensure_dhis2_metadata_reuses_existing_cos() -> None:
     ]
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
-        SAMPLE_OU_WITH_GEOM,  # level-1 org units
+        SAMPLE_OU_WITH_GEOM,  # level-2 org units
         existing_cos,  # existing Male/Female category options
         existing_cocs,  # categoryOptionCombos
     ]
@@ -231,7 +231,7 @@ def test_ensure_dhis2_metadata_no_polygon() -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.return_value = SAMPLE_OU_POINT
 
-    with pytest.raises(ValueError, match="No level-1 org units with Polygon"):
+    with pytest.raises(ValueError, match="No level-2 org units with Polygon"):
         ensure_dhis2_metadata.fn(mock_client)
 
 

@@ -169,8 +169,9 @@ class ImportResult(BaseModel):
 def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMapping]:
     """Ensure category options, category, category combo, DE, and DS exist.
 
-    Fetches level-1 org units with geometry, posts all metadata, then
-    resolves the auto-generated categoryOptionCombo UIDs.
+    Fetches level-2 org units (provinces/regions) with polygon geometry for
+    the WorldPop query. The WorldPop API has a 100,000 km^2 area limit, so
+    country-level (level-1) polygons are typically too large.
 
     Args:
         client: Authenticated DHIS2 client.
@@ -181,10 +182,10 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
     raw_ous = client.fetch_metadata(
         "organisationUnits",
         fields="id,name,geometry",
-        filters=["level:eq:1"],
+        filters=["level:eq:2"],
     )
     if not raw_ous:
-        msg = "No level-1 organisation unit found in DHIS2"
+        msg = "No level-2 organisation units found in DHIS2"
         raise ValueError(msg)
 
     org_units = [
@@ -192,10 +193,10 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
         for ou in raw_ous
         if ou.get("geometry", {}).get("type") in ("Polygon", "MultiPolygon")
     ]
-    print(f"Found {len(org_units)} level-1 org units with polygon geometry")
+    print(f"Found {len(org_units)} level-2 org units with polygon geometry")
 
     if not org_units:
-        msg = "No level-1 org units with Polygon/MultiPolygon geometry"
+        msg = "No level-2 org units with Polygon/MultiPolygon geometry"
         raise ValueError(msg)
 
     # Reuse existing Male/Female category options if present on the server
