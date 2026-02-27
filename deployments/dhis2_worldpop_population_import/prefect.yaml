@@ -1,0 +1,10 @@
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /opt/prefect/deployments/dhis2_worldpop_population_import
+
+deployments:
+  - name: dhis2-worldpop-population-import
+    entrypoint: flow.py:dhis2_worldpop_population_import_flow
+    schedules: []
+    work_pool:
+      name: default
