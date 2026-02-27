@@ -232,7 +232,7 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
 
 
 @task(retries=2, retry_delay_seconds=[2, 5])
-def fetch_indicator_data(
+def fetch_wb_data(
     indicator: IndicatorConfig,
     iso3_codes: list[str],
     start_year: int,
@@ -419,7 +419,7 @@ def dhis2_worldbank_health_import_flow(
 
     all_values: list[IndicatorValue] = []
     for indicator in INDICATORS:
-        values = fetch_indicator_data(indicator, query.iso3_codes, query.start_year, query.end_year)
+        values = fetch_wb_data(indicator, query.iso3_codes, query.start_year, query.end_year)
         all_values.extend(values)
 
     data_values = build_data_values(org_unit, all_values)

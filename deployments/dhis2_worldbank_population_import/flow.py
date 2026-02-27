@@ -143,12 +143,12 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
 
     data_element = Dhis2DataElement(
         id=DATA_ELEMENT_UID,
-        name="Prefect - Population",
+        name="PR - Population",
         shortName="PR - Population",
     )
     data_set = Dhis2DataSet(
         id=DATA_SET_UID,
-        name="Prefect - Population",
+        name="PR - Population",
         shortName="PR - Population",
         periodType="Yearly",
         dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],

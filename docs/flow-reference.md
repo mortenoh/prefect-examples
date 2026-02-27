@@ -2745,7 +2745,7 @@ def dhis2_worldbank_health_import_flow(query: HealthQuery | None = None) -> Impo
     client = get_dhis2_credentials().get_client()
     org_unit = ensure_dhis2_metadata(client)
     for indicator in INDICATORS:
-        all_values.extend(fetch_indicator_data(indicator, ...))
+        all_values.extend(fetch_wb_data(indicator, ...))
     data_values = build_data_values(org_unit, all_values)
     result = import_to_dhis2(client, dhis2_url, org_unit, data_values)
     create_markdown_artifact(key="dhis2-worldbank-health-import", markdown=result.markdown)

@@ -28,7 +28,7 @@ DataValue = _mod.DataValue
 ImportResult = _mod.ImportResult
 INDICATORS = _mod.INDICATORS
 ensure_dhis2_metadata = _mod.ensure_dhis2_metadata
-fetch_indicator_data = _mod.fetch_indicator_data
+fetch_wb_data = _mod.fetch_wb_data
 build_data_values = _mod.build_data_values
 import_to_dhis2 = _mod.import_to_dhis2
 dhis2_worldbank_health_import_flow = _mod.dhis2_worldbank_health_import_flow
@@ -127,7 +127,7 @@ def test_ensure_dhis2_metadata_no_level1() -> None:
 
 
 @patch("dhis2_worldbank_health_import.httpx.Client")
-def test_fetch_indicator_data(mock_client_cls: MagicMock) -> None:
+def test_fetch_wb_data(mock_client_cls: MagicMock) -> None:
     mock_resp = MagicMock()
     mock_resp.json.return_value = SAMPLE_WB_RESPONSE
     mock_resp.raise_for_status = MagicMock()
@@ -139,7 +139,7 @@ def test_fetch_indicator_data(mock_client_cls: MagicMock) -> None:
     mock_client_cls.return_value = mock_http
 
     indicator = INDICATORS[0]
-    results = fetch_indicator_data.fn(indicator, ["LAO"], 2021, 2023)
+    results = fetch_wb_data.fn(indicator, ["LAO"], 2021, 2023)
 
     assert len(results) == 2  # null filtered out
     assert results[0].indicator == "SH.DYN.MORT"

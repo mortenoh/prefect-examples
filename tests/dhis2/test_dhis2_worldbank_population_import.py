@@ -104,7 +104,7 @@ def test_ensure_dhis2_metadata() -> None:
     assert org_unit.name == "Lao PDR"
     mock_client.post_metadata.assert_called_once()
     payload = mock_client.post_metadata.call_args[0][0]
-    assert payload["dataElements"][0]["name"] == "Prefect - Population"
+    assert payload["dataElements"][0]["name"] == "PR - Population"
     assert payload["dataSets"][0]["periodType"] == "Yearly"
     assert payload["dataSets"][0]["organisationUnits"] == [{"id": "ROOT_OU"}]
 
