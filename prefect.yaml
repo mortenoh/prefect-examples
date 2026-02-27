@@ -594,8 +594,14 @@ deployments:
       name: default
     schedules: []
 
-  - name: dhis2-worldbank-import
-    entrypoint: flows/dhis2/dhis2_worldbank_import.py:dhis2_worldbank_import_flow
+  - name: dhis2-worldbank-population-import
+    entrypoint: flows/dhis2/dhis2_worldbank_population_import.py:dhis2_worldbank_population_import_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: dhis2-worldbank-health-import
+    entrypoint: flows/dhis2/dhis2_worldbank_health_import.py:dhis2_worldbank_health_import_flow
     work_pool:
       name: default
     schedules: []

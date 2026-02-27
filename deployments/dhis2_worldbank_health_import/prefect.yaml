@@ -1,0 +1,10 @@
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /opt/prefect/deployments/dhis2_worldbank_health_import
+
+deployments:
+  - name: dhis2-worldbank-health-import
+    entrypoint: flow.py:dhis2_worldbank_health_import_flow
+    schedules: []
+    work_pool:
+      name: default

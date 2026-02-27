@@ -1,8 +1,8 @@
-"""DHIS2 World Bank Population Import.
+"""DHIS2 World Bank Health Indicators Import.
 
-Fetches total population (SP.POP.TOTL) from the World Bank API, ensures
-the target data element and data set exist in DHIS2, and imports the
-population data as data values.
+Fetches 10 health-related indicators from the World Bank API, ensures
+the target data elements and data set exist in DHIS2, and imports the
+indicator data as data values.
 
 Airflow equivalent: PythonOperator chain with World Bank fetch + DHIS2 setup.
 Prefect approach:   typed models, retry-enabled tasks, markdown artifact.
@@ -28,12 +28,64 @@ logger = logging.getLogger(__name__)
 
 WORLDBANK_API_URL = "https://api.worldbank.org/v2"
 
-DATA_ELEMENT_UID = "PfPopTotal1"
-DATA_SET_UID = "PfPopDtSet1"
+DATA_SET_UID = "PfWbHlthDS1"
+
 
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
+
+
+class IndicatorConfig(BaseModel):
+    """Configuration for a single World Bank health indicator."""
+
+    wb_code: str = Field(description="World Bank indicator code")
+    de_uid: str = Field(description="DHIS2 data element UID")
+    name: str = Field(description="Data element display name")
+    shortName: str = Field(description="Data element short name")
+
+
+INDICATORS: list[IndicatorConfig] = [
+    IndicatorConfig(
+        wb_code="SH.DYN.MORT", de_uid="PfWbU5Mort1", name="PR - Under-5 Mortality Rate", shortName="PR - U5 Mortality"
+    ),
+    IndicatorConfig(
+        wb_code="SP.DYN.IMRT.IN",
+        de_uid="PfWbInfMrt1",
+        name="PR - Infant Mortality Rate",
+        shortName="PR - Inf Mortality",
+    ),
+    IndicatorConfig(
+        wb_code="SH.STA.MMRT",
+        de_uid="PfWbMatMrt1",
+        name="PR - Maternal Mortality Ratio",
+        shortName="PR - Mat Mortality",
+    ),
+    IndicatorConfig(
+        wb_code="SP.DYN.LE00.IN", de_uid="PfWbLifExp1", name="PR - Life Expectancy", shortName="PR - Life Expect"
+    ),
+    IndicatorConfig(
+        wb_code="SH.XPD.CHEX.GD.ZS",
+        de_uid="PfWbHlthEx1",
+        name="PR - Health Expenditure % GDP",
+        shortName="PR - Hlth Expend",
+    ),
+    IndicatorConfig(
+        wb_code="SH.TBS.INCD", de_uid="PfWbTbIncd1", name="PR - TB Incidence", shortName="PR - TB Incidence"
+    ),
+    IndicatorConfig(
+        wb_code="SH.IMM.MEAS", de_uid="PfWbMeasIm1", name="PR - Measles Immunization", shortName="PR - Measles Imm"
+    ),
+    IndicatorConfig(
+        wb_code="SH.STA.STNT.ZS", de_uid="PfWbStntPr1", name="PR - Stunting Prevalence", shortName="PR - Stunting"
+    ),
+    IndicatorConfig(
+        wb_code="SP.DYN.TFRT.IN", de_uid="PfWbFertRt1", name="PR - Fertility Rate", shortName="PR - Fertility"
+    ),
+    IndicatorConfig(
+        wb_code="NY.GDP.PCAP.CD", de_uid="PfWbGdpPCp1", name="PR - GDP Per Capita", shortName="PR - GDP PCap"
+    ),
+]
 
 
 class Dhis2Ref(BaseModel):
@@ -70,21 +122,21 @@ class Dhis2DataSet(BaseModel):
     organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
 
 
-class PopulationQuery(BaseModel):
-    """Parameters for a World Bank population report."""
+class HealthQuery(BaseModel):
+    """Parameters for a World Bank health indicators report."""
 
     iso3_codes: list[str] = Field(description="ISO3 country codes to fetch")
     start_year: int = Field(description="First year of data range (inclusive)")
     end_year: int = Field(description="Last year of data range (inclusive)")
 
 
-class CountryPopulation(BaseModel):
-    """A single population data point from the World Bank."""
+class IndicatorValue(BaseModel):
+    """A single indicator data point from the World Bank."""
 
-    iso3: str = Field(description="Country ISO3 code")
-    country_name: str = Field(default="", description="Country display name")
+    indicator: str = Field(description="World Bank indicator code")
+    de_uid: str = Field(description="DHIS2 data element UID")
     year: int = Field(description="Data year")
-    population: int = Field(description="Total population")
+    value: float = Field(description="Indicator value")
 
 
 class OrgUnit(BaseModel):
@@ -122,9 +174,9 @@ class ImportResult(BaseModel):
 
 @task
 def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
-    """Ensure the population data element and data set exist in DHIS2.
+    """Ensure the health indicator data elements and data set exist in DHIS2.
 
-    Fetches the level-1 org unit, creates the DE and DS if needed, and
+    Fetches the level-1 org unit, creates the 10 DEs and DS if needed, and
     returns the org unit to use as the data target.
 
     Args:
@@ -141,22 +193,26 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
     org_unit = OrgUnit(id=level1_ous[0]["id"], name=level1_ous[0].get("name", ""))
     print(f"Level 1 org unit: {org_unit.name} ({org_unit.id})")
 
-    data_element = Dhis2DataElement(
-        id=DATA_ELEMENT_UID,
-        name="Prefect - Population",
-        shortName="PR - Population",
-    )
+    data_elements = [
+        Dhis2DataElement(
+            id=ind.de_uid,
+            name=ind.name,
+            shortName=ind.shortName,
+        )
+        for ind in INDICATORS
+    ]
+
     data_set = Dhis2DataSet(
         id=DATA_SET_UID,
-        name="Prefect - Population",
-        shortName="PR - Population",
+        name="PR - World Bank Health Indicators",
+        shortName="PR - WB Health",
         periodType="Yearly",
-        dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
+        dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=ind.de_uid)) for ind in INDICATORS],
         organisationUnits=[Dhis2Ref(id=org_unit.id)],
     )
 
     payload: dict[str, Any] = {
-        "dataElements": [data_element.model_dump()],
+        "dataElements": [de.model_dump() for de in data_elements],
         "dataSets": [data_set.model_dump()],
     }
 
@@ -176,23 +232,25 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
 
 
 @task(retries=2, retry_delay_seconds=[2, 5])
-def fetch_population_data(
+def fetch_indicator_data(
+    indicator: IndicatorConfig,
     iso3_codes: list[str],
     start_year: int,
     end_year: int,
-) -> list[CountryPopulation]:
-    """Fetch total population from the World Bank for multiple countries.
+) -> list[IndicatorValue]:
+    """Fetch a single World Bank indicator for multiple countries.
 
     Args:
+        indicator: Indicator configuration with WB code and DE UID.
         iso3_codes: List of ISO3 country codes.
         start_year: First year (inclusive).
         end_year: Last year (inclusive).
 
     Returns:
-        List of CountryPopulation entries (null values filtered out).
+        List of IndicatorValue entries (null values filtered out).
     """
     codes = ";".join(iso3_codes)
-    url = f"{WORLDBANK_API_URL}/country/{codes}/indicator/SP.POP.TOTL"
+    url = f"{WORLDBANK_API_URL}/country/{codes}/indicator/{indicator.wb_code}"
     num_expected = len(iso3_codes) * (end_year - start_year + 1)
     params: dict[str, str] = {
         "date": f"{start_year}:{end_year}",
@@ -207,49 +265,49 @@ def fetch_population_data(
     payload: Any = resp.json()
 
     if not isinstance(payload, list) or len(payload) < 2 or not payload[1]:
-        print(f"No population data returned for {codes} ({start_year}-{end_year})")
+        print(f"No data returned for {indicator.wb_code} / {codes} ({start_year}-{end_year})")
         return []
 
-    results: list[CountryPopulation] = []
+    results: list[IndicatorValue] = []
     for entry in payload[1]:
         value = entry.get("value")
         if value is None:
             continue
         results.append(
-            CountryPopulation(
-                iso3=entry.get("countryiso3code", ""),
-                country_name=entry.get("country", {}).get("value", ""),
+            IndicatorValue(
+                indicator=indicator.wb_code,
+                de_uid=indicator.de_uid,
                 year=int(entry.get("date", 0)),
-                population=int(value),
+                value=float(value),
             )
         )
 
-    print(f"Fetched population data: {len(results)} records for {len(iso3_codes)} countries")
+    print(f"Fetched {indicator.wb_code}: {len(results)} records")
     return results
 
 
 @task
 def build_data_values(
     org_unit: OrgUnit,
-    populations: list[CountryPopulation],
+    all_values: list[IndicatorValue],
 ) -> list[DataValue]:
-    """Transform population records into DHIS2 data values.
+    """Transform indicator records into DHIS2 data values.
 
     Args:
         org_unit: Target organisation unit.
-        populations: Fetched population records.
+        all_values: Fetched indicator records across all indicators.
 
     Returns:
         List of DataValue objects ready for import.
     """
     values = [
         DataValue(
-            dataElement=DATA_ELEMENT_UID,
-            period=str(pop.year),
+            dataElement=iv.de_uid,
+            period=str(iv.year),
             orgUnit=org_unit.id,
-            value=str(pop.population),
+            value=str(iv.value),
         )
-        for pop in populations
+        for iv in all_values
     ]
     print(f"Built {len(values)} data values for org unit {org_unit.name} ({org_unit.id})")
     return values
@@ -297,11 +355,11 @@ def import_to_dhis2(
         print(f"Import response: {result}")
 
     lines = [
-        "## DHIS2 World Bank Population Import",
+        "## DHIS2 World Bank Health Indicators Import",
         "",
         f"**DHIS2 target:** {dhis2_url}",
         f"**Org unit:** {org_unit.name} (`{org_unit.id}`)",
-        f"**Data element:** `{DATA_ELEMENT_UID}` | **Data set:** `{DATA_SET_UID}`",
+        f"**Data set:** `{DATA_SET_UID}`",
         "",
         "### Import Summary",
         "",
@@ -311,11 +369,11 @@ def import_to_dhis2(
         "",
         "### Data Values",
         "",
-        "| Period | Value |",
-        "|--------|-------|",
+        "| Data Element | Period | Value |",
+        "|-------------|--------|-------|",
     ]
-    for dv in sorted(data_values, key=lambda d: d.period):
-        lines.append(f"| {dv.period} | {int(dv.value):,} |")
+    for dv in sorted(data_values, key=lambda d: (d.dataElement, d.period)):
+        lines.append(f"| {dv.dataElement} | {dv.period} | {dv.value} |")
     lines.append("")
 
     return ImportResult(
@@ -334,11 +392,11 @@ def import_to_dhis2(
 # ---------------------------------------------------------------------------
 
 
-@flow(name="dhis2_worldbank_import", log_prints=True)
-def dhis2_worldbank_import_flow(
-    query: PopulationQuery | None = None,
+@flow(name="dhis2_worldbank_health_import", log_prints=True)
+def dhis2_worldbank_health_import_flow(
+    query: HealthQuery | None = None,
 ) -> ImportResult:
-    """Fetch World Bank population data and import into DHIS2.
+    """Fetch World Bank health indicator data and import into DHIS2.
 
     Args:
         query: Query parameters. Uses demo defaults if not provided.
@@ -347,7 +405,7 @@ def dhis2_worldbank_import_flow(
         ImportResult with counts and markdown summary.
     """
     if query is None:
-        query = PopulationQuery(
+        query = HealthQuery(
             iso3_codes=["LAO"],
             start_year=2020,
             end_year=2023,
@@ -358,14 +416,19 @@ def dhis2_worldbank_import_flow(
     client = creds.get_client()
 
     org_unit = ensure_dhis2_metadata(client)
-    populations = fetch_population_data(query.iso3_codes, query.start_year, query.end_year)
-    data_values = build_data_values(org_unit, populations)
+
+    all_values: list[IndicatorValue] = []
+    for indicator in INDICATORS:
+        values = fetch_indicator_data(indicator, query.iso3_codes, query.start_year, query.end_year)
+        all_values.extend(values)
+
+    data_values = build_data_values(org_unit, all_values)
     result = import_to_dhis2(client, creds.base_url, org_unit, data_values)
 
-    create_markdown_artifact(key="dhis2-worldbank-import", markdown=result.markdown)
+    create_markdown_artifact(key="dhis2-worldbank-health-import", markdown=result.markdown)
     return result
 
 
 if __name__ == "__main__":
     load_dotenv()
-    dhis2_worldbank_import_flow()
+    dhis2_worldbank_health_import_flow()

@@ -2714,8 +2714,8 @@ data (SP.POP.TOTL) and imports it into a DHIS2 data element via
 **Airflow equivalent:** PythonOperator chain with World Bank fetch + DHIS2 POST.
 
 ```python
-@flow(name="dhis2_worldbank_import", log_prints=True)
-def dhis2_worldbank_import_flow(query: ImportQuery | None = None) -> ImportResult:
+@flow(name="dhis2_worldbank_population_import", log_prints=True)
+def dhis2_worldbank_population_import_flow(query: ImportQuery | None = None) -> ImportResult:
     client = get_dhis2_credentials().get_client()
     populations = fetch_population_data(query.iso3_codes, query.start_year, query.end_year)
     org_unit_map = resolve_org_units(client, query.iso3_codes)
@@ -2729,6 +2729,33 @@ Four tasks form a pipeline: (1) batch-fetch population from the World Bank API,
 DHIS2 `dataValueSets` schema, (4) POST and parse the import summary. Unresolved
 ISO3 codes are logged as warnings and skipped. Retry-enabled tasks handle transient
 API failures on both the World Bank and DHIS2 sides.
+
+---
+
+### DHIS2 World Bank Health Indicators Import
+
+**What it demonstrates:** Fetches 10 World Bank health indicators and imports
+them into DHIS2 as data values across 10 data elements within a single data set.
+
+**Airflow equivalent:** PythonOperator chain with World Bank fetch + DHIS2 POST.
+
+```python
+@flow(name="dhis2_worldbank_health_import", log_prints=True)
+def dhis2_worldbank_health_import_flow(query: HealthQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_unit = ensure_dhis2_metadata(client)
+    for indicator in INDICATORS:
+        all_values.extend(fetch_indicator_data(indicator, ...))
+    data_values = build_data_values(org_unit, all_values)
+    result = import_to_dhis2(client, dhis2_url, org_unit, data_values)
+    create_markdown_artifact(key="dhis2-worldbank-health-import", markdown=result.markdown)
+```
+
+Four tasks form a pipeline: (1) ensure 10 data elements and 1 data set exist in
+DHIS2, (2) fetch each indicator from the World Bank API in a loop, (3) build data
+values mapping indicator results to DHIS2 data element UIDs, (4) POST all values
+in a single import. Covers indicators including under-5 mortality, life expectancy,
+health expenditure, TB incidence, measles immunization, stunting, and more.
 
 ---
 

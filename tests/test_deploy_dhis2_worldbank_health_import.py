@@ -1,4 +1,4 @@
-"""Tests for the dhis2_worldbank_import deployment flow."""
+"""Tests for the dhis2_worldbank_health_import deployment flow."""
 
 import importlib.util
 import sys
@@ -6,32 +6,34 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 _spec = importlib.util.spec_from_file_location(
-    "deploy_dhis2_worldbank_import",
-    Path(__file__).resolve().parent.parent / "deployments" / "dhis2_worldbank_import" / "flow.py",
+    "deploy_dhis2_worldbank_health_import",
+    Path(__file__).resolve().parent.parent / "deployments" / "dhis2_worldbank_health_import" / "flow.py",
 )
 assert _spec and _spec.loader
 _mod = importlib.util.module_from_spec(_spec)
-sys.modules["deploy_dhis2_worldbank_import"] = _mod
+sys.modules["deploy_dhis2_worldbank_health_import"] = _mod
 _spec.loader.exec_module(_mod)
 
 from prefect_dhis2 import Dhis2Client  # noqa: E402
 from prefect_dhis2.credentials import Dhis2Credentials  # noqa: E402
 
-PopulationQuery = _mod.PopulationQuery
-CountryPopulation = _mod.CountryPopulation
+HealthQuery = _mod.HealthQuery
+IndicatorConfig = _mod.IndicatorConfig
+IndicatorValue = _mod.IndicatorValue
 OrgUnit = _mod.OrgUnit
 DataValue = _mod.DataValue
 ImportResult = _mod.ImportResult
+INDICATORS = _mod.INDICATORS
 ensure_dhis2_metadata = _mod.ensure_dhis2_metadata
-fetch_population_data = _mod.fetch_population_data
+fetch_indicator_data = _mod.fetch_indicator_data
 build_data_values = _mod.build_data_values
 import_to_dhis2 = _mod.import_to_dhis2
-dhis2_worldbank_import_flow = _mod.dhis2_worldbank_import_flow
+dhis2_worldbank_health_import_flow = _mod.dhis2_worldbank_health_import_flow
 
 SAMPLE_LEVEL1_OU = [{"id": "ROOT_OU", "name": "Root"}]
 SAMPLE_METADATA_RESPONSE = {
     "status": "OK",
-    "stats": {"created": 2, "updated": 0, "deleted": 0, "ignored": 0, "total": 2},
+    "stats": {"created": 11, "updated": 0, "deleted": 0, "ignored": 0, "total": 11},
 }
 SAMPLE_IMPORT_RESPONSE = {
     "status": "SUCCESS",
@@ -48,18 +50,19 @@ def test_ensure_dhis2_metadata() -> None:
 
     assert org_unit.id == "ROOT_OU"
     payload = mock_client.post_metadata.call_args[0][0]
-    assert payload["dataElements"][0]["name"] == "Prefect - Population"
+    assert len(payload["dataElements"]) == 10
+    assert payload["dataSets"][0]["name"] == "PR - World Bank Health Indicators"
     assert payload["dataSets"][0]["periodType"] == "Yearly"
     assert payload["dataSets"][0]["organisationUnits"] == [{"id": "ROOT_OU"}]
 
 
-@patch("deploy_dhis2_worldbank_import.httpx.Client")
-def test_fetch_population_data(mock_client_cls: MagicMock) -> None:
+@patch("deploy_dhis2_worldbank_health_import.httpx.Client")
+def test_fetch_indicator_data(mock_client_cls: MagicMock) -> None:
     mock_response = MagicMock()
     mock_response.json.return_value = [
         {"page": 1},
         [
-            {"countryiso3code": "LAO", "country": {"value": "Lao PDR"}, "date": "2023", "value": 7633779},
+            {"countryiso3code": "LAO", "country": {"value": "Lao PDR"}, "date": "2023", "value": 44.3},
         ],
     ]
     mock_response.raise_for_status = MagicMock()
@@ -67,22 +70,23 @@ def test_fetch_population_data(mock_client_cls: MagicMock) -> None:
     mock_client_cls.return_value.__enter__.return_value.get.return_value = mock_response
     mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
 
-    result = fetch_population_data.fn(["LAO"], 2023, 2023)
+    indicator = INDICATORS[0]
+    result = fetch_indicator_data.fn(indicator, ["LAO"], 2023, 2023)
     assert len(result) == 1
-    assert result[0].population == 7633779
+    assert result[0].value == 44.3
 
 
 def test_build_data_values() -> None:
-    populations = [CountryPopulation(iso3="LAO", country_name="Lao PDR", year=2023, population=7633779)]
+    values = [IndicatorValue(indicator="SH.DYN.MORT", de_uid="PfWbU5Mort1", year=2023, value=44.3)]
     org_unit = OrgUnit(id="ROOT_OU", name="Root")
 
-    values = build_data_values.fn(org_unit, populations)
+    data_values = build_data_values.fn(org_unit, values)
 
-    assert len(values) == 1
-    assert values[0].dataElement == "PfPopTotal1"
-    assert values[0].orgUnit == "ROOT_OU"
-    assert values[0].period == "2023"
-    assert values[0].value == "7633779"
+    assert len(data_values) == 1
+    assert data_values[0].dataElement == "PfWbU5Mort1"
+    assert data_values[0].orgUnit == "ROOT_OU"
+    assert data_values[0].period == "2023"
+    assert data_values[0].value == "44.3"
 
 
 def test_import_to_dhis2() -> None:
@@ -91,7 +95,7 @@ def test_import_to_dhis2() -> None:
 
     org_unit = OrgUnit(id="ROOT_OU", name="Root")
     data_values = [
-        DataValue(dataElement="PfPopTotal1", period="2023", orgUnit="ROOT_OU", value="7633779"),
+        DataValue(dataElement="PfWbU5Mort1", period="2023", orgUnit="ROOT_OU", value="44.3"),
     ]
 
     result = import_to_dhis2.fn(mock_client, "https://dhis2.example.org", org_unit, data_values)
@@ -101,7 +105,7 @@ def test_import_to_dhis2() -> None:
     assert result.total == 1
 
 
-@patch("deploy_dhis2_worldbank_import.httpx.Client")
+@patch("deploy_dhis2_worldbank_health_import.httpx.Client")
 @patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(mock_get_client: MagicMock, mock_httpx_client_cls: MagicMock) -> None:
     mock_client = MagicMock(spec=Dhis2Client)
@@ -113,14 +117,14 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_client_cls: MagicMock)
     mock_response = MagicMock()
     mock_response.json.return_value = [
         {"page": 1},
-        [{"countryiso3code": "LAO", "country": {"value": "Lao PDR"}, "date": "2023", "value": 7633779}],
+        [{"countryiso3code": "LAO", "country": {"value": "Lao PDR"}, "date": "2023", "value": 44.3}],
     ]
     mock_response.raise_for_status = MagicMock()
     mock_httpx_client_cls.return_value.__enter__ = MagicMock(return_value=MagicMock())
     mock_httpx_client_cls.return_value.__enter__.return_value.get.return_value = mock_response
     mock_httpx_client_cls.return_value.__exit__ = MagicMock(return_value=False)
 
-    state = dhis2_worldbank_import_flow(return_state=True)
+    state = dhis2_worldbank_health_import_flow(return_state=True)
     assert state.is_completed()
     result = state.result()
     assert isinstance(result, ImportResult)
