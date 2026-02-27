@@ -5,6 +5,7 @@ pull:
 deployments:
   - name: dhis2-geoparquet-export-dev
     entrypoint: flow.py:dhis2_geoparquet_export_flow
+    schedules: []
     parameters:
       instance: "dhis2-dev"
     work_pool:
@@ -12,6 +13,7 @@ deployments:
 
   - name: dhis2-geoparquet-export-v42
     entrypoint: flow.py:dhis2_geoparquet_export_flow
+    schedules: []
     parameters:
       instance: "dhis2-v42"
     work_pool:
@@ -19,6 +21,7 @@ deployments:
 
   - name: dhis2-geoparquet-export-v41
     entrypoint: flow.py:dhis2_geoparquet_export_flow
+    schedules: []
     parameters:
       instance: "dhis2-v41"
     work_pool:
@@ -26,6 +29,7 @@ deployments:
 
   - name: dhis2-geoparquet-export-v40
     entrypoint: flow.py:dhis2_geoparquet_export_flow
+    schedules: []
     parameters:
       instance: "dhis2-v40"
     work_pool:

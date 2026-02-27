@@ -5,5 +5,6 @@ pull:
 deployments:
   - name: s3-parquet-export
     entrypoint: flow.py:s3_parquet_export_flow
+    schedules: []
     work_pool:
       name: default
