@@ -240,6 +240,66 @@ deployments:
       name: default
     schedules: []
 
+  - name: cloud-worldbank-country-profile
+    entrypoint: flows/cloud/cloud_worldbank_country_profile.py:worldbank_country_profile_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: cloud-worldbank-gdp-comparison
+    entrypoint: flows/cloud/cloud_worldbank_gdp_comparison.py:worldbank_gdp_comparison_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: cloud-worldbank-indicator-timeseries
+    entrypoint: flows/cloud/cloud_worldbank_indicator_timeseries.py:worldbank_indicator_timeseries_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: cloud-worldbank-poverty-analysis
+    entrypoint: flows/cloud/cloud_worldbank_poverty_analysis.py:worldbank_poverty_analysis_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: cloud-worldpop-age-sex-pyramid
+    entrypoint: flows/cloud/cloud_worldpop_age_sex_pyramid.py:worldpop_age_sex_pyramid_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: cloud-worldpop-country-comparison
+    entrypoint: flows/cloud/cloud_worldpop_country_comparison.py:worldpop_country_comparison_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: cloud-worldpop-country-report
+    entrypoint: flows/cloud/cloud_worldpop_country_report.py:worldpop_country_report_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: cloud-worldpop-dataset-catalog
+    entrypoint: flows/cloud/cloud_worldpop_dataset_catalog.py:worldpop_dataset_catalog_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: cloud-worldpop-population-stats
+    entrypoint: flows/cloud/cloud_worldpop_population_stats.py:worldpop_population_stats_flow
+    work_pool:
+      name: default
+    schedules: []
+
+  - name: cloud-worldpop-population-timeseries
+    entrypoint: flows/cloud/cloud_worldpop_population_timeseries.py:worldpop_population_timeseries_flow
+    work_pool:
+      name: default
+    schedules: []
+
   - name: core-advanced-retries
     entrypoint: flows/core/core_advanced_retries.py:advanced_retries_flow
     work_pool:

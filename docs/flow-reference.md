@@ -2987,6 +2987,41 @@ dynamic mapping pattern with real API calls.
 
 ---
 
+### WorldPop Country Report
+
+**What it demonstrates:** Multi-source API aggregation -- WorldPop catalog
+metadata enriched with population numbers from the World Bank API -- followed
+by Slack notification via webhook.
+
+**External APIs:**
+- **WorldPop catalog API** (`hub.worldpop.org/rest/data`) -- dataset metadata
+  and year-range availability per country.
+- **World Bank API** (`api.worldbank.org/v2`) -- country-level population by
+  ISO3 code and year (indicator `SP.POP.TOTL`).
+
+**Airflow equivalent:** PythonOperator + HttpHook + SlackWebhookOperator.
+
+```python
+@flow(name="cloud_worldpop_country_report", log_prints=True)
+def worldpop_country_report_flow(query: CountryReportQuery | None = None) -> PopulationReport:
+    futures = fetch_country_data.map(query.iso3_codes, dataset=query.dataset, subdataset=query.subdataset)
+    raw_countries = [f.result() for f in futures]
+    pop_data = fetch_population(query.iso3_codes, query.year)
+    for c in raw_countries:
+        c.population = pop_data.get(c.iso3, 0)
+    countries = transform_results(raw_countries)
+    markdown = build_report(countries)
+    create_markdown_artifact(key="worldpop-country-report", markdown=markdown)
+    slack_sent = send_slack_notification(countries)
+    return PopulationReport(countries=countries, total_countries=len(countries), markdown=markdown, slack_sent=slack_sent)
+```
+
+The World Bank batch endpoint accepts semicolon-separated ISO3 codes in a
+single request, avoiding per-country fan-out for population data. Results are
+merged into the WorldPop metadata before sorting by population descending.
+
+---
+
 ### WorldPop Population Time-Series
 
 **What it demonstrates:** Time-series construction from sequential API queries,
@@ -3010,6 +3045,130 @@ def compute_growth_rates(year_records: list[YearMetadata]) -> list[GrowthRate]:
 Sequential API pagination over available years for a single country. Growth
 rates are computed from consecutive year metadata. The markdown artifact
 includes both the year listing and a growth rate table with peak identification.
+
+---
+
+## World Bank API
+
+### World Bank GDP Comparison
+
+**What it demonstrates:** Batch multi-country API call to the World Bank
+indicators endpoint, ranking and report generation.
+
+**Airflow equivalent:** PythonOperator + HttpHook for REST API with data
+ranking.
+
+```python
+@task(retries=2, retry_delay_seconds=[2, 5])
+def fetch_gdp_data(iso3_codes: list[str], year: int) -> list[CountryGdp]:
+    codes = ";".join(iso3_codes)
+    url = f"{WORLDBANK_API_URL}/country/{codes}/indicator/NY.GDP.MKTP.CD"
+    params = {"date": str(year), "format": "json", "per_page": str(len(iso3_codes))}
+    with httpx.Client(timeout=30) as client:
+        resp = client.get(url, params=params)
+        resp.raise_for_status()
+    ...
+
+@flow(name="cloud_worldbank_gdp_comparison", log_prints=True)
+def worldbank_gdp_comparison_flow(query: GdpComparisonQuery | None = None) -> GdpComparisonReport:
+    countries = fetch_gdp_data(query.iso3_codes, query.year)
+    ranked = rank_by_gdp(countries)
+    markdown = build_gdp_report(ranked, query)
+    create_markdown_artifact(key="worldbank-gdp-comparison", markdown=markdown)
+    return GdpComparisonReport(countries=ranked, total_countries=len(ranked), markdown=markdown)
+```
+
+The World Bank batch endpoint accepts semicolon-separated ISO3 codes, avoiding
+per-country fan-out. GDP values are ranked descending with summary statistics.
+
+---
+
+### World Bank Indicator Time-Series
+
+**What it demonstrates:** Time-series construction from a single World Bank
+indicator over a year range, with year-over-year growth rate computation and
+peak/trough identification.
+
+**Airflow equivalent:** PythonOperator loop with HttpHook for paginated API.
+
+```python
+@task(retries=2, retry_delay_seconds=[2, 5])
+def fetch_indicator_timeseries(iso3: str, indicator: str, start_year: int, end_year: int) -> list[YearValue]:
+    url = f"{WORLDBANK_API_URL}/country/{iso3}/indicator/{indicator}"
+    params = {"date": f"{start_year}:{end_year}", "format": "json", "per_page": "100"}
+    ...
+
+@task
+def compute_growth_rates(data: list[YearValue]) -> list[GrowthRate]:
+    rates = []
+    for i in range(1, len(data)):
+        growth = (data[i].value - data[i-1].value) / data[i-1].value * 100
+        rates.append(GrowthRate(year=data[i].year, value=data[i].value, growth_pct=round(growth, 4)))
+    return rates
+```
+
+Year-range queries use `date=2000:2023` syntax. Null values from the API are
+filtered before growth rate computation. Peak and trough growth years are
+identified in the report summary.
+
+---
+
+### World Bank Country Profile
+
+**What it demonstrates:** Multi-indicator aggregation using `.map()` to query
+several different World Bank indicators for a single country in parallel.
+Builds a dashboard-style country profile.
+
+**Airflow equivalent:** PythonOperator with multiple HttpHook calls.
+
+```python
+DEFAULT_INDICATORS = [
+    "SP.POP.TOTL",      # Population
+    "NY.GDP.MKTP.CD",   # GDP (current US$)
+    "NY.GDP.PCAP.CD",   # GDP per capita
+    "SP.DYN.LE00.IN",   # Life expectancy
+    "SE.ADT.LITR.ZS",   # Literacy rate
+    "SH.DYN.MORT",      # Under-5 mortality rate
+]
+
+@flow(name="cloud_worldbank_country_profile", log_prints=True)
+def worldbank_country_profile_flow(query: ProfileQuery | None = None) -> CountryProfile:
+    futures = fetch_indicator.map(query.iso3, query.indicators, year=query.year)
+    indicators = [f.result() for f in futures]
+    profile = build_country_profile(query.iso3, query.year, indicators)
+    create_markdown_artifact(key="worldbank-country-profile", markdown=profile.markdown)
+    return profile
+```
+
+`.map()` parallelises one API call per indicator. Value formatting adapts to
+indicator type: percentages for rate indicators (`.ZS` suffix), dollar
+formatting for large monetary values, and comma-separated integers for counts.
+
+---
+
+### World Bank Poverty Analysis
+
+**What it demonstrates:** Handling sparse/missing data common with development
+indicators. Uses `.map()` for parallel country queries, trend detection, and
+robust null-value handling.
+
+**Airflow equivalent:** PythonOperator in a loop with missing-data handling.
+
+```python
+@task(retries=2, retry_delay_seconds=[2, 5])
+def fetch_poverty_data(iso3: str, start_year: int, end_year: int) -> CountryPoverty:
+    url = f"{WORLDBANK_API_URL}/country/{iso3}/indicator/SI.POV.DDAY"
+    ...
+    # Filter null values, find latest data point, determine trend
+    if len(data) >= 2:
+        diff = latest_value - earliest_value
+        trend = "improving" if diff < -1 else "worsening" if diff > 1 else "stable"
+```
+
+Poverty data (`SI.POV.DDAY` -- headcount ratio at $2.15/day) is notoriously
+sparse, with many countries missing recent data points. The flow demonstrates
+robust handling of null API values, trend detection from available data, and
+sorting that separates countries with data from those without.
 
 ---
 
