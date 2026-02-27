@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 WORLDPOP_STATS_URL = "https://api.worldpop.org/v1/services/stats"
+WORLDPOP_TASKS_URL = "https://api.worldpop.org/v1/tasks"
 POLL_INTERVAL_SECONDS = 10
 POLL_TIMEOUT_SECONDS = 600
 
@@ -303,36 +304,34 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
     return org_units, CocMapping(male=male_coc_uid, female=female_coc_uid)
 
 
-def _poll_async_result(task_id: str, form_data: dict[str, str]) -> dict[str, Any]:
-    """Poll the WorldPop async task endpoint until completion or timeout.
+def _poll_async_result(task_id: str) -> dict[str, Any]:
+    """Poll the WorldPop task endpoint until completion or timeout.
 
-    The WorldPop API requires the original request parameters alongside the
-    taskid when polling for results.
+    Uses ``GET /v1/tasks/{taskid}`` to check status and retrieve results.
 
     Args:
         task_id: WorldPop async task identifier.
-        form_data: Original form data (dataset, year, geojson) to re-send.
 
     Returns:
         Final API response body.
     """
-    poll_data = {**form_data, "taskid": task_id}
+    url = f"{WORLDPOP_TASKS_URL}/{task_id}"
     start = time.monotonic()
     attempt = 0
     with httpx.Client(timeout=30) as client:
         while time.monotonic() - start < POLL_TIMEOUT_SECONDS:
             attempt += 1
-            resp = client.post(WORLDPOP_STATS_URL, data=poll_data)
+            resp = client.get(url)
             resp.raise_for_status()
             body = resp.json()
             status = body.get("status", "")
             elapsed = int(time.monotonic() - start)
             print(f"  Poll #{attempt} ({elapsed}s): status={status}")
             if status == "finished":
+                if body.get("error"):
+                    msg = f"Async task {task_id} error: {body.get('error_message', 'unknown')}"
+                    raise RuntimeError(msg)
                 return body  # type: ignore[no-any-return]
-            if status == "error":
-                msg = f"Async task {task_id} failed"
-                raise RuntimeError(msg)
             time.sleep(POLL_INTERVAL_SECONDS)
     msg = f"Async task {task_id} timed out after {POLL_TIMEOUT_SECONDS}s"
     raise TimeoutError(msg)
@@ -364,12 +363,18 @@ def fetch_worldpop_population(org_unit: OrgUnitGeo, year: int) -> WorldPopResult
     if body.get("status") == "created":
         task_id = body.get("taskid", "")
         print(f"Async task created for {org_unit.name}: {task_id}, polling...")
-        body = _poll_async_result(task_id, data)
+        body = _poll_async_result(task_id)
 
     pyramid = body.get("data", {}).get("agesexpyramid", {})
 
-    male_total = sum(float(pyramid.get(f"M_{i}", 0)) for i in range(17))
-    female_total = sum(float(pyramid.get(f"F_{i}", 0)) for i in range(17))
+    # The tasks endpoint returns a list of age-group objects with male/female
+    # keys, while inline responses use M_0..M_16 / F_0..F_16 dict keys.
+    if isinstance(pyramid, list):
+        male_total = sum(float(row.get("male", 0)) for row in pyramid)
+        female_total = sum(float(row.get("female", 0)) for row in pyramid)
+    else:
+        male_total = sum(float(pyramid.get(f"M_{i}", 0)) for i in range(17))
+        female_total = sum(float(pyramid.get(f"F_{i}", 0)) for i in range(17))
 
     print(f"{org_unit.name}: male={male_total:,.0f}, female={female_total:,.0f}")
     return WorldPopResult(

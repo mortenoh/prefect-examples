@@ -55,45 +55,28 @@ SAMPLE_IMPORT_RESPONSE = {
     "importCount": {"imported": 2, "updated": 0, "ignored": 0, "deleted": 0},
 }
 
-SAMPLE_WORLDPOP_RESPONSE = {
+SAMPLE_WORLDPOP_TASK_RESPONSE = {
     "status": "finished",
     "data": {
-        "agesexpyramid": {
-            "M_0": 500.0,
-            "M_1": 480.0,
-            "M_2": 450.0,
-            "M_3": 420.0,
-            "M_4": 400.0,
-            "M_5": 380.0,
-            "M_6": 350.0,
-            "M_7": 320.0,
-            "M_8": 300.0,
-            "M_9": 280.0,
-            "M_10": 250.0,
-            "M_11": 220.0,
-            "M_12": 180.0,
-            "M_13": 140.0,
-            "M_14": 100.0,
-            "M_15": 60.0,
-            "M_16": 30.0,
-            "F_0": 490.0,
-            "F_1": 470.0,
-            "F_2": 440.0,
-            "F_3": 410.0,
-            "F_4": 390.0,
-            "F_5": 370.0,
-            "F_6": 340.0,
-            "F_7": 310.0,
-            "F_8": 290.0,
-            "F_9": 270.0,
-            "F_10": 240.0,
-            "F_11": 210.0,
-            "F_12": 170.0,
-            "F_13": 130.0,
-            "F_14": 90.0,
-            "F_15": 50.0,
-            "F_16": 20.0,
-        }
+        "agesexpyramid": [
+            {"class": "0", "male": 500.0, "female": 490.0},
+            {"class": "1", "male": 480.0, "female": 470.0},
+            {"class": "2", "male": 450.0, "female": 440.0},
+            {"class": "3", "male": 420.0, "female": 410.0},
+            {"class": "4", "male": 400.0, "female": 390.0},
+            {"class": "5", "male": 380.0, "female": 370.0},
+            {"class": "6", "male": 350.0, "female": 340.0},
+            {"class": "7", "male": 320.0, "female": 310.0},
+            {"class": "8", "male": 300.0, "female": 290.0},
+            {"class": "9", "male": 280.0, "female": 270.0},
+            {"class": "10", "male": 250.0, "female": 240.0},
+            {"class": "11", "male": 220.0, "female": 210.0},
+            {"class": "12", "male": 180.0, "female": 170.0},
+            {"class": "13", "male": 140.0, "female": 130.0},
+            {"class": "14", "male": 100.0, "female": 90.0},
+            {"class": "15", "male": 60.0, "female": 50.0},
+            {"class": "16", "male": 30.0, "female": 20.0},
+        ],
     },
 }
 
@@ -120,12 +103,25 @@ def test_ensure_dhis2_metadata() -> None:
 
 @patch("deploy_dhis2_worldpop_population_import.httpx.Client")
 def test_fetch_worldpop_population(mock_client_cls: MagicMock) -> None:
-    mock_resp = MagicMock()
-    mock_resp.json.return_value = SAMPLE_WORLDPOP_RESPONSE
-    mock_resp.raise_for_status = MagicMock()
-    mock_client_cls.return_value.__enter__ = MagicMock(return_value=MagicMock())
-    mock_client_cls.return_value.__enter__.return_value.post.return_value = mock_resp
-    mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
+    mock_resp_created = MagicMock()
+    mock_resp_created.json.return_value = {"status": "created", "taskid": "abc123"}
+    mock_resp_created.raise_for_status = MagicMock()
+
+    mock_resp_finished = MagicMock()
+    mock_resp_finished.json.return_value = SAMPLE_WORLDPOP_TASK_RESPONSE
+    mock_resp_finished.raise_for_status = MagicMock()
+
+    mock_http_initial = MagicMock()
+    mock_http_initial.post.return_value = mock_resp_created
+    mock_http_initial.__enter__ = MagicMock(return_value=mock_http_initial)
+    mock_http_initial.__exit__ = MagicMock(return_value=False)
+
+    mock_http_poll = MagicMock()
+    mock_http_poll.get.return_value = mock_resp_finished
+    mock_http_poll.__enter__ = MagicMock(return_value=mock_http_poll)
+    mock_http_poll.__exit__ = MagicMock(return_value=False)
+
+    mock_client_cls.side_effect = [mock_http_initial, mock_http_poll]
 
     ou = OrgUnitGeo(id="ROOT_OU", name="Root", geometry=SAMPLE_OU_WITH_GEOM[0]["geometry"])
     result = fetch_worldpop_population.fn(ou, 2020)
@@ -188,15 +184,25 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     mock_client.post_data_values.return_value = SAMPLE_IMPORT_RESPONSE
     mock_get_client.return_value = mock_client
 
-    mock_resp = MagicMock()
-    mock_resp.json.return_value = SAMPLE_WORLDPOP_RESPONSE
-    mock_resp.raise_for_status = MagicMock()
+    mock_resp_created = MagicMock()
+    mock_resp_created.json.return_value = {"status": "created", "taskid": "flow123"}
+    mock_resp_created.raise_for_status = MagicMock()
 
-    mock_http = MagicMock()
-    mock_http.post.return_value = mock_resp
-    mock_http.__enter__ = MagicMock(return_value=mock_http)
-    mock_http.__exit__ = MagicMock(return_value=False)
-    mock_httpx_cls.return_value = mock_http
+    mock_resp_finished = MagicMock()
+    mock_resp_finished.json.return_value = SAMPLE_WORLDPOP_TASK_RESPONSE
+    mock_resp_finished.raise_for_status = MagicMock()
+
+    mock_http_initial = MagicMock()
+    mock_http_initial.post.return_value = mock_resp_created
+    mock_http_initial.__enter__ = MagicMock(return_value=mock_http_initial)
+    mock_http_initial.__exit__ = MagicMock(return_value=False)
+
+    mock_http_poll = MagicMock()
+    mock_http_poll.get.return_value = mock_resp_finished
+    mock_http_poll.__enter__ = MagicMock(return_value=mock_http_poll)
+    mock_http_poll.__exit__ = MagicMock(return_value=False)
+
+    mock_httpx_cls.side_effect = [mock_http_initial, mock_http_poll]
 
     state = dhis2_worldpop_population_import_flow(return_state=True)
     assert state.is_completed()

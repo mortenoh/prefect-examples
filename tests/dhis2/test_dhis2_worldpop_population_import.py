@@ -97,6 +97,32 @@ SAMPLE_WORLDPOP_RESPONSE = {
     },
 }
 
+# Task endpoint returns list-of-objects format (used by async polling via /v1/tasks/)
+SAMPLE_WORLDPOP_TASK_RESPONSE = {
+    "status": "finished",
+    "data": {
+        "agesexpyramid": [
+            {"class": "0", "male": 500.0, "female": 490.0},
+            {"class": "1", "male": 480.0, "female": 470.0},
+            {"class": "2", "male": 450.0, "female": 440.0},
+            {"class": "3", "male": 420.0, "female": 410.0},
+            {"class": "4", "male": 400.0, "female": 390.0},
+            {"class": "5", "male": 380.0, "female": 370.0},
+            {"class": "6", "male": 350.0, "female": 340.0},
+            {"class": "7", "male": 320.0, "female": 310.0},
+            {"class": "8", "male": 300.0, "female": 290.0},
+            {"class": "9", "male": 280.0, "female": 270.0},
+            {"class": "10", "male": 250.0, "female": 240.0},
+            {"class": "11", "male": 220.0, "female": 210.0},
+            {"class": "12", "male": 180.0, "female": 170.0},
+            {"class": "13", "male": 140.0, "female": 130.0},
+            {"class": "14", "male": 100.0, "female": 90.0},
+            {"class": "15", "male": 60.0, "female": 50.0},
+            {"class": "16", "male": 30.0, "female": 20.0},
+        ],
+    },
+}
+
 SAMPLE_COCS = [
     {"id": "COC_MALE_1", "name": "Male", "categoryOptions": [{"id": "PfWpSexMal1"}]},
     {"id": "COC_FEML_1", "name": "Female", "categoryOptions": [{"id": "PfWpSexFem1"}]},
@@ -244,18 +270,18 @@ def test_fetch_worldpop_population_async(mock_client_cls: MagicMock) -> None:
     mock_resp_created.raise_for_status = MagicMock()
 
     mock_resp_finished = MagicMock()
-    mock_resp_finished.json.return_value = SAMPLE_WORLDPOP_RESPONSE
+    mock_resp_finished.json.return_value = SAMPLE_WORLDPOP_TASK_RESPONSE
     mock_resp_finished.raise_for_status = MagicMock()
 
     # First Client context: initial POST returns "created"
-    # Second Client context (polling): POST returns "finished"
+    # Second Client context (polling): GET /v1/tasks/{id} returns "finished"
     mock_http_initial = MagicMock()
     mock_http_initial.post.return_value = mock_resp_created
     mock_http_initial.__enter__ = MagicMock(return_value=mock_http_initial)
     mock_http_initial.__exit__ = MagicMock(return_value=False)
 
     mock_http_poll = MagicMock()
-    mock_http_poll.post.return_value = mock_resp_finished
+    mock_http_poll.get.return_value = mock_resp_finished
     mock_http_poll.__enter__ = MagicMock(return_value=mock_http_poll)
     mock_http_poll.__exit__ = MagicMock(return_value=False)
 
@@ -354,15 +380,26 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     mock_client.post_data_values.return_value = SAMPLE_IMPORT_RESPONSE
     mock_get_client.return_value = mock_client
 
-    mock_resp = MagicMock()
-    mock_resp.json.return_value = SAMPLE_WORLDPOP_RESPONSE
-    mock_resp.raise_for_status = MagicMock()
+    # Initial POST returns async "created", poll GET returns "finished"
+    mock_resp_created = MagicMock()
+    mock_resp_created.json.return_value = {"status": "created", "taskid": "flow123"}
+    mock_resp_created.raise_for_status = MagicMock()
 
-    mock_http = MagicMock()
-    mock_http.post.return_value = mock_resp
-    mock_http.__enter__ = MagicMock(return_value=mock_http)
-    mock_http.__exit__ = MagicMock(return_value=False)
-    mock_httpx_cls.return_value = mock_http
+    mock_resp_finished = MagicMock()
+    mock_resp_finished.json.return_value = SAMPLE_WORLDPOP_TASK_RESPONSE
+    mock_resp_finished.raise_for_status = MagicMock()
+
+    mock_http_initial = MagicMock()
+    mock_http_initial.post.return_value = mock_resp_created
+    mock_http_initial.__enter__ = MagicMock(return_value=mock_http_initial)
+    mock_http_initial.__exit__ = MagicMock(return_value=False)
+
+    mock_http_poll = MagicMock()
+    mock_http_poll.get.return_value = mock_resp_finished
+    mock_http_poll.__enter__ = MagicMock(return_value=mock_http_poll)
+    mock_http_poll.__exit__ = MagicMock(return_value=False)
+
+    mock_httpx_cls.side_effect = [mock_http_initial, mock_http_poll]
 
     state = dhis2_worldpop_population_import_flow(return_state=True)
     assert state.is_completed()
