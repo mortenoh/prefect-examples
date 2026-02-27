@@ -66,12 +66,8 @@ class Dhis2DataSet(BaseModel):
     name: str = Field(description="Display name")
     shortName: str = Field(description="Short name")
     periodType: str = Field(default="Yearly", description="Period type")
-    dataSetElements: list[Dhis2DataSetElement] = Field(
-        default_factory=list, description="Data elements in the set"
-    )
-    organisationUnits: list[Dhis2Ref] = Field(
-        default_factory=list, description="Assigned org units"
-    )
+    dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
+    organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
 
 
 class PopulationQuery(BaseModel):
@@ -137,9 +133,7 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
     Returns:
         Level-1 OrgUnit.
     """
-    level1_ous = client.fetch_metadata(
-        "organisationUnits", fields="id,name", filters=["level:eq:1"]
-    )
+    level1_ous = client.fetch_metadata("organisationUnits", fields="id,name", filters=["level:eq:1"])
     if not level1_ous:
         msg = "No level-1 organisation unit found in DHIS2"
         raise ValueError(msg)
