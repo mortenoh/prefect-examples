@@ -1,4 +1,4 @@
-"""Tests for DHIS2 World Bank Population Import flow."""
+"""Tests for DHIS2 World Bank Population Report flow."""
 
 import importlib.util
 import sys
@@ -19,15 +19,13 @@ _spec.loader.exec_module(_mod)
 
 from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials  # noqa: E402
 
-ImportQuery = _mod.ImportQuery
+PopulationQuery = _mod.PopulationQuery
 CountryPopulation = _mod.CountryPopulation
 OrgUnitMapping = _mod.OrgUnitMapping
-DataValue = _mod.DataValue
-ImportResult = _mod.ImportResult
+PopulationReport = _mod.PopulationReport
 fetch_population_data = _mod.fetch_population_data
 resolve_org_units = _mod.resolve_org_units
-build_data_values = _mod.build_data_values
-import_data_values = _mod.import_data_values
+build_report = _mod.build_report
 dhis2_worldbank_import_flow = _mod.dhis2_worldbank_import_flow
 
 # ---------------------------------------------------------------------------
@@ -38,45 +36,38 @@ SAMPLE_WB_RESPONSE = [
     {"page": 1, "pages": 1, "per_page": 10, "total": 4},
     [
         {
-            "countryiso3code": "ETH",
-            "country": {"value": "Ethiopia"},
+            "countryiso3code": "LAO",
+            "country": {"value": "Lao PDR"},
             "date": "2023",
-            "value": 126527060,
+            "value": 7633779,
             "indicator": {"id": "SP.POP.TOTL"},
         },
         {
-            "countryiso3code": "ETH",
-            "country": {"value": "Ethiopia"},
+            "countryiso3code": "LAO",
+            "country": {"value": "Lao PDR"},
             "date": "2022",
-            "value": 123379924,
+            "value": 7529475,
             "indicator": {"id": "SP.POP.TOTL"},
         },
         {
-            "countryiso3code": "KEN",
-            "country": {"value": "Kenya"},
-            "date": "2023",
-            "value": 55100586,
+            "countryiso3code": "LAO",
+            "country": {"value": "Lao PDR"},
+            "date": "2021",
+            "value": 7425057,
             "indicator": {"id": "SP.POP.TOTL"},
         },
         {
-            "countryiso3code": "KEN",
-            "country": {"value": "Kenya"},
-            "date": "2022",
+            "countryiso3code": "LAO",
+            "country": {"value": "Lao PDR"},
+            "date": "2020",
             "value": None,
         },
     ],
 ]
 
 SAMPLE_ORG_UNITS = [
-    {"id": "OU_ETH", "code": "ETH", "name": "Ethiopia"},
-    {"id": "OU_KEN", "code": "KEN", "name": "Kenya"},
+    {"id": "OU_LAO", "code": "LAO", "name": "Lao PDR"},
 ]
-
-SAMPLE_IMPORT_RESPONSE = {
-    "status": "SUCCESS",
-    "importCount": {"imported": 3, "updated": 0, "ignored": 0, "deleted": 0},
-    "description": "Import complete",
-}
 
 
 # ---------------------------------------------------------------------------
@@ -84,22 +75,14 @@ SAMPLE_IMPORT_RESPONSE = {
 # ---------------------------------------------------------------------------
 
 
-def test_import_query_requires_data_element_uid() -> None:
+def test_population_query_valid() -> None:
+    q = PopulationQuery(iso3_codes=["LAO"], start_year=2020, end_year=2023)
+    assert q.iso3_codes == ["LAO"]
+
+
+def test_population_query_requires_iso3() -> None:
     with pytest.raises(ValidationError):
-        ImportQuery(iso3_codes=["ETH"], start_year=2020, end_year=2023)
-
-
-def test_import_query_valid() -> None:
-    q = ImportQuery(iso3_codes=["ETH"], start_year=2020, end_year=2023, data_element_uid="abc123")
-    assert q.data_element_uid == "abc123"
-    assert q.iso3_codes == ["ETH"]
-
-
-def test_data_value_camel_case() -> None:
-    dv = DataValue(dataElement="DE1", period="2023", orgUnit="OU1", value="100")
-    dumped = dv.model_dump()
-    assert "dataElement" in dumped
-    assert "orgUnit" in dumped
+        PopulationQuery(start_year=2020, end_year=2023)
 
 
 # ---------------------------------------------------------------------------
@@ -119,12 +102,12 @@ def test_fetch_population_data(mock_client_cls: MagicMock) -> None:
     mock_http.__exit__ = MagicMock(return_value=False)
     mock_client_cls.return_value = mock_http
 
-    results = fetch_population_data.fn(["ETH", "KEN"], 2022, 2023)
+    results = fetch_population_data.fn(["LAO"], 2020, 2023)
 
     assert len(results) == 3  # one null value filtered out
     assert all(isinstance(r, CountryPopulation) for r in results)
-    assert results[0].iso3 == "ETH"
-    assert results[0].population == 126527060
+    assert results[0].iso3 == "LAO"
+    assert results[0].population == 7633779
 
 
 @patch("dhis2_worldbank_import.httpx.Client")
@@ -147,69 +130,52 @@ def test_resolve_org_units() -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_organisation_units_by_code.return_value = SAMPLE_ORG_UNITS
 
-    mapping = resolve_org_units.fn(mock_client, ["ETH", "KEN", "MOZ"])
+    mapping = resolve_org_units.fn(mock_client, ["LAO"])
 
-    assert len(mapping) == 2
-    assert "ETH" in mapping
-    assert mapping["ETH"].org_unit_uid == "OU_ETH"
-    assert mapping["KEN"].org_unit_name == "Kenya"
-    # MOZ is missing -- should log warning but not raise
+    assert len(mapping) == 1
+    assert "LAO" in mapping
+    assert mapping["LAO"].org_unit_uid == "OU_LAO"
+    assert mapping["LAO"].org_unit_name == "Lao PDR"
 
 
-def test_resolve_org_units_all_found() -> None:
+def test_resolve_org_units_missing() -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_organisation_units_by_code.return_value = SAMPLE_ORG_UNITS
 
-    mapping = resolve_org_units.fn(mock_client, ["ETH", "KEN"])
-    assert len(mapping) == 2
+    mapping = resolve_org_units.fn(mock_client, ["LAO", "ZZZ"])
+    assert len(mapping) == 1  # ZZZ not found
 
 
-def test_build_data_values() -> None:
+def test_build_report() -> None:
     populations = [
-        CountryPopulation(iso3="ETH", country_name="Ethiopia", year=2023, population=126527060),
-        CountryPopulation(iso3="KEN", country_name="Kenya", year=2023, population=55100586),
-        CountryPopulation(iso3="MOZ", country_name="Mozambique", year=2023, population=33897354),
+        CountryPopulation(iso3="LAO", country_name="Lao PDR", year=2023, population=7633779),
+        CountryPopulation(iso3="LAO", country_name="Lao PDR", year=2022, population=7529475),
     ]
-    org_map = {
-        "ETH": OrgUnitMapping(iso3="ETH", org_unit_uid="OU_ETH", org_unit_name="Ethiopia"),
-        "KEN": OrgUnitMapping(iso3="KEN", org_unit_uid="OU_KEN", org_unit_name="Kenya"),
+    org_unit_map = {
+        "LAO": OrgUnitMapping(iso3="LAO", org_unit_uid="OU_LAO", org_unit_name="Lao PDR"),
     }
+    query = PopulationQuery(iso3_codes=["LAO"], start_year=2022, end_year=2023)
 
-    values = build_data_values.fn(populations, org_map, "DE_POP")
+    report = build_report.fn("https://dhis2.example.org", query, populations, org_unit_map)
 
-    assert len(values) == 2  # MOZ skipped
-    assert values[0].dataElement == "DE_POP"
-    assert values[0].orgUnit == "OU_ETH"
-    assert values[0].period == "2023"
-    assert values[0].value == "126527060"
-
-
-def test_build_data_values_empty_map() -> None:
-    populations = [
-        CountryPopulation(iso3="ETH", country_name="Ethiopia", year=2023, population=100),
-    ]
-    values = build_data_values.fn(populations, {}, "DE_POP")
-    assert values == []
+    assert isinstance(report, PopulationReport)
+    assert report.dhis2_url == "https://dhis2.example.org"
+    assert report.record_count == 2
+    assert report.org_units_resolved == 1
+    assert "https://dhis2.example.org" in report.markdown
+    assert "Lao PDR" in report.markdown
+    assert "7,633,779" in report.markdown
+    assert "OU_LAO" in report.markdown
 
 
-def test_import_data_values() -> None:
-    mock_client = MagicMock(spec=Dhis2Client)
-    mock_client.post_data_values.return_value = SAMPLE_IMPORT_RESPONSE
+def test_build_report_empty() -> None:
+    query = PopulationQuery(iso3_codes=["ZZZ"], start_year=2023, end_year=2023)
 
-    data_values = [
-        DataValue(dataElement="DE1", period="2023", orgUnit="OU1", value="100"),
-        DataValue(dataElement="DE1", period="2023", orgUnit="OU2", value="200"),
-        DataValue(dataElement="DE1", period="2022", orgUnit="OU1", value="90"),
-    ]
+    report = build_report.fn("https://dhis2.example.org", query, [], {})
 
-    result = import_data_values.fn(mock_client, data_values)
-
-    assert isinstance(result, ImportResult)
-    assert result.status == "SUCCESS"
-    assert result.imported == 3
-    assert result.updated == 0
-    assert result.total_submitted == 3
-    assert "Import Result" in result.markdown
+    assert report.record_count == 0
+    assert "No population data" in report.markdown
+    assert "No matching org units" in report.markdown
 
 
 # ---------------------------------------------------------------------------
@@ -223,7 +189,6 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     # Mock DHIS2 client
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_organisation_units_by_code.return_value = SAMPLE_ORG_UNITS
-    mock_client.post_data_values.return_value = SAMPLE_IMPORT_RESPONSE
     mock_get_client.return_value = mock_client
 
     # Mock World Bank httpx.Client
@@ -237,12 +202,9 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     mock_http.__exit__ = MagicMock(return_value=False)
     mock_httpx_cls.return_value = mock_http
 
-    query = ImportQuery(
-        iso3_codes=["ETH", "KEN"],
-        start_year=2022,
-        end_year=2023,
-        data_element_uid="DE_POP",
-    )
-
-    state = dhis2_worldbank_import_flow(query=query, return_state=True)
+    state = dhis2_worldbank_import_flow(return_state=True)
     assert state.is_completed()
+    report = state.result()
+    assert isinstance(report, PopulationReport)
+    assert report.record_count == 3
+    assert report.org_units_resolved == 1
