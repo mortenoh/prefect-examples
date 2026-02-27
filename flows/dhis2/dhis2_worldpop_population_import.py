@@ -197,44 +197,71 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
         msg = "No level-1 org units with Polygon/MultiPolygon geometry"
         raise ValueError(msg)
 
-    payload: dict[str, Any] = {
-        "categoryOptions": [
-            Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="Male", shortName="Male").model_dump(),
-            Dhis2CategoryOption(id=CAT_OPTION_FEMALE_UID, name="Female", shortName="Female").model_dump(),
-        ],
-        "categories": [
-            Dhis2Category(
-                id=CATEGORY_UID,
-                name="Sex",
-                shortName="Sex",
-                categoryOptions=[Dhis2Ref(id=CAT_OPTION_MALE_UID), Dhis2Ref(id=CAT_OPTION_FEMALE_UID)],
-            ).model_dump(),
-        ],
-        "categoryCombos": [
-            Dhis2CategoryCombo(
-                id=CAT_COMBO_UID,
-                name="Sex",
-                categories=[Dhis2Ref(id=CATEGORY_UID)],
-            ).model_dump(),
-        ],
-        "dataElements": [
-            Dhis2DataElement(
-                id=DATA_ELEMENT_UID,
-                name="PR - WorldPop Population",
-                shortName="PR - WP Pop",
-                categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
-            ).model_dump(),
-        ],
-        "dataSets": [
-            Dhis2DataSet(
-                id=DATA_SET_UID,
-                name="PR - WorldPop Population",
-                shortName="PR - WP Pop",
-                dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
-                organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
-            ).model_dump(),
-        ],
-    }
+    # Reuse existing Male/Female category options if present on the server
+    existing_cos = client.fetch_metadata(
+        "categoryOptions",
+        fields="id,name",
+        filters=["name:in:[Male,Female]"],
+    )
+    male_co_uid = CAT_OPTION_MALE_UID
+    female_co_uid = CAT_OPTION_FEMALE_UID
+    for co in existing_cos:
+        if co["name"] == "Male":
+            male_co_uid = co["id"]
+        elif co["name"] == "Female":
+            female_co_uid = co["id"]
+
+    new_cos = male_co_uid == CAT_OPTION_MALE_UID or female_co_uid == CAT_OPTION_FEMALE_UID
+    if not new_cos:
+        print(f"Reusing existing category options: Male={male_co_uid}, Female={female_co_uid}")
+
+    payload: dict[str, Any] = {}
+
+    if new_cos:
+        cos_to_create = []
+        if male_co_uid == CAT_OPTION_MALE_UID:
+            cos_to_create.append(
+                Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="Male", shortName="Male").model_dump()
+            )
+        if female_co_uid == CAT_OPTION_FEMALE_UID:
+            cos_to_create.append(
+                Dhis2CategoryOption(id=CAT_OPTION_FEMALE_UID, name="Female", shortName="Female").model_dump()
+            )
+        if cos_to_create:
+            payload["categoryOptions"] = cos_to_create
+
+    payload["categories"] = [
+        Dhis2Category(
+            id=CATEGORY_UID,
+            name="Sex",
+            shortName="Sex",
+            categoryOptions=[Dhis2Ref(id=male_co_uid), Dhis2Ref(id=female_co_uid)],
+        ).model_dump(),
+    ]
+    payload["categoryCombos"] = [
+        Dhis2CategoryCombo(
+            id=CAT_COMBO_UID,
+            name="Sex",
+            categories=[Dhis2Ref(id=CATEGORY_UID)],
+        ).model_dump(),
+    ]
+    payload["dataElements"] = [
+        Dhis2DataElement(
+            id=DATA_ELEMENT_UID,
+            name="PR - WorldPop Population",
+            shortName="PR - WP Pop",
+            categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
+        ).model_dump(),
+    ]
+    payload["dataSets"] = [
+        Dhis2DataSet(
+            id=DATA_SET_UID,
+            name="PR - WorldPop Population",
+            shortName="PR - WP Pop",
+            dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
+            organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
+        ).model_dump(),
+    ]
 
     result = client.post_metadata(payload)
     stats = result.get("stats", {})

@@ -102,6 +102,7 @@ def test_ensure_dhis2_metadata() -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
         SAMPLE_OU_WITH_GEOM,
+        [],  # no existing category options
         SAMPLE_COCS,
     ]
     mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
@@ -180,6 +181,7 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
         SAMPLE_OU_WITH_GEOM,
+        [],  # no existing category options
         SAMPLE_COCS,
     ]
     mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE

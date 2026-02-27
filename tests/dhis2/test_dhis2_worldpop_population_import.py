@@ -143,8 +143,9 @@ def test_import_query_validation() -> None:
 def test_ensure_dhis2_metadata() -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
-        SAMPLE_OU_WITH_GEOM,  # first call: org units
-        SAMPLE_COCS,  # second call: categoryOptionCombos
+        SAMPLE_OU_WITH_GEOM,  # level-1 org units
+        [],  # no existing Male/Female category options
+        SAMPLE_COCS,  # categoryOptionCombos
     ]
     mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
 
@@ -169,6 +170,27 @@ def test_ensure_dhis2_metadata() -> None:
     assert len(payload["dataElements"]) == 1
     assert len(payload["dataSets"]) == 1
     assert payload["dataSets"][0]["organisationUnits"] == [{"id": "ROOT_OU"}]
+
+
+def test_ensure_dhis2_metadata_reuses_existing_cos() -> None:
+    existing_cos = [{"id": "EXISTING_M", "name": "Male"}, {"id": "EXISTING_F", "name": "Female"}]
+    mock_client = MagicMock(spec=Dhis2Client)
+    mock_client.fetch_metadata.side_effect = [
+        SAMPLE_OU_WITH_GEOM,  # level-1 org units
+        existing_cos,  # existing Male/Female category options
+        SAMPLE_COCS,  # categoryOptionCombos
+    ]
+    mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
+
+    ensure_dhis2_metadata.fn(mock_client)
+
+    payload = mock_client.post_metadata.call_args[0][0]
+    assert "categoryOptions" not in payload
+    # Category should reference existing UIDs
+    cat_options = payload["categories"][0]["categoryOptions"]
+    option_ids = {co["id"] for co in cat_options}
+    assert "EXISTING_M" in option_ids
+    assert "EXISTING_F" in option_ids
 
 
 def test_ensure_dhis2_metadata_no_polygon() -> None:
@@ -317,6 +339,7 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
         SAMPLE_OU_WITH_GEOM,
+        [],  # no existing category options
         SAMPLE_COCS,
     ]
     mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
