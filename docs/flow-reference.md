@@ -2705,7 +2705,34 @@ quality scoring, and a markdown dashboard artifact. This is the DHIS2 capstone.
 
 ---
 
-## Connection Patterns 
+### DHIS2 World Bank Population Import
+
+**What it demonstrates:** First *write* flow -- fetches World Bank population
+data (SP.POP.TOTL) and imports it into a DHIS2 data element via
+`POST /api/dataValueSets`.
+
+**Airflow equivalent:** PythonOperator chain with World Bank fetch + DHIS2 POST.
+
+```python
+@flow(name="dhis2_worldbank_import", log_prints=True)
+def dhis2_worldbank_import_flow(query: ImportQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    populations = fetch_population_data(query.iso3_codes, query.start_year, query.end_year)
+    org_unit_map = resolve_org_units(client, query.iso3_codes)
+    data_values = build_data_values(populations, org_unit_map, query.data_element_uid)
+    result = import_data_values(client, data_values)
+    create_markdown_artifact(key="dhis2-worldbank-import", markdown=result.markdown)
+```
+
+Four tasks form a pipeline: (1) batch-fetch population from the World Bank API,
+(2) resolve ISO3 codes to DHIS2 org unit UIDs, (3) build data values matching the
+DHIS2 `dataValueSets` schema, (4) POST and parse the import summary. Unresolved
+ISO3 codes are logged as warnings and skipped. Retry-enabled tasks handle transient
+API failures on both the World Bank and DHIS2 sides.
+
+---
+
+## Connection Patterns
 
 ### Environment-Based Configuration
 

@@ -594,6 +594,12 @@ deployments:
       name: default
     schedules: []
 
+  - name: dhis2-worldbank-import
+    entrypoint: flows/dhis2/dhis2_worldbank_import.py:dhis2_worldbank_import_flow
+    work_pool:
+      name: default
+    schedules: []
+
   - name: patterns-advanced-map-patterns
     entrypoint: flows/patterns/patterns_advanced_map_patterns.py:advanced_map_patterns_flow
     work_pool:

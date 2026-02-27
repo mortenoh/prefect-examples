@@ -77,6 +77,48 @@ class Dhis2Client:
         result: list[dict[str, Any]] = data[key]
         return result
 
+    def post_data_values(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """POST data values to /dataValueSets.
+
+        Args:
+            payload: JSON body with ``dataValues`` list.
+
+        Returns:
+            Parsed DHIS2 import summary response.
+        """
+        resp = self._http.post("/dataValueSets", json=payload)
+        resp.raise_for_status()
+        result: dict[str, Any] = resp.json()
+        return result
+
+    def fetch_organisation_units_by_code(
+        self,
+        codes: list[str],
+        fields: str = "id,code,name",
+    ) -> list[dict[str, Any]]:
+        """Fetch organisation units matching the given codes.
+
+        Args:
+            codes: List of organisation unit codes (e.g. ISO3 country codes).
+            fields: DHIS2 fields parameter.
+
+        Returns:
+            List of organisation unit dicts.
+        """
+        code_list = ",".join(codes)
+        resp = self._http.get(
+            "/organisationUnits",
+            params={
+                "filter": f"code:in:[{code_list}]",
+                "fields": fields,
+                "paging": "false",
+            },
+        )
+        resp.raise_for_status()
+        data: dict[str, Any] = resp.json()
+        result: list[dict[str, Any]] = data["organisationUnits"]
+        return result
+
     def fetch_analytics(
         self,
         dimension: list[str],
