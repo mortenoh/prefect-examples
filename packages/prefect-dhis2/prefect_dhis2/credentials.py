@@ -105,7 +105,11 @@ class Dhis2Client:
         Returns:
             Parsed DHIS2 metadata import summary.
         """
-        resp = self._http.post("/metadata", json=payload)
+        resp = self._http.post(
+            "/metadata",
+            params={"importStrategy": "CREATE_AND_UPDATE"},
+            json=payload,
+        )
         resp.raise_for_status()
         result: dict[str, Any] = resp.json()
         return result
