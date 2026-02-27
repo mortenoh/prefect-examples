@@ -174,16 +174,23 @@ def test_ensure_dhis2_metadata() -> None:
 
 def test_ensure_dhis2_metadata_reuses_existing_cos() -> None:
     existing_cos = [{"id": "EXISTING_M", "name": "Male"}, {"id": "EXISTING_F", "name": "Female"}]
+    # COCs reference the existing server UIDs, not our fixed constants
+    existing_cocs = [
+        {"id": "COC_MALE_1", "name": "Male", "categoryOptions": [{"id": "EXISTING_M"}]},
+        {"id": "COC_FEML_1", "name": "Female", "categoryOptions": [{"id": "EXISTING_F"}]},
+    ]
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
         SAMPLE_OU_WITH_GEOM,  # level-1 org units
         existing_cos,  # existing Male/Female category options
-        SAMPLE_COCS,  # categoryOptionCombos
+        existing_cocs,  # categoryOptionCombos
     ]
     mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
 
-    ensure_dhis2_metadata.fn(mock_client)
+    _org_units, coc_mapping = ensure_dhis2_metadata.fn(mock_client)
 
+    assert coc_mapping.male == "COC_MALE_1"
+    assert coc_mapping.female == "COC_FEML_1"
     payload = mock_client.post_metadata.call_args[0][0]
     assert "categoryOptions" not in payload
     # Category should reference existing UIDs
@@ -191,6 +198,7 @@ def test_ensure_dhis2_metadata_reuses_existing_cos() -> None:
     option_ids = {co["id"] for co in cat_options}
     assert "EXISTING_M" in option_ids
     assert "EXISTING_F" in option_ids
+    mock_client.run_maintenance.assert_called_once_with("categoryOptionComboUpdate")
 
 
 def test_ensure_dhis2_metadata_no_polygon() -> None:

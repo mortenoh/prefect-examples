@@ -114,6 +114,15 @@ class Dhis2Client:
         result: dict[str, Any] = resp.json()
         return result
 
+    def run_maintenance(self, task: str) -> None:
+        """POST a maintenance task (e.g. categoryOptionComboUpdate).
+
+        Args:
+            task: Maintenance task endpoint name.
+        """
+        resp = self._http.post(f"/maintenance/{task}")
+        resp.raise_for_status()
+
     def fetch_organisation_units_by_code(
         self,
         codes: list[str],

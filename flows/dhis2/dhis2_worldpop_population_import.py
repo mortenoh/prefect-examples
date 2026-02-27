@@ -275,6 +275,10 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
     if status not in ("OK", "WARNING"):
         print(f"Metadata response: {result}")
 
+    # Regenerate categoryOptionCombos after metadata changes
+    client.run_maintenance("categoryOptionComboUpdate")
+    print("Triggered categoryOptionCombo regeneration")
+
     # Resolve auto-generated categoryOptionCombos
     cocs = client.fetch_metadata(
         "categoryOptionCombos",
@@ -286,9 +290,9 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
     female_coc_uid = ""
     for coc in cocs:
         option_ids = {co["id"] for co in coc.get("categoryOptions", [])}
-        if CAT_OPTION_MALE_UID in option_ids:
+        if male_co_uid in option_ids:
             male_coc_uid = coc["id"]
-        elif CAT_OPTION_FEMALE_UID in option_ids:
+        elif female_co_uid in option_ids:
             female_coc_uid = coc["id"]
 
     if not male_coc_uid or not female_coc_uid:
