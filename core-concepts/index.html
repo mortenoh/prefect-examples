@@ -1,0 +1,2970 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Progressive Prefect 3 examples — from hello-world to production patterns.">
+      
+      
+      
+      
+        <link rel="prev" href="../tutorials/">
+      
+      
+        <link rel="next" href="../flow-reference/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Core Concepts - Prefect Examples</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#core-concepts" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Prefect Examples" class="md-header__button md-logo" aria-label="Prefect Examples" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Prefect Examples
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Core Concepts
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mortenoh/prefect-examples" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Prefect Examples" class="md-nav__button md-logo" aria-label="Prefect Examples" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Prefect Examples
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mortenoh/prefect-examples" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Concepts
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        States
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployments
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deployments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-you-need-a-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why you need a deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flowserve-vs-flowdeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        flow.serve() vs flow.deploy()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prefectyaml-for-declarative-deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prefect.yaml for declarative deployments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#work-pools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Work pools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deployment-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prefect-cli-for-deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefect CLI for deployments
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Artifacts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tags
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Automations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#python-sdk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python SDK
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-triggeraction-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common trigger/action patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#airflow-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airflow comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#webhooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhooks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Webhooks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#webhook-block-outbound" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhook block (outbound)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inbound-webhooks-cloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inbound webhooks (Cloud)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-run-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Run Names
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blocks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Blocks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#block-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Block lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-block-vs-secret-vs-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to use Block vs Secret vs JSON
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secretstr-for-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SecretStr for credentials
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-methods-to-blocks-the-integration-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding methods to blocks (the integration pattern)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#airflow-connections-vs-prefect-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airflow Connections vs Prefect Blocks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pydantic Models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transactions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#async-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async Flows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-and-scheduling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment and Scheduling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deployment and Scheduling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#passing-parameters-to-deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Passing parameters to deployments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deployment-aware-flows-with-prefectruntime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment-aware flows with prefect.runtime
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changing-schedules-after-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing schedules after deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-io" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File I/O
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Quality
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analytics-and-modeling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analytics and Modeling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#blocks-and-connections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blocks and Connections
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#airflow-to-prefect-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airflow to Prefect comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flow-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../feature-coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature Coverage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        States
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployments
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deployments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-you-need-a-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why you need a deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flowserve-vs-flowdeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        flow.serve() vs flow.deploy()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prefectyaml-for-declarative-deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prefect.yaml for declarative deployments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#work-pools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Work pools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deployment-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prefect-cli-for-deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prefect CLI for deployments
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Artifacts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tags
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Automations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#python-sdk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python SDK
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-triggeraction-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common trigger/action patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#airflow-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airflow comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#webhooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhooks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Webhooks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#webhook-block-outbound" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhook block (outbound)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inbound-webhooks-cloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inbound webhooks (Cloud)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-run-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Run Names
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blocks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Blocks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#block-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Block lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-block-vs-secret-vs-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to use Block vs Secret vs JSON
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secretstr-for-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SecretStr for credentials
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-methods-to-blocks-the-integration-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding methods to blocks (the integration pattern)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#airflow-connections-vs-prefect-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airflow Connections vs Prefect Blocks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pydantic Models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transactions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#async-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async Flows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-and-scheduling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment and Scheduling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deployment and Scheduling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#passing-parameters-to-deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Passing parameters to deployments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deployment-aware-flows-with-prefectruntime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment-aware flows with prefect.runtime
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changing-schedules-after-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing schedules after deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-io" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File I/O
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Quality
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analytics-and-modeling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analytics and Modeling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#blocks-and-connections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blocks and Connections
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#airflow-to-prefect-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airflow to Prefect comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="core-concepts">Core Concepts<a class="headerlink" href="#core-concepts" title="Permanent link">&para;</a></h1>
+<p>A quick tour of the Prefect 3 building blocks used throughout these examples.</p>
+<h2 id="flows">Flows<a class="headerlink" href="#flows" title="Permanent link">&para;</a></h2>
+<p>A <strong>flow</strong> is the main container for orchestrated work. Decorate any Python
+function with <code>@flow</code> and Prefect tracks its execution, state, and metadata.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect</span><span class="w"> </span><span class="kn">import</span> <span class="n">flow</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nd">@flow</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_flow&quot;</span><span class="p">,</span> <span class="n">log_prints</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">my_flow</span><span class="p">():</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running!&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Flows can call other flows (subflows), accept typed parameters, and return
+values.</p>
+<h2 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">&para;</a></h2>
+<p>A <strong>task</strong> is a unit of work inside a flow. Decorate a function with <code>@task</code>
+to gain retries, caching, concurrency controls, and observability.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect</span><span class="w"> </span><span class="kn">import</span> <span class="n">task</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nd">@task</span><span class="p">(</span><span class="n">retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">retry_delay_seconds</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">extract_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="o">...</span>
+</code></pre></div>
+<p>Tasks are called like normal functions. Dependencies are expressed through
+return-value wiring -- pass the output of one task as input to the next.</p>
+<h2 id="states">States<a class="headerlink" href="#states" title="Permanent link">&para;</a></h2>
+<p>Every flow run and task run has a <strong>state</strong> that tracks its lifecycle:
+<code>Pending</code>, <code>Running</code>, <code>Completed</code>, <code>Failed</code>, <code>Cancelled</code>, etc.</p>
+<p>You can inspect states programmatically:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">state</span> <span class="o">=</span> <span class="n">my_flow</span><span class="p">(</span><span class="n">return_state</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">assert</span> <span class="n">state</span><span class="o">.</span><span class="n">is_completed</span><span class="p">()</span>
+</code></pre></div>
+<h2 id="results">Results<a class="headerlink" href="#results" title="Permanent link">&para;</a></h2>
+<p>Tasks and flows return values directly -- no push/pull ceremony required.
+In Airflow you would use XCom; in Prefect you simply return and pass values:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nd">@task</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">produce</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nd">@task</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">consume</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">])</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="nd">@flow</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="k">def</span><span class="w"> </span><span class="nf">pipeline</span><span class="p">():</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">data</span> <span class="o">=</span> <span class="n">produce</span><span class="p">()</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">consume</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>      <span class="c1"># data flows naturally</span>
+</code></pre></div>
+<h2 id="deployments">Deployments<a class="headerlink" href="#deployments" title="Permanent link">&para;</a></h2>
+<p>A <strong>deployment</strong> packages a flow for remote execution on a schedule or via API
+triggers. A flow is just a Python function; a deployment is the configuration
+that says <em>when</em>, <em>where</em>, and <em>with what parameters</em> that function should run.</p>
+<h3 id="why-you-need-a-deployment">Why you need a deployment<a class="headerlink" href="#why-you-need-a-deployment" title="Permanent link">&para;</a></h3>
+<p>Running <code>python my_flow.py</code> executes a flow once. A deployment lets you:</p>
+<ul>
+<li><strong>Schedule</strong> runs (cron, interval, or RRule)</li>
+<li><strong>Trigger</strong> runs from the UI, API, or CLI</li>
+<li><strong>Parameterize</strong> runs with different inputs</li>
+<li><strong>Run on remote infrastructure</strong> (Docker, Kubernetes, etc.)</li>
+</ul>
+<h3 id="flowserve-vs-flowdeploy"><code>flow.serve()</code> vs <code>flow.deploy()</code><a class="headerlink" href="#flowserve-vs-flowdeploy" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>flow.serve()</code></th>
+<th><code>flow.deploy()</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Where it runs</td>
+<td>Same process</td>
+<td>Work pool (separate infra)</td>
+</tr>
+<tr>
+<td>Infra needed</td>
+<td>None</td>
+<td>Work pool + worker</td>
+</tr>
+<tr>
+<td>Scaling</td>
+<td>Single process</td>
+<td>Pool-level scaling</td>
+</tr>
+<tr>
+<td>Best for</td>
+<td>Dev, simple cron jobs</td>
+<td>Production, team use</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># flow.serve() -- simplest approach, runs in-process</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">my_flow</span><span class="o">.</span><span class="n">serve</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;my-flow&quot;</span><span class="p">,</span> <span class="n">cron</span><span class="o">=</span><span class="s2">&quot;0 6 * * *&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># flow.deploy() -- production, sends runs to a work pool</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">my_flow</span><span class="o">.</span><span class="n">deploy</span><span class="p">(</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my-flow&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">work_pool_name</span><span class="o">=</span><span class="s2">&quot;my-pool&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">cron</span><span class="o">=</span><span class="s2">&quot;0 6 * * *&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">)</span>
+</code></pre></div>
+<p>Both methods accept <code>parameters=</code> to set default parameter values:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">my_flow</span><span class="o">.</span><span class="n">serve</span><span class="p">(</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;dhis2-daily&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">cron</span><span class="o">=</span><span class="s2">&quot;0 6 * * *&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;endpoints&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;organisationUnits&quot;</span><span class="p">,</span> <span class="s2">&quot;dataElements&quot;</span><span class="p">]},</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">)</span>
+</code></pre></div>
+<h3 id="prefectyaml-for-declarative-deployments"><code>prefect.yaml</code> for declarative deployments<a class="headerlink" href="#prefectyaml-for-declarative-deployments" title="Permanent link">&para;</a></h3>
+<p>For production, define deployments in a <code>prefect.yaml</code> file at the project
+root. This is the Prefect equivalent of Airflow's <code>dags/</code> folder:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">deployments</span><span class="p">:</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dhis2-ou</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">entrypoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">flow.py:dhis2_ou_flow</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">schedules</span><span class="p">:</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">cron</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;0</span><span class="nv"> </span><span class="s">6</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*&quot;</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="nt">timezone</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;UTC&quot;</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="nt">work_pool</span><span class="p">:</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">default</span>
+</code></pre></div>
+<p>Deploy with <code>prefect deploy --all</code> or <code>prefect deploy -n dhis2-ou</code>.</p>
+<h3 id="work-pools">Work pools<a class="headerlink" href="#work-pools" title="Permanent link">&para;</a></h3>
+<p>Work pools define <em>where</em> flow runs execute. Three common types:</p>
+<table>
+<thead>
+<tr>
+<th>Pool type</th>
+<th>What it does</th>
+<th>When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>process</code></td>
+<td>Runs flows as local subprocesses</td>
+<td>Development, single-machine</td>
+</tr>
+<tr>
+<td><code>docker</code></td>
+<td>Runs flows in Docker containers</td>
+<td>Team use, isolation</td>
+</tr>
+<tr>
+<td><code>kubernetes</code></td>
+<td>Runs flows as K8s jobs</td>
+<td>Production, auto-scaling</td>
+</tr>
+</tbody>
+</table>
+<p>Create a pool and start a worker:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>prefect<span class="w"> </span>work-pool<span class="w"> </span>create<span class="w"> </span>my-pool<span class="w"> </span>--type<span class="w"> </span>process
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>prefect<span class="w"> </span>worker<span class="w"> </span>start<span class="w"> </span>--pool<span class="w"> </span>my-pool
+</code></pre></div>
+<h3 id="deployment-lifecycle">Deployment lifecycle<a class="headerlink" href="#deployment-lifecycle" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Create</strong> -- <code>prefect deploy</code> or <code>flow.serve()</code>/<code>flow.deploy()</code></li>
+<li><strong>Schedule</strong> -- runs are created automatically per schedule</li>
+<li><strong>Run</strong> -- trigger manually via <code>prefect deployment run &lt;name&gt;</code></li>
+<li><strong>Pause</strong> -- <code>prefect deployment pause &lt;name&gt;</code> (stops scheduling)</li>
+<li><strong>Resume</strong> -- <code>prefect deployment resume &lt;name&gt;</code></li>
+<li><strong>Update</strong> -- re-run <code>prefect deploy</code> or change schedule via CLI</li>
+<li><strong>Delete</strong> -- <code>prefect deployment delete &lt;name&gt;</code></li>
+</ol>
+<h3 id="prefect-cli-for-deployments">Prefect CLI for deployments<a class="headerlink" href="#prefect-cli-for-deployments" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># List and inspect</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>ls<span class="w">                          </span><span class="c1"># list all deployments</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>inspect<span class="w"> </span>&lt;flow/deployment&gt;<span class="w">   </span><span class="c1"># view deployment details</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># Trigger runs</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>run<span class="w"> </span>&lt;flow/deployment&gt;<span class="w">                    </span><span class="c1"># run with defaults</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>run<span class="w"> </span>&lt;flow/deployment&gt;<span class="w"> </span>-p<span class="w"> </span><span class="nv">key</span><span class="o">=</span>value<span class="w">       </span><span class="c1"># run with params</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># Schedule management</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>set-schedule<span class="w"> </span>&lt;name&gt;<span class="w"> </span>--cron<span class="w"> </span><span class="s2">&quot;0 8 * * *&quot;</span><span class="w">   </span><span class="c1"># change schedule</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>set-schedule<span class="w"> </span>&lt;name&gt;<span class="w"> </span>--interval<span class="w"> </span><span class="m">3600</span><span class="w">      </span><span class="c1"># every hour</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>clear-schedule<span class="w"> </span>&lt;name&gt;<span class="w">                    </span><span class="c1"># remove schedule</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>pause<span class="w"> </span>&lt;name&gt;<span class="w">                             </span><span class="c1"># pause scheduling</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>resume<span class="w"> </span>&lt;name&gt;<span class="w">                            </span><span class="c1"># resume scheduling</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="c1"># Cleanup</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>delete<span class="w"> </span>&lt;name&gt;
+</code></pre></div>
+<h2 id="artifacts">Artifacts<a class="headerlink" href="#artifacts" title="Permanent link">&para;</a></h2>
+<p><strong>Artifacts</strong> publish rich content (markdown, tables, links) to the Prefect UI.
+Use them for reports, dashboards, and reference links.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.artifacts</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_markdown_artifact</span><span class="p">,</span> <span class="n">create_table_artifact</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">create_markdown_artifact</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;report&quot;</span><span class="p">,</span> <span class="n">markdown</span><span class="o">=</span><span class="s2">&quot;# Report</span><span class="se">\n</span><span class="s2">...&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">create_table_artifact</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;col&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}])</span>
+</code></pre></div>
+<p>Without a Prefect server, artifact functions silently no-op.</p>
+<p><strong>See:</strong> <a href="../flow-reference/#markdown-artifacts">Markdown Artifacts</a>,
+<a href="../flow-reference/#table-and-link-artifacts">Table and Link Artifacts</a></p>
+<h2 id="tags">Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h2>
+<p><strong>Tags</strong> label flows and tasks for filtering, searching, and grouping in the
+Prefect UI. Apply them at definition time or dynamically at runtime:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect</span><span class="w"> </span><span class="kn">import</span> <span class="n">flow</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">tags</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nd">@task</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;etl&quot;</span><span class="p">,</span> <span class="s2">&quot;extract&quot;</span><span class="p">])</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">extract_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="o">...</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="nd">@flow</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_flow&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;examples&quot;</span><span class="p">])</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">my_flow</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="n">extract_data</span><span class="p">()</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>    <span class="c1"># Dynamic tags applied at runtime</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>    <span class="k">with</span> <span class="n">tags</span><span class="p">(</span><span class="s2">&quot;ad-hoc&quot;</span><span class="p">,</span> <span class="s2">&quot;debug&quot;</span><span class="p">):</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>        <span class="n">debug_task</span><span class="p">()</span>
+</code></pre></div>
+<p>Tags are additive -- tasks inherit tags from their parent flow, plus any set
+via the <code>tags()</code> context manager.</p>
+<p><strong>See:</strong> <a href="../flow-reference/#tags">Tags</a></p>
+<h2 id="events">Events<a class="headerlink" href="#events" title="Permanent link">&para;</a></h2>
+<p><strong>Events</strong> are custom signals emitted from flows and tasks. Use them to
+trigger automations or track domain-specific occurrences:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">emit_event</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">emit_event</span><span class="p">(</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="n">event</span><span class="o">=</span><span class="s2">&quot;data.quality.check&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="n">resource</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prefect.resource.id&quot;</span><span class="p">:</span> <span class="s2">&quot;quality-monitor&quot;</span><span class="p">},</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;green&quot;</span><span class="p">},</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="p">)</span>
+</code></pre></div>
+<p>Events are sent to the Prefect event system and can trigger automations
+configured in the UI. Without a server, <code>emit_event()</code> silently no-ops.</p>
+<p><strong>See:</strong> <a href="../flow-reference/#events">Events</a></p>
+<h2 id="automations">Automations<a class="headerlink" href="#automations" title="Permanent link">&para;</a></h2>
+<p>Automations are event-driven rules that pair a <strong>trigger</strong> with an <strong>action</strong>.
+When the trigger condition is met (e.g. a flow run fails, an event is emitted,
+or a work queue becomes unhealthy), Prefect executes the configured action
+automatically. Automations can be created in the UI, via the CLI, or with the
+Python SDK.</p>
+<h3 id="python-sdk">Python SDK<a class="headerlink" href="#python-sdk" title="Permanent link">&para;</a></h3>
+<p>Use the <code>Automation</code> and <code>EventTrigger</code> classes from <code>prefect.automations</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.automations</span><span class="w"> </span><span class="kn">import</span> <span class="n">Automation</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.events.schemas.automations</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventTrigger</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># Send a notification when any flow run fails</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">Automation</span><span class="p">(</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;notify-on-failure&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    <span class="n">trigger</span><span class="o">=</span><span class="n">EventTrigger</span><span class="p">(</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>        <span class="n">expect</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prefect.flow-run.Failed&quot;</span><span class="p">},</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>        <span class="n">match</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prefect.resource.id&quot;</span><span class="p">:</span> <span class="s2">&quot;prefect.flow-run.*&quot;</span><span class="p">},</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    <span class="p">),</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>    <span class="n">actions</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;send-notification&quot;</span><span class="p">,</span> <span class="s2">&quot;block_document_id&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;notification-block-id&gt;&quot;</span><span class="p">}],</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Circuit breaker: pause a deployment after 3 failures in 10 minutes</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">Automation</span><span class="p">(</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;circuit-breaker&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="n">trigger</span><span class="o">=</span><span class="n">EventTrigger</span><span class="p">(</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>        <span class="n">expect</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prefect.flow-run.Failed&quot;</span><span class="p">},</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>        <span class="n">match</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prefect.resource.id&quot;</span><span class="p">:</span> <span class="s2">&quot;prefect.flow-run.*&quot;</span><span class="p">},</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>        <span class="n">for_each</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;prefect.resource.id&quot;</span><span class="p">},</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>        <span class="n">threshold</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>        <span class="n">within</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>    <span class="p">),</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>    <span class="n">actions</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;pause-deployment&quot;</span><span class="p">}],</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+</code></pre></div>
+<h3 id="common-triggeraction-patterns">Common trigger/action patterns<a class="headerlink" href="#common-triggeraction-patterns" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Action</th>
+<th>Use case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Flow run enters <code>Failed</code> state</td>
+<td>Send notification</td>
+<td>Alert on-call engineer</td>
+</tr>
+<tr>
+<td>N failures within time window</td>
+<td>Pause deployment</td>
+<td>Circuit breaker</td>
+</tr>
+<tr>
+<td>Work queue becomes unhealthy</td>
+<td>Send notification</td>
+<td>Infrastructure monitoring</td>
+</tr>
+<tr>
+<td>Custom event emitted</td>
+<td>Run deployment</td>
+<td>Event-driven orchestration</td>
+</tr>
+<tr>
+<td>Flow run duration exceeds threshold</td>
+<td>Cancel flow run</td>
+<td>Timeout guard</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>prefect<span class="w"> </span>automation<span class="w"> </span>ls<span class="w">                     </span><span class="c1"># list automations</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>prefect<span class="w"> </span>automation<span class="w"> </span>inspect<span class="w"> </span>&lt;name&gt;<span class="w">         </span><span class="c1"># view automation details</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>prefect<span class="w"> </span>automation<span class="w"> </span>pause<span class="w"> </span>&lt;name&gt;<span class="w">           </span><span class="c1"># disable an automation</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>prefect<span class="w"> </span>automation<span class="w"> </span>resume<span class="w"> </span>&lt;name&gt;<span class="w">          </span><span class="c1"># re-enable an automation</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>prefect<span class="w"> </span>automation<span class="w"> </span>delete<span class="w"> </span>&lt;name&gt;<span class="w">          </span><span class="c1"># remove an automation</span>
+</code></pre></div>
+<h3 id="airflow-comparison">Airflow comparison<a class="headerlink" href="#airflow-comparison" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Airflow</th>
+<th>Prefect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SLA callbacks (<code>sla_miss_callback</code>)</td>
+<td>Automation with duration trigger</td>
+</tr>
+<tr>
+<td>PagerDuty / Slack operators in <code>on_failure_callback</code></td>
+<td>Notification action on failure trigger</td>
+</tr>
+<tr>
+<td>Sensors polling for external events</td>
+<td><code>EventTrigger</code> reacting to emitted events</td>
+</tr>
+<tr>
+<td>No built-in circuit breaker</td>
+<td>Threshold trigger + pause action</td>
+</tr>
+</tbody>
+</table>
+<p><strong>See:</strong> <a href="https://docs.prefect.io/concepts/automations/">Prefect Automations docs</a></p>
+<h2 id="webhooks">Webhooks<a class="headerlink" href="#webhooks" title="Permanent link">&para;</a></h2>
+<p>Prefect has two webhook concepts:</p>
+<h3 id="webhook-block-outbound">Webhook block (outbound)<a class="headerlink" href="#webhook-block-outbound" title="Permanent link">&para;</a></h3>
+<p>The <code>Webhook</code> block from <code>prefect.blocks.webhook</code> is a reusable, server-persisted
+block for making outbound HTTP calls. It stores URL, method, headers, and auth
+credentials securely (URL as <code>SecretStr</code>, headers as <code>SecretDict</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecretStr</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.blocks.webhook</span><span class="w"> </span><span class="kn">import</span> <span class="n">Webhook</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecretDict</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="n">webhook</span> <span class="o">=</span> <span class="n">Webhook</span><span class="p">(</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>    <span class="n">url</span><span class="o">=</span><span class="n">SecretStr</span><span class="p">(</span><span class="s2">&quot;https://api.example.com/events&quot;</span><span class="p">),</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>    <span class="n">headers</span><span class="o">=</span><span class="n">SecretDict</span><span class="p">({</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>        <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>        <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer my-token&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>    <span class="p">}),</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="p">)</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="c1"># Call the webhook (async)</span>
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">webhook</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;pipeline.completed&quot;</span><span class="p">})</span>
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="c1"># Save to server for reuse across flows</span>
+<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="n">webhook</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;my-webhook&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="n">loaded</span> <span class="o">=</span> <span class="n">Webhook</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;my-webhook&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>The <code>Webhook</code> block also powers the <code>CallWebhook</code> automation action -- when an
+automation fires, Prefect calls the saved webhook block automatically.</p>
+<h3 id="inbound-webhooks-cloud">Inbound webhooks (Cloud)<a class="headerlink" href="#inbound-webhooks-cloud" title="Permanent link">&para;</a></h3>
+<p>Prefect Cloud provides inbound webhook endpoints where external systems (GitHub,
+Slack, CI tools) POST events. A Jinja2 template transforms each incoming payload
+into a Prefect event:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>{
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  &quot;event&quot;: &quot;{{ body.action }}&quot;,
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>  &quot;resource&quot;: {
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    &quot;prefect.resource.id&quot;: &quot;github.repo.{{ body.repository.full_name }}&quot;,
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    &quot;ref&quot;: &quot;{{ body.ref }}&quot;,
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    &quot;sender&quot;: &quot;{{ body.sender.login }}&quot;
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>  }
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>}
+</code></pre></div>
+<p>This template would transform a GitHub push event into a Prefect event that can
+trigger automations. Inbound webhooks are managed via the CLI:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>prefect<span class="w"> </span>webhook<span class="w"> </span>create<span class="w"> </span>my-github-hook<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">    </span>--template<span class="w"> </span><span class="s1">&#39;{&quot;event&quot;:&quot;{{ body.action }}&quot;}&#39;</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>prefect<span class="w"> </span>webhook<span class="w"> </span>ls
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>prefect<span class="w"> </span>webhook<span class="w"> </span>get<span class="w"> </span>my-github-hook
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>prefect<span class="w"> </span>webhook<span class="w"> </span>delete<span class="w"> </span>my-github-hook
+</code></pre></div>
+<p><strong>See:</strong> <a href="../flow-reference/#webhook-block">Webhook Block flow</a>,
+<a href="https://docs.prefect.io/concepts/webhooks/">Prefect Webhooks docs</a></p>
+<h2 id="custom-run-names">Custom Run Names<a class="headerlink" href="#custom-run-names" title="Permanent link">&para;</a></h2>
+<p>Customise flow run and task run names for easier identification in the UI and
+logs. Names support template strings and callable generators:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nd">@task</span><span class="p">(</span><span class="n">task_run_name</span><span class="o">=</span><span class="s2">&quot;fetch-</span><span class="si">{source}</span><span class="s2">-page-</span><span class="si">{page}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">fetch_page</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">page</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>    <span class="o">...</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="nd">@flow</span><span class="p">(</span><span class="n">flow_run_name</span><span class="o">=</span><span class="s2">&quot;report-</span><span class="si">{env}</span><span class="s2">-</span><span class="si">{date_str}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">report_flow</span><span class="p">(</span><span class="n">env</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">date_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>    <span class="o">...</span>
+</code></pre></div>
+<p>For dynamic names, pass a callable:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">generate_name</span><span class="p">():</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;run-</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">:</span><span class="s2">%Y%m%d-%H%M</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="nd">@flow</span><span class="p">(</span><span class="n">flow_run_name</span><span class="o">=</span><span class="n">generate_name</span><span class="p">)</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">my_flow</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>    <span class="o">...</span>
+</code></pre></div>
+<p><strong>See:</strong> <a href="../flow-reference/#task-run-names">Task Run Names</a>,
+<a href="../flow-reference/#flow-run-names">Flow Run Names</a></p>
+<h2 id="blocks">Blocks<a class="headerlink" href="#blocks" title="Permanent link">&para;</a></h2>
+<p><strong>Blocks</strong> are typed, reusable configuration objects. Built-in blocks include
+<code>Secret</code>, <code>JSON</code>, and others. Custom blocks subclass <code>Block</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.blocks.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Block</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">DatabaseConfig</span><span class="p">(</span><span class="n">Block</span><span class="p">):</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;localhost&quot;</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5432</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="c1"># Use directly or save/load from server</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="n">config</span> <span class="o">=</span> <span class="n">DatabaseConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;db.prod.com&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>The <code>Secret</code> block handles encrypted credentials:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.blocks.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">Secret</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="n">api_key</span> <span class="o">=</span> <span class="n">Secret</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;my-key&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</code></pre></div>
+<h3 id="block-lifecycle">Block lifecycle<a class="headerlink" href="#block-lifecycle" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Define</strong> -- subclass <code>Block</code> with typed fields</li>
+<li><strong>Instantiate</strong> -- create with values: <code>MyBlock(field="value")</code></li>
+<li><strong>Save</strong> -- persist to the Prefect server: <code>block.save("my-block")</code></li>
+<li><strong>Load</strong> -- retrieve in any flow: <code>MyBlock.load("my-block")</code></li>
+</ol>
+<p>Blocks saved to a Prefect server have their <code>SecretStr</code> fields encrypted at
+rest.  Without a server, blocks work as plain Python objects with inline
+defaults.</p>
+<h3 id="when-to-use-block-vs-secret-vs-json">When to use Block vs Secret vs JSON<a class="headerlink" href="#when-to-use-block-vs-secret-vs-json" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Use for</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Custom <code>Block</code></td>
+<td>Typed connection config with methods</td>
+<td><code>Dhis2Credentials</code></td>
+</tr>
+<tr>
+<td><code>Secret</code></td>
+<td>Single credential value</td>
+<td>API key, token</td>
+</tr>
+<tr>
+<td><code>JSON</code></td>
+<td>Unstructured config</td>
+<td>Feature flags, thresholds</td>
+</tr>
+</tbody>
+</table>
+<h3 id="secretstr-for-credentials">SecretStr for credentials<a class="headerlink" href="#secretstr-for-credentials" title="Permanent link">&para;</a></h3>
+<p>Use Pydantic <code>SecretStr</code> for password and token fields on blocks. SecretStr
+prevents accidental exposure in logs, repr, and serialization:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyConnection</span><span class="p">(</span><span class="n">Block</span><span class="p">):</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;admin&quot;</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">SecretStr</span><span class="p">(</span><span class="s2">&quot;changeme&quot;</span><span class="p">))</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="n">conn</span> <span class="o">=</span> <span class="n">MyConnection</span><span class="p">()</span>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="n">conn</span><span class="o">.</span><span class="n">password</span>                       <span class="c1"># SecretStr(&#39;**********&#39;)</span>
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="n">conn</span><span class="o">.</span><span class="n">password</span><span class="o">.</span><span class="n">get_secret_value</span><span class="p">()</span>    <span class="c1"># &#39;changeme&#39;</span>
+</code></pre></div>
+<h3 id="adding-methods-to-blocks-the-integration-pattern">Adding methods to blocks (the integration pattern)<a class="headerlink" href="#adding-methods-to-blocks-the-integration-pattern" title="Permanent link">&para;</a></h3>
+<p>Official Prefect integrations (prefect-aws, prefect-gcp, prefect-slack) put
+a <code>get_client()</code> method on credentials blocks that returns an authenticated
+SDK client. API methods live on the client class, not the block:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Dhis2Client</span><span class="p">:</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Authenticated DHIS2 API client.&quot;&quot;&quot;</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_http</span> <span class="o">=</span> <span class="n">httpx</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>            <span class="n">base_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/api&quot;</span><span class="p">,</span>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>            <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">),</span>
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>            <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>        <span class="p">)</span>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">fetch_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a>        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_http</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">endpoint</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;paging&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span><span class="p">})</span>
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a>        <span class="n">resp</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a>        <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="n">endpoint</span><span class="p">]</span>
+<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a>
+<a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a><span class="k">class</span><span class="w"> </span><span class="nc">Dhis2Credentials</span><span class="p">(</span><span class="n">Block</span><span class="p">):</span>
+<a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a>    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;https://play.im.dhis2.org/dev&quot;</span>
+<a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a>    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;admin&quot;</span>
+<a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a>    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">SecretStr</span><span class="p">(</span><span class="s2">&quot;district&quot;</span><span class="p">))</span>
+<a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a>
+<a id="__codelineno-23-21" name="__codelineno-23-21" href="#__codelineno-23-21"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_client</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dhis2Client</span><span class="p">:</span>
+<a id="__codelineno-23-22" name="__codelineno-23-22" href="#__codelineno-23-22"></a>        <span class="k">return</span> <span class="n">Dhis2Client</span><span class="p">(</span>
+<a id="__codelineno-23-23" name="__codelineno-23-23" href="#__codelineno-23-23"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">base_url</span><span class="p">,</span>
+<a id="__codelineno-23-24" name="__codelineno-23-24" href="#__codelineno-23-24"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+<a id="__codelineno-23-25" name="__codelineno-23-25" href="#__codelineno-23-25"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="o">.</span><span class="n">get_secret_value</span><span class="p">(),</span>
+<a id="__codelineno-23-26" name="__codelineno-23-26" href="#__codelineno-23-26"></a>        <span class="p">)</span>
+</code></pre></div>
+<p>This pattern separates credential storage (Block) from API logic (Client),
+following the same convention as <code>GcpCredentials.get_client()</code> in prefect-gcp.</p>
+<h3 id="airflow-connections-vs-prefect-blocks">Airflow Connections vs Prefect Blocks<a class="headerlink" href="#airflow-connections-vs-prefect-blocks" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Airflow</th>
+<th>Prefect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Connection</code> (host, login, password, extras)</td>
+<td>Custom <code>Block</code> with typed fields</td>
+</tr>
+<tr>
+<td><code>BaseHook.get_connection("conn_id")</code></td>
+<td><code>MyBlock.load("block-name")</code></td>
+</tr>
+<tr>
+<td>Fernet-encrypted in metadata DB</td>
+<td>Encrypted at rest in Prefect server</td>
+</tr>
+<tr>
+<td>Password as plain string</td>
+<td><code>SecretStr</code> prevents accidental logging</td>
+</tr>
+<tr>
+<td>Hook classes with methods</td>
+<td>Block classes with methods</td>
+</tr>
+</tbody>
+</table>
+<h2 id="pydantic-models">Pydantic Models<a class="headerlink" href="#pydantic-models" title="Permanent link">&para;</a></h2>
+<p>Prefect works natively with <strong>Pydantic models</strong> as task parameters and return
+types. This gives automatic validation, serialisation, and type safety:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">WeatherReading</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>    <span class="n">station_id</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>    <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>    <span class="n">humidity</span><span class="p">:</span> <span class="nb">float</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;temperature&quot;</span><span class="p">)</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>    <span class="nd">@classmethod</span>
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">temperature_in_range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a>        <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">100</span> <span class="ow">or</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">60</span><span class="p">:</span>
+<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Temperature </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> out of range&quot;</span><span class="p">)</span>
+<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>        <span class="k">return</span> <span class="n">v</span>
+</code></pre></div>
+<p>Pydantic replaces the manual serialisation required by Airflow's XCom. Models
+flow between tasks naturally, with validation happening automatically.</p>
+<h2 id="transactions">Transactions<a class="headerlink" href="#transactions" title="Permanent link">&para;</a></h2>
+<p><strong>Transactions</strong> group tasks atomically. If any task in the group fails, the
+entire transaction is treated as a unit:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.transactions</span><span class="w"> </span><span class="kn">import</span> <span class="n">transaction</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="nd">@flow</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">atomic_pipeline</span><span class="p">():</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>    <span class="k">with</span> <span class="n">transaction</span><span class="p">():</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>        <span class="n">step_a</span><span class="p">()</span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>        <span class="n">step_b</span><span class="p">()</span>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>        <span class="n">step_c</span><span class="p">()</span>
+</code></pre></div>
+<p>Transactions are a Prefect-specific feature with no direct Airflow equivalent.</p>
+<h2 id="async-flows">Async Flows<a class="headerlink" href="#async-flows" title="Permanent link">&para;</a></h2>
+<p>Prefect natively supports <code>async def</code> tasks and flows. Use <code>asyncio.gather()</code>
+for concurrent I/O-bound work:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nd">@task</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fetch</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">url</span><span class="p">}</span>
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="nd">@flow</span>
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">pipeline</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>    <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">))</span>
+</code></pre></div>
+<p>Sync and async tasks can be mixed in an async flow. Async flows use
+<code>asyncio.run()</code> in <code>__main__</code>.</p>
+<h2 id="deployment-and-scheduling">Deployment and Scheduling<a class="headerlink" href="#deployment-and-scheduling" title="Permanent link">&para;</a></h2>
+<p>Prefect supports three schedule types:</p>
+<ul>
+<li><strong>CronSchedule</strong> -- standard cron expressions (<code>"0 6 * * *"</code>)</li>
+<li><strong>IntervalSchedule</strong> -- fixed intervals (<code>interval=900</code> seconds)</li>
+<li><strong>RRuleSchedule</strong> -- RFC 5545 recurrence rules (<code>"FREQ=WEEKLY;BYDAY=MO,WE,FR"</code>)</li>
+</ul>
+<p>Schedules are passed to <code>flow.serve()</code> or <code>flow.deploy()</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="n">my_flow</span><span class="o">.</span><span class="n">serve</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;daily&quot;</span><span class="p">,</span> <span class="n">cron</span><span class="o">=</span><span class="s2">&quot;0 6 * * *&quot;</span><span class="p">)</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="n">my_flow</span><span class="o">.</span><span class="n">serve</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;every-15m&quot;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">900</span><span class="p">)</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="n">my_flow</span><span class="o">.</span><span class="n">serve</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;weekdays&quot;</span><span class="p">,</span> <span class="n">rrule</span><span class="o">=</span><span class="s2">&quot;FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>In <code>prefect.yaml</code>, schedules are declared per deployment:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nt">schedules</span><span class="p">:</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">cron</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;0</span><span class="nv"> </span><span class="s">6</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*&quot;</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">    </span><span class="nt">timezone</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;UTC&quot;</span>
+</code></pre></div>
+<h3 id="passing-parameters-to-deployments">Passing parameters to deployments<a class="headerlink" href="#passing-parameters-to-deployments" title="Permanent link">&para;</a></h3>
+<p>Deployments can override a flow's default parameters. Parameters are passed
+at deployment creation and can be overridden per run:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># At deployment time (default parameters for all runs)</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="n">my_flow</span><span class="o">.</span><span class="n">serve</span><span class="p">(</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;dhis2-sync&quot;</span><span class="p">,</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>    <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;endpoints&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;organisationUnits&quot;</span><span class="p">]},</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="p">)</span>
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="c1"># Override at run time via CLI</span>
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="c1"># prefect deployment run my-flow/dhis2-sync -p endpoints=&#39;[&quot;dataElements&quot;]&#39;</span>
+</code></pre></div>
+<h3 id="deployment-aware-flows-with-prefectruntime">Deployment-aware flows with <code>prefect.runtime</code><a class="headerlink" href="#deployment-aware-flows-with-prefectruntime" title="Permanent link">&para;</a></h3>
+<p>Use <code>prefect.runtime</code> to access deployment context inside a running flow:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">deployment</span><span class="p">,</span> <span class="n">flow_run</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="n">deployment_name</span> <span class="o">=</span> <span class="n">deployment</span><span class="o">.</span><span class="n">name</span>            <span class="c1"># None for local runs</span>
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="n">flow_run_name</span> <span class="o">=</span> <span class="n">flow_run</span><span class="o">.</span><span class="n">name</span>                <span class="c1"># auto-generated name</span>
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="n">scheduled_start</span> <span class="o">=</span> <span class="n">flow_run</span><span class="o">.</span><span class="n">scheduled_start_time</span>
+</code></pre></div>
+<p>This lets flows adapt their behaviour depending on whether they are running
+locally or inside a deployment.</p>
+<h3 id="changing-schedules-after-deployment">Changing schedules after deployment<a class="headerlink" href="#changing-schedules-after-deployment" title="Permanent link">&para;</a></h3>
+<p>Use the CLI to update schedules without redeploying:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>set-schedule<span class="w"> </span>&lt;name&gt;<span class="w"> </span>--cron<span class="w"> </span><span class="s2">&quot;0 8 * * *&quot;</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>set-schedule<span class="w"> </span>&lt;name&gt;<span class="w"> </span>--interval<span class="w"> </span><span class="m">1800</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>set-schedule<span class="w"> </span>&lt;name&gt;<span class="w"> </span>--rrule<span class="w"> </span><span class="s2">&quot;FREQ=DAILY;BYDAY=MO,WE,FR&quot;</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>prefect<span class="w"> </span>deployment<span class="w"> </span>clear-schedule<span class="w"> </span>&lt;name&gt;
+</code></pre></div>
+<p>Or re-run <code>prefect deploy</code> after updating <code>prefect.yaml</code>.</p>
+<h2 id="file-io">File I/O<a class="headerlink" href="#file-io" title="Permanent link">&para;</a></h2>
+<p>Prefect flows handle file I/O with stdlib modules (<code>csv</code>, <code>json</code>, <code>pathlib</code>,
+<code>tempfile</code>). Each file operation is a <code>@task</code> for observability:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="nd">@task</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">read_csv</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+</code></pre></div>
+<p>Use <code>tempfile.mkdtemp()</code> for isolated working directories in flows, and
+<code>tmp_path</code> in tests. For mixed file types, dispatch on path suffix. Track
+processed files in a JSON manifest for incremental processing.</p>
+<h2 id="data-quality">Data Quality<a class="headerlink" href="#data-quality" title="Permanent link">&para;</a></h2>
+<p>Define quality rules as configuration and execute them against data:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nd">@task</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">execute_rule</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">rule</span><span class="p">:</span> <span class="n">QualityRule</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RuleResult</span><span class="p">:</span>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>    <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">rule_type</span> <span class="o">==</span> <span class="s2">&quot;not_null&quot;</span><span class="p">:</span>
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>        <span class="k">return</span> <span class="n">run_not_null_check</span><span class="o">.</span><span class="n">fn</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">rule</span><span class="o">.</span><span class="n">column</span><span class="p">)</span>
+</code></pre></div>
+<p>Score rules individually, then compute an overall quality score with
+traffic-light classification (green/amber/red). For cross-dataset validation,
+check referential integrity between related datasets.</p>
+<p>Statistical profiling uses the stdlib <code>statistics</code> module (mean, stdev, median)
+to profile columns by inferred type (numeric vs string).</p>
+<h2 id="analytics-and-modeling">Analytics and Modeling<a class="headerlink" href="#analytics-and-modeling" title="Permanent link">&para;</a></h2>
+<p>Phase 5 introduces statistical analysis and modeling patterns:</p>
+<ul>
+<li><strong>Pearson correlation</strong> -- manual implementation using <code>math</code> and <code>statistics</code>
+  modules (no numpy/scipy required)</li>
+<li><strong>Linear regression</strong> -- ordinary least squares with R-squared computation</li>
+<li><strong>Star schema</strong> -- dimensional modeling with fact and dimension tables,
+  surrogate keys, and composite index ranking</li>
+<li><strong>Log returns</strong> -- financial time series analysis with rolling volatility</li>
+<li><strong>Hypothesis testing</strong> -- educational null hypothesis validation pattern</li>
+</ul>
+<p>These patterns demonstrate that analytics pipelines can be built with
+stdlib modules alone, making flows lightweight and dependency-free.</p>
+<h2 id="blocks-and-connections">Blocks and Connections<a class="headerlink" href="#blocks-and-connections" title="Permanent link">&para;</a></h2>
+<p>In Airflow, external system credentials are stored as <strong>Connections</strong> and
+accessed via <code>BaseHook.get_connection("conn_id")</code>. In Prefect, the equivalent
+is a custom <strong>Block</strong> -- a typed, serializable configuration object whose
+<code>get_client()</code> method returns an authenticated API client:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect.blocks.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Block</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">Dhis2Credentials</span><span class="p">(</span><span class="n">Block</span><span class="p">):</span>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;https://play.im.dhis2.org/dev&quot;</span>
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;admin&quot;</span>
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">SecretStr</span><span class="p">(</span><span class="s2">&quot;district&quot;</span><span class="p">))</span>
+<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>
+<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_client</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dhis2Client</span><span class="p">:</span>
+<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>        <span class="k">return</span> <span class="n">Dhis2Client</span><span class="p">(</span>
+<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">base_url</span><span class="p">,</span>
+<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="o">.</span><span class="n">get_secret_value</span><span class="p">(),</span>
+<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a>        <span class="p">)</span>
+<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a>
+<a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a><span class="c1"># Register once:</span>
+<a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a><span class="n">Dhis2Credentials</span><span class="p">(</span><span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;https://dhis2.example.org&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;dhis2&quot;</span><span class="p">)</span>
+<a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a>
+<a id="__codelineno-34-19" name="__codelineno-34-19" href="#__codelineno-34-19"></a><span class="c1"># Load in any flow:</span>
+<a id="__codelineno-34-20" name="__codelineno-34-20" href="#__codelineno-34-20"></a><span class="n">creds</span> <span class="o">=</span> <span class="n">Dhis2Credentials</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;dhis2&quot;</span><span class="p">)</span>
+<a id="__codelineno-34-21" name="__codelineno-34-21" href="#__codelineno-34-21"></a><span class="n">client</span> <span class="o">=</span> <span class="n">creds</span><span class="o">.</span><span class="n">get_client</span><span class="p">()</span>
+<a id="__codelineno-34-22" name="__codelineno-34-22" href="#__codelineno-34-22"></a><span class="n">units</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">fetch_metadata</span><span class="p">(</span><span class="s2">&quot;organisationUnits&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Password is stored as <code>SecretStr</code> directly on the block. When saved to a
+Prefect server, <code>SecretStr</code> fields are encrypted at rest.</p>
+<p>Multiple configuration strategies can coexist -- inline defaults for
+development, saved blocks for production, environment variables for CI:</p>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Best for</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Inline <code>Block()</code></td>
+<td>Development, testing</td>
+<td><code>Dhis2Credentials()</code></td>
+</tr>
+<tr>
+<td><code>Block.load()</code></td>
+<td>Production with Prefect server</td>
+<td><code>Dhis2Credentials.load("dhis2")</code></td>
+</tr>
+<tr>
+<td><code>SecretStr</code> on Block</td>
+<td>Credentials with config</td>
+<td><code>password: SecretStr</code></td>
+</tr>
+<tr>
+<td><code>Secret.load()</code></td>
+<td>Standalone passwords, API keys</td>
+<td><code>Secret.load("dhis2-password")</code></td>
+</tr>
+<tr>
+<td><code>os.environ</code></td>
+<td>CI/CD, containers</td>
+<td><code>os.environ["DHIS2_PASSWORD"]</code></td>
+</tr>
+<tr>
+<td><code>JSON.load()</code></td>
+<td>Structured config</td>
+<td><code>JSON.load("dhis2-config")</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="airflow-to-prefect-comparison">Airflow to Prefect comparison<a class="headerlink" href="#airflow-to-prefect-comparison" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Airflow concept</th>
+<th>Prefect equivalent</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DAG</td>
+<td><code>@flow</code></td>
+<td>001</td>
+</tr>
+<tr>
+<td>PythonOperator</td>
+<td><code>@task</code></td>
+<td>002</td>
+</tr>
+<tr>
+<td><code>&gt;&gt;</code> / <code>set_downstream</code></td>
+<td>Return-value wiring, <code>.submit()</code></td>
+<td>003</td>
+</tr>
+<tr>
+<td>TaskFlow API (<code>@task</code>)</td>
+<td>Native -- Prefect is taskflow-first</td>
+<td>004</td>
+</tr>
+<tr>
+<td>XCom push/pull</td>
+<td>Return values</td>
+<td>005</td>
+</tr>
+<tr>
+<td>BranchPythonOperator</td>
+<td>Python <code>if/elif/else</code></td>
+<td>006</td>
+</tr>
+<tr>
+<td><code>on_failure_callback</code> / trigger_rule</td>
+<td>State hooks, <code>allow_failure</code></td>
+<td>007</td>
+</tr>
+<tr>
+<td>Jinja2 templating / params</td>
+<td>Typed function parameters</td>
+<td>008</td>
+</tr>
+<tr>
+<td>TaskGroup / SubDagOperator</td>
+<td>Subflows (<code>@flow</code> calling <code>@flow</code>)</td>
+<td>009</td>
+</tr>
+<tr>
+<td><code>expand()</code> (dynamic task mapping)</td>
+<td><code>.map()</code></td>
+<td>010</td>
+</tr>
+<tr>
+<td>Sensor (poke/reschedule)</td>
+<td>While-loop polling</td>
+<td>011</td>
+</tr>
+<tr>
+<td><code>retries</code> + callbacks</td>
+<td><code>retries</code>, <code>retry_delay_seconds</code>, hooks</td>
+<td>012</td>
+</tr>
+<tr>
+<td>Custom operators / shared utils</td>
+<td>Python imports</td>
+<td>013</td>
+</tr>
+<tr>
+<td>Custom XCom + trigger rules</td>
+<td><code>emit_event()</code></td>
+<td>014</td>
+</tr>
+<tr>
+<td>TriggerDagRunOperator</td>
+<td>Subflow calls, <code>run_deployment()</code></td>
+<td>015</td>
+</tr>
+<tr>
+<td>Pool slots</td>
+<td><code>concurrency()</code> context manager</td>
+<td>016</td>
+</tr>
+<tr>
+<td>Variables + params</td>
+<td><code>Variable.get()</code>/<code>set()</code></td>
+<td>017</td>
+</tr>
+<tr>
+<td>ShortCircuitOperator</td>
+<td>Python <code>return</code></td>
+<td>018</td>
+</tr>
+<tr>
+<td><code>@setup</code> / <code>@teardown</code></td>
+<td>Context managers, <code>try/finally</code></td>
+<td>019</td>
+</tr>
+<tr>
+<td>Complex DAG</td>
+<td>Subflows + <code>.map()</code> + hooks</td>
+<td>020</td>
+</tr>
+<tr>
+<td>Custom caching / Redis</td>
+<td><code>cache_policy</code>, <code>cache_key_fn</code></td>
+<td>021</td>
+</tr>
+<tr>
+<td><code>execution_timeout</code></td>
+<td><code>timeout_seconds</code></td>
+<td>022</td>
+</tr>
+<tr>
+<td>Custom <code>task_id</code></td>
+<td><code>task_run_name</code></td>
+<td>023</td>
+</tr>
+<tr>
+<td><code>exponential_backoff</code></td>
+<td><code>retry_delay_seconds</code> list, <code>retry_jitter_factor</code></td>
+<td>024</td>
+</tr>
+<tr>
+<td>Task instance logger</td>
+<td><code>get_run_logger()</code></td>
+<td>025</td>
+</tr>
+<tr>
+<td>DAG/task tags</td>
+<td><code>tags=</code>, <code>tags()</code> context manager</td>
+<td>026</td>
+</tr>
+<tr>
+<td>Custom <code>run_id</code></td>
+<td><code>flow_run_name</code></td>
+<td>027</td>
+</tr>
+<tr>
+<td>XCom backend config</td>
+<td><code>persist_result</code>, <code>result_storage_key</code></td>
+<td>028</td>
+</tr>
+<tr>
+<td>Custom HTML / reports</td>
+<td><code>create_markdown_artifact()</code></td>
+<td>029</td>
+</tr>
+<tr>
+<td>UI plugins</td>
+<td><code>create_table_artifact()</code>, <code>create_link_artifact()</code></td>
+<td>030</td>
+</tr>
+<tr>
+<td>Connections (encrypted)</td>
+<td><code>Secret</code> block</td>
+<td>031</td>
+</tr>
+<tr>
+<td>Custom connection types</td>
+<td>Custom <code>Block</code> subclass</td>
+<td>032</td>
+</tr>
+<tr>
+<td>Deferrable operators</td>
+<td><code>async def</code> tasks and flows</td>
+<td>033</td>
+</tr>
+<tr>
+<td>Parallel deferrable ops</td>
+<td><code>asyncio.gather()</code></td>
+<td>034</td>
+</tr>
+<tr>
+<td>Mixed operator types</td>
+<td>Sync + async tasks in async flow</td>
+<td>035</td>
+</tr>
+<tr>
+<td>Dynamic mapping + async</td>
+<td><code>.map()</code> / <code>.submit()</code> with async tasks</td>
+<td>036</td>
+</tr>
+<tr>
+<td>DAG in <code>dags/</code> folder</td>
+<td><code>flow.serve()</code></td>
+<td>037</td>
+</tr>
+<tr>
+<td><code>schedule_interval</code></td>
+<td><code>CronSchedule</code>, <code>IntervalSchedule</code>, <code>RRuleSchedule</code></td>
+<td>038</td>
+</tr>
+<tr>
+<td>Executors (Celery, K8s)</td>
+<td>Work pools + workers</td>
+<td>039</td>
+</tr>
+<tr>
+<td>Production DAG</td>
+<td>Caching + retries + artifacts + tags</td>
+<td>040</td>
+</tr>
+<tr>
+<td>XCom + complex types</td>
+<td>Pydantic <code>BaseModel</code> params/returns</td>
+<td>041</td>
+</tr>
+<tr>
+<td>BashOperator</td>
+<td><code>subprocess.run()</code> in a <code>@task</code></td>
+<td>042</td>
+</tr>
+<tr>
+<td>HttpOperator</td>
+<td><code>httpx</code> in a <code>@task</code></td>
+<td>043</td>
+</tr>
+<tr>
+<td>Custom operators</td>
+<td>Task factory functions</td>
+<td>044</td>
+</tr>
+<tr>
+<td><code>expand_kwargs</code></td>
+<td>Multi-arg <code>.map()</code></td>
+<td>045</td>
+</tr>
+<tr>
+<td>Error handling patterns</td>
+<td>Quarantine pattern with Pydantic</td>
+<td>046</td>
+</tr>
+<tr>
+<td>Schema validation</td>
+<td>Pydantic <code>field_validator</code></td>
+<td>047</td>
+</tr>
+<tr>
+<td>SLA miss detection</td>
+<td><code>time.monotonic()</code> + threshold checks</td>
+<td>048</td>
+</tr>
+<tr>
+<td>Webhook callbacks</td>
+<td><code>httpx.post()</code> + flow hooks</td>
+<td>049</td>
+</tr>
+<tr>
+<td>Progressive retry</td>
+<td><code>retries</code> + <code>on_failure</code> hooks</td>
+<td>050</td>
+</tr>
+<tr>
+<td>Thin DAG wiring</td>
+<td>Pure functions + thin <code>@task</code> wrappers</td>
+<td>051</td>
+</tr>
+<tr>
+<td>Custom hooks/sensors</td>
+<td>Python decorators wrapping <code>@task</code></td>
+<td>052</td>
+</tr>
+<tr>
+<td>Trigger rules</td>
+<td><code>allow_failure</code>, state inspection</td>
+<td>053</td>
+</tr>
+<tr>
+<td>TaskGroups</td>
+<td>Nested subflows (<code>@flow</code> calling <code>@flow</code>)</td>
+<td>054</td>
+</tr>
+<tr>
+<td>Backfill / <code>logical_date</code></td>
+<td>Flow parameters for date ranges</td>
+<td>055</td>
+</tr>
+<tr>
+<td>Jinja <code>{{ ds }}</code> macros</td>
+<td><code>prefect.runtime</code> context</td>
+<td>056</td>
+</tr>
+<tr>
+<td>No equivalent</td>
+<td><code>transaction()</code> for atomic groups</td>
+<td>057</td>
+</tr>
+<tr>
+<td>Human-in-the-loop ops</td>
+<td><code>pause_flow_run()</code> / approval pattern</td>
+<td>058</td>
+</tr>
+<tr>
+<td>Executors</td>
+<td>Task runners (<code>ThreadPoolTaskRunner</code>)</td>
+<td>059</td>
+</tr>
+<tr>
+<td>Full ETL SCD pipeline</td>
+<td>Capstone: all Phase 3 features</td>
+<td>060</td>
+</tr>
+<tr>
+<td>CSV landing zone</td>
+<td>stdlib <code>csv</code> in <code>@task</code></td>
+<td>061</td>
+</tr>
+<tr>
+<td>JSON event ingestion</td>
+<td>Recursive flatten, NDJSON output</td>
+<td>062</td>
+</tr>
+<tr>
+<td>Multi-file batch</td>
+<td>File-type dispatch, hash dedup</td>
+<td>063</td>
+</tr>
+<tr>
+<td>Incremental file processing</td>
+<td>JSON manifest tracking</td>
+<td>064</td>
+</tr>
+<tr>
+<td>Freshness/completeness checks</td>
+<td>Config-driven quality rules</td>
+<td>065</td>
+</tr>
+<tr>
+<td>Referential integrity</td>
+<td>FK checks between datasets</td>
+<td>066</td>
+</tr>
+<tr>
+<td>Quality dashboard</td>
+<td>Statistical profiling (<code>statistics</code>)</td>
+<td>067</td>
+</tr>
+<tr>
+<td>Pipeline health check</td>
+<td>Meta-monitoring / watchdog</td>
+<td>068</td>
+</tr>
+<tr>
+<td>Multi-city forecast</td>
+<td>Chained <code>.map()</code> calls</td>
+<td>069</td>
+</tr>
+<tr>
+<td>Paginated API fetch</td>
+<td>Offset/limit simulation, chunked <code>.map()</code></td>
+<td>070</td>
+</tr>
+<tr>
+<td>Cross-API enrichment</td>
+<td>Multi-source join, partial fallback</td>
+<td>071</td>
+</tr>
+<tr>
+<td>Cached API comparison</td>
+<td>Application-level cache with TTL</td>
+<td>072</td>
+</tr>
+<tr>
+<td>API-triggered config</td>
+<td>Config-driven stage dispatch</td>
+<td>073</td>
+</tr>
+<tr>
+<td>Asset producer/consumer</td>
+<td>File-based data contracts</td>
+<td>074</td>
+</tr>
+<tr>
+<td>No equivalent</td>
+<td>Circuit breaker state machine</td>
+<td>075</td>
+</tr>
+<tr>
+<td>Multi-API dashboard</td>
+<td>Pydantic discriminated unions</td>
+<td>076</td>
+</tr>
+<tr>
+<td>GeoJSON / OData pivot</td>
+<td>Windowed batch, anomaly detection</td>
+<td>077</td>
+</tr>
+<tr>
+<td>No equivalent</td>
+<td>Hash-based idempotency registry</td>
+<td>078</td>
+</tr>
+<tr>
+<td>No equivalent</td>
+<td>Checkpoint-based stage recovery</td>
+<td>079</td>
+</tr>
+<tr>
+<td>Quality framework + dashboard</td>
+<td>Capstone: all Phase 4 features</td>
+<td>080</td>
+</tr>
+<tr>
+<td>WHO threshold classification</td>
+<td>Threshold-based AQI classification</td>
+<td>081</td>
+</tr>
+<tr>
+<td>Weighted risk scoring</td>
+<td>Multi-source composite risk index</td>
+<td>082</td>
+</tr>
+<tr>
+<td>Seasonal analysis</td>
+<td>Latitude-daylight correlation</td>
+<td>083</td>
+</tr>
+<tr>
+<td>Parquet aggregation</td>
+<td>Fan-out grouped aggregation</td>
+<td>084</td>
+</tr>
+<tr>
+<td>Nested JSON normalization</td>
+<td>Pydantic model flattening</td>
+<td>085</td>
+</tr>
+<tr>
+<td>Multi-indicator correlation</td>
+<td>Pearson correlation matrix</td>
+<td>086</td>
+</tr>
+<tr>
+<td>Currency volatility analysis</td>
+<td>Log returns, rolling volatility</td>
+<td>087</td>
+</tr>
+<tr>
+<td>Cross-domain hypothesis test</td>
+<td>Null hypothesis validation</td>
+<td>088</td>
+</tr>
+<tr>
+<td>Log-linear regression</td>
+<td>Manual OLS regression</td>
+<td>089</td>
+</tr>
+<tr>
+<td>Dimensional modeling</td>
+<td>Star schema, composite index</td>
+<td>090</td>
+</tr>
+<tr>
+<td>SQL-based ETL layers</td>
+<td>Simulated staging/production/summary</td>
+<td>091</td>
+</tr>
+<tr>
+<td>Generic data transfer</td>
+<td>Category computation, checksum verification</td>
+<td>092</td>
+</tr>
+<tr>
+<td>Org unit hierarchy</td>
+<td>Tree flattening, path-based depth</td>
+<td>093</td>
+</tr>
+<tr>
+<td>Expression parsing</td>
+<td>Regex complexity scoring</td>
+<td>094</td>
+</tr>
+<tr>
+<td>GeoJSON construction</td>
+<td>Spatial feature collection</td>
+<td>095</td>
+</tr>
+<tr>
+<td>Combined parallel export</td>
+<td>Fan-in multi-endpoint summary</td>
+<td>096</td>
+</tr>
+<tr>
+<td>No equivalent</td>
+<td>Data lineage tracking (hashlib)</td>
+<td>097</td>
+</tr>
+<tr>
+<td>No equivalent</td>
+<td>Pipeline template factory</td>
+<td>098</td>
+</tr>
+<tr>
+<td>No equivalent</td>
+<td>Multi-pipeline orchestrator</td>
+<td>099</td>
+</tr>
+<tr>
+<td>Full analytics pipeline</td>
+<td>Grand capstone: all Phase 5 patterns</td>
+<td>100</td>
+</tr>
+<tr>
+<td><code>BaseHook.get_connection()</code></td>
+<td>Custom <code>Block</code> with methods + <code>SecretStr</code></td>
+<td>101</td>
+</tr>
+<tr>
+<td>DHIS2 org unit fetch</td>
+<td>Block auth + Pydantic flattening</td>
+<td>102</td>
+</tr>
+<tr>
+<td>DHIS2 data element fetch</td>
+<td>Block auth + categorization</td>
+<td>103</td>
+</tr>
+<tr>
+<td>DHIS2 indicator fetch</td>
+<td>Block auth + regex expression parsing</td>
+<td>104</td>
+</tr>
+<tr>
+<td>DHIS2 geometry export</td>
+<td>Block auth + GeoJSON construction</td>
+<td>105</td>
+</tr>
+<tr>
+<td>DHIS2 combined export</td>
+<td>Parallel <code>.submit()</code> + shared block</td>
+<td>106</td>
+</tr>
+<tr>
+<td>DHIS2 analytics query</td>
+<td>Dimension query + headers/rows parsing</td>
+<td>107</td>
+</tr>
+<tr>
+<td>Full DHIS2 pipeline</td>
+<td>Multi-stage pipeline + quality + dashboard</td>
+<td>108</td>
+</tr>
+<tr>
+<td>Connection/Variable config</td>
+<td>Multiple config strategies (Block, Secret, env)</td>
+<td>109</td>
+</tr>
+<tr>
+<td>Authenticated API pattern</td>
+<td>Pluggable auth block (api_key, bearer, basic)</td>
+<td>110</td>
+</tr>
+<tr>
+<td>Scheduled DAG + Connections</td>
+<td><code>flow.deploy()</code> with blocks + artifacts</td>
+<td><code>deployments/dhis2_ou</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
