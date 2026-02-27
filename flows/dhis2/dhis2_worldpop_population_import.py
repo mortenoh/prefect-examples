@@ -341,14 +341,15 @@ def fetch_worldpop_population(org_unit: OrgUnitGeo, year: int) -> WorldPopResult
     Returns:
         WorldPopResult with male and female population totals.
     """
-    params: dict[str, str] = {
+    data: dict[str, str] = {
         "dataset": "wpgpas",
         "year": str(year),
         "geojson": json.dumps(org_unit.geometry),
+        "runasync": "true",
     }
 
     with httpx.Client(timeout=30) as client:
-        resp = client.get(WORLDPOP_STATS_URL, params=params)
+        resp = client.post(WORLDPOP_STATS_URL, data=data)
         resp.raise_for_status()
         body = resp.json()
 

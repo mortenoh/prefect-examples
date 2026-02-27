@@ -216,7 +216,7 @@ def test_fetch_worldpop_population(mock_client_cls: MagicMock) -> None:
     mock_resp.raise_for_status = MagicMock()
 
     mock_http = MagicMock()
-    mock_http.get.return_value = mock_resp
+    mock_http.post.return_value = mock_resp
     mock_http.__enter__ = MagicMock(return_value=mock_http)
     mock_http.__exit__ = MagicMock(return_value=False)
     mock_client_cls.return_value = mock_http
@@ -247,10 +247,10 @@ def test_fetch_worldpop_population_async(mock_client_cls: MagicMock) -> None:
     mock_resp_finished.json.return_value = SAMPLE_WORLDPOP_RESPONSE
     mock_resp_finished.raise_for_status = MagicMock()
 
-    # First Client context: initial GET returns "created"
-    # Second Client context (polling): returns "finished"
+    # First Client context: initial POST returns "created"
+    # Second Client context (polling): GET returns "finished"
     mock_http_initial = MagicMock()
-    mock_http_initial.get.return_value = mock_resp_created
+    mock_http_initial.post.return_value = mock_resp_created
     mock_http_initial.__enter__ = MagicMock(return_value=mock_http_initial)
     mock_http_initial.__exit__ = MagicMock(return_value=False)
 
@@ -359,7 +359,7 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     mock_resp.raise_for_status = MagicMock()
 
     mock_http = MagicMock()
-    mock_http.get.return_value = mock_resp
+    mock_http.post.return_value = mock_resp
     mock_http.__enter__ = MagicMock(return_value=mock_http)
     mock_http.__exit__ = MagicMock(return_value=False)
     mock_httpx_cls.return_value = mock_http

@@ -124,7 +124,7 @@ def test_fetch_worldpop_population(mock_client_cls: MagicMock) -> None:
     mock_resp.json.return_value = SAMPLE_WORLDPOP_RESPONSE
     mock_resp.raise_for_status = MagicMock()
     mock_client_cls.return_value.__enter__ = MagicMock(return_value=MagicMock())
-    mock_client_cls.return_value.__enter__.return_value.get.return_value = mock_resp
+    mock_client_cls.return_value.__enter__.return_value.post.return_value = mock_resp
     mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
 
     ou = OrgUnitGeo(id="ROOT_OU", name="Root", geometry=SAMPLE_OU_WITH_GEOM[0]["geometry"])
@@ -193,7 +193,7 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     mock_resp.raise_for_status = MagicMock()
 
     mock_http = MagicMock()
-    mock_http.get.return_value = mock_resp
+    mock_http.post.return_value = mock_resp
     mock_http.__enter__ = MagicMock(return_value=mock_http)
     mock_http.__exit__ = MagicMock(return_value=False)
     mock_httpx_cls.return_value = mock_http
