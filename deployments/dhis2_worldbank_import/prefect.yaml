@@ -1,0 +1,12 @@
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /opt/prefect/deployments/dhis2_worldbank_import
+
+deployments:
+  - name: dhis2-worldbank-import
+    entrypoint: flow.py:dhis2_worldbank_import_flow
+    schedules:
+      - cron: "0 * * * *"
+        timezone: "UTC"
+    work_pool:
+      name: default

@@ -63,6 +63,7 @@ deploy: register-blocks create-blocks ## Register blocks, create instances, and 
 	cd deployments/dhis2_block_connection && uv run prefect deploy --all
 	cd deployments/s3_parquet_export && uv run prefect deploy --all
 	cd deployments/dhis2_geoparquet_export && uv run prefect deploy --all
+	cd deployments/dhis2_worldbank_import && uv run prefect deploy --all
 
 register-blocks: ## Register custom block types with Prefect server
 	uv run prefect block register -m prefect_dhis2
