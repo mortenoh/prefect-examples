@@ -1,4 +1,4 @@
-"""Tests for the dhis2_worldpop_population_import deployment flow."""
+"""Tests for the dhis2_worldpop_population_import_docker deployment flow."""
 
 import importlib.util
 import sys
@@ -6,12 +6,12 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 _spec = importlib.util.spec_from_file_location(
-    "deploy_dhis2_worldpop_population_import",
-    Path(__file__).resolve().parent.parent / "deployments" / "dhis2_worldpop_population_import" / "flow.py",
+    "deploy_dhis2_worldpop_population_import_docker",
+    Path(__file__).resolve().parent.parent / "deployments" / "dhis2_worldpop_population_import_docker" / "flow.py",
 )
 assert _spec and _spec.loader
 _mod = importlib.util.module_from_spec(_spec)
-sys.modules["deploy_dhis2_worldpop_population_import"] = _mod
+sys.modules["deploy_dhis2_worldpop_population_import_docker"] = _mod
 _spec.loader.exec_module(_mod)
 
 from prefect_dhis2 import Dhis2Client  # noqa: E402
@@ -100,7 +100,7 @@ def test_ensure_dhis2_metadata() -> None:
     assert payload["dataSets"][0]["organisationUnits"] == [{"id": "ROOT_OU"}]
 
 
-@patch("deploy_dhis2_worldpop_population_import.httpx.Client")
+@patch("deploy_dhis2_worldpop_population_import_docker.httpx.Client")
 def test_fetch_worldpop_population(mock_client_cls: MagicMock) -> None:
     mock_resp_created = MagicMock()
     mock_resp_created.json.return_value = {"status": "created", "taskid": "abc123"}
@@ -170,7 +170,7 @@ def test_import_to_dhis2() -> None:
     assert result.total == 2
 
 
-@patch("deploy_dhis2_worldpop_population_import._query_worldpop_polygon", return_value=(4860.0, 4690.0))
+@patch("deploy_dhis2_worldpop_population_import_docker._query_worldpop_polygon", return_value=(4860.0, 4690.0))
 @patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(mock_get_client: MagicMock, mock_worldpop: MagicMock) -> None:
     mock_client = MagicMock(spec=Dhis2Client)
