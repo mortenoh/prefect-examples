@@ -20,12 +20,12 @@ sync: ## Install dependencies
 lint: ## Auto-format, fix lint errors, and type-check
 	uv run ruff format .
 	uv run ruff check --fix .
-	uv run mypy src/ packages/ flows/ tests/
+	uv run mypy src/ packages/ flows/ tests/ scripts/
 
 check: ## Check formatting, linting, and types (read-only, same as CI)
 	uv run ruff format --check .
 	uv run ruff check .
-	uv run mypy src/ packages/ flows/ tests/
+	uv run mypy src/ packages/ flows/ tests/ scripts/
 
 test: ## Run tests
 	PREFECT_API_URL= uv run pytest
