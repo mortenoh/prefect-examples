@@ -400,9 +400,9 @@ def test_import_to_dhis2_empty() -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("dhis2_worldpop_population_import.httpx.Client")
+@patch("dhis2_worldpop_population_import._query_worldpop_polygon")
 @patch.object(Dhis2Credentials, "get_client")
-def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> None:
+def test_flow_runs(mock_get_client: MagicMock, mock_query: MagicMock) -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
         SAMPLE_OU_WITH_GEOM,
@@ -412,26 +412,8 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     mock_client.post_data_values.return_value = SAMPLE_IMPORT_RESPONSE
     mock_get_client.return_value = mock_client
 
-    # Initial POST returns async "created", poll GET returns "finished"
-    mock_resp_created = MagicMock()
-    mock_resp_created.json.return_value = {"status": "created", "taskid": "flow123"}
-    mock_resp_created.raise_for_status = MagicMock()
-
-    mock_resp_finished = MagicMock()
-    mock_resp_finished.json.return_value = SAMPLE_WORLDPOP_TASK_RESPONSE
-    mock_resp_finished.raise_for_status = MagicMock()
-
-    mock_http_initial = MagicMock()
-    mock_http_initial.post.return_value = mock_resp_created
-    mock_http_initial.__enter__ = MagicMock(return_value=mock_http_initial)
-    mock_http_initial.__exit__ = MagicMock(return_value=False)
-
-    mock_http_poll = MagicMock()
-    mock_http_poll.get.return_value = mock_resp_finished
-    mock_http_poll.__enter__ = MagicMock(return_value=mock_http_poll)
-    mock_http_poll.__exit__ = MagicMock(return_value=False)
-
-    mock_httpx_cls.side_effect = [mock_http_initial, mock_http_poll]
+    # Mock the WorldPop query to return population totals directly
+    mock_query.return_value = (EXPECTED_MALE_TOTAL, EXPECTED_FEMALE_TOTAL)
 
     state = dhis2_worldpop_population_import_flow(return_state=True)
     assert state.is_completed()

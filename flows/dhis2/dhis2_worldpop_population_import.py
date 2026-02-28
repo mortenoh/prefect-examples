@@ -475,16 +475,16 @@ def import_to_dhis2(
     payload = {"dataValues": [dv.model_dump() for dv in data_values]}
     result = client.post_data_values(payload)
 
-    counts = result.get("importCount", {})
+    # DHIS2 may nest counts under "response" or at the top level
+    inner = result.get("response", result)
+    counts = inner.get("importCount", {})
     imported = counts.get("imported", 0)
     updated = counts.get("updated", 0)
     ignored = counts.get("ignored", 0)
+    status = inner.get("status", result.get("status", "UNKNOWN"))
 
-    print(
-        f"DHIS2 import: imported={imported}, updated={updated}, "
-        f"ignored={ignored}, status={result.get('status', 'UNKNOWN')}"
-    )
-    if result.get("status") not in ("SUCCESS", "WARNING"):
+    print(f"DHIS2 import: imported={imported}, updated={updated}, ignored={ignored}, status={status}")
+    if status not in ("OK", "SUCCESS", "WARNING"):
         print(f"Import response: {result}")
 
     lines = [
