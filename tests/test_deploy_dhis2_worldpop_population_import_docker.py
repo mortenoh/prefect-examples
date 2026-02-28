@@ -182,7 +182,7 @@ def test_flow_runs(mock_get_client: MagicMock, mock_worldpop: MagicMock) -> None
     mock_client.post_data_values.return_value = SAMPLE_IMPORT_RESPONSE
     mock_get_client.return_value = mock_client
 
-    state = dhis2_worldpop_population_import_flow(return_state=True)
+    state = dhis2_worldpop_population_import_flow(query=ImportQuery(years=[2020]), return_state=True)
     assert state.is_completed()
     result = state.result()
     assert isinstance(result, ImportResult)

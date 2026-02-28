@@ -6,7 +6,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pydantic import ValidationError
 
 _spec = importlib.util.spec_from_file_location(
     "dhis2_worldpop_population_import",
@@ -163,14 +162,7 @@ EXPECTED_FEMALE_TOTAL = 4690.0
 
 def test_import_query_defaults() -> None:
     q = ImportQuery()
-    assert q.year == 2020
-
-
-def test_import_query_validation() -> None:
-    with pytest.raises(ValidationError):
-        ImportQuery(year=1999)
-    with pytest.raises(ValidationError):
-        ImportQuery(year=2021)
+    assert q.years == list(range(2015, 2025))
 
 
 # ---------------------------------------------------------------------------
@@ -415,7 +407,7 @@ def test_flow_runs(mock_get_client: MagicMock, mock_query: MagicMock) -> None:
     # Mock the WorldPop query to return population totals directly
     mock_query.return_value = (EXPECTED_MALE_TOTAL, EXPECTED_FEMALE_TOTAL)
 
-    state = dhis2_worldpop_population_import_flow(return_state=True)
+    state = dhis2_worldpop_population_import_flow(query=ImportQuery(years=[2020]), return_state=True)
     assert state.is_completed()
     result = state.result()
     assert isinstance(result, ImportResult)

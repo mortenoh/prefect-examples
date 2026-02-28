@@ -128,7 +128,7 @@ class WorldPopResult(BaseModel):
 class ImportQuery(BaseModel):
     """Parameters for a WorldPop population import."""
 
-    year: int = Field(default=2020, ge=2000, le=2020)
+    years: list[int] = Field(default=list(range(2015, 2025)))
 
 
 class CocMapping(BaseModel):
@@ -165,7 +165,7 @@ class ImportResult(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@task
+@task(task_run_name="ensure-dhis2-metadata")
 def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMapping]:
     """Ensure category options, category, category combo, DE, and DS exist.
 
@@ -363,7 +363,11 @@ def _submit_and_poll(dataset: str, year: int, geojson_str: str) -> dict[str, Any
     return body  # type: ignore[no-any-return]
 
 
-@task(retries=2, retry_delay_seconds=[2, 5])
+@task(
+    task_run_name="fetch-worldpop-{org_unit.name}",
+    retries=2,
+    retry_delay_seconds=[2, 5],
+)
 def fetch_worldpop_population(org_unit: OrgUnitGeo, year: int) -> WorldPopResult:
     """Query the WorldPop age-sex API for a single org unit.
 
@@ -403,7 +407,7 @@ def fetch_worldpop_population(org_unit: OrgUnitGeo, year: int) -> WorldPopResult
     )
 
 
-@task
+@task(task_run_name="build-data-values-{year}")
 def build_data_values(
     results: list[WorldPopResult],
     year: int,
@@ -446,7 +450,7 @@ def build_data_values(
     return values
 
 
-@task
+@task(task_run_name="import-to-dhis2")
 def import_to_dhis2(
     client: Dhis2Client,
     dhis2_url: str,
@@ -549,13 +553,16 @@ def dhis2_worldpop_population_import_flow(
 
     org_units, coc_mapping = ensure_dhis2_metadata(client)
 
-    results: list[WorldPopResult] = []
-    for ou in org_units:
-        wp_result = fetch_worldpop_population(ou, query.year)
-        results.append(wp_result)
+    all_data_values: list[DataValue] = []
+    for year in query.years:
+        results: list[WorldPopResult] = []
+        for ou in org_units:
+            wp_result = fetch_worldpop_population(ou, year)
+            results.append(wp_result)
+        data_values = build_data_values(results, year, coc_mapping)
+        all_data_values.extend(data_values)
 
-    data_values = build_data_values(results, query.year, coc_mapping)
-    result = import_to_dhis2(client, creds.base_url, org_units, data_values)
+    result = import_to_dhis2(client, creds.base_url, org_units, all_data_values)
 
     create_markdown_artifact(key="dhis2-worldpop-population-import", markdown=result.markdown)
     return result
