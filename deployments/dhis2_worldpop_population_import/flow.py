@@ -199,71 +199,44 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
         msg = "No level-2 org units with Polygon/MultiPolygon geometry"
         raise ValueError(msg)
 
-    # Reuse existing Male/Female category options if present on the server
-    existing_cos = client.fetch_metadata(
-        "categoryOptions",
-        fields="id,name",
-        filters=["name:in:[Male,Female]"],
-    )
-    male_co_uid = CAT_OPTION_MALE_UID
-    female_co_uid = CAT_OPTION_FEMALE_UID
-    for co in existing_cos:
-        if co["name"] == "Male":
-            male_co_uid = co["id"]
-        elif co["name"] == "Female":
-            female_co_uid = co["id"]
-
-    new_cos = male_co_uid == CAT_OPTION_MALE_UID or female_co_uid == CAT_OPTION_FEMALE_UID
-    if not new_cos:
-        print(f"Reusing existing category options: Male={male_co_uid}, Female={female_co_uid}")
-
-    payload: dict[str, Any] = {}
-
-    if new_cos:
-        cos_to_create = []
-        if male_co_uid == CAT_OPTION_MALE_UID:
-            cos_to_create.append(
-                Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="Male", shortName="Male").model_dump()
-            )
-        if female_co_uid == CAT_OPTION_FEMALE_UID:
-            cos_to_create.append(
-                Dhis2CategoryOption(id=CAT_OPTION_FEMALE_UID, name="Female", shortName="Female").model_dump()
-            )
-        if cos_to_create:
-            payload["categoryOptions"] = cos_to_create
-
-    payload["categories"] = [
-        Dhis2Category(
-            id=CATEGORY_UID,
-            name="Sex",
-            shortName="Sex",
-            categoryOptions=[Dhis2Ref(id=male_co_uid), Dhis2Ref(id=female_co_uid)],
-        ).model_dump(),
-    ]
-    payload["categoryCombos"] = [
-        Dhis2CategoryCombo(
-            id=CAT_COMBO_UID,
-            name="Sex",
-            categories=[Dhis2Ref(id=CATEGORY_UID)],
-        ).model_dump(),
-    ]
-    payload["dataElements"] = [
-        Dhis2DataElement(
-            id=DATA_ELEMENT_UID,
-            name="PR - WorldPop Population",
-            shortName="PR - WP Pop",
-            categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
-        ).model_dump(),
-    ]
-    payload["dataSets"] = [
-        Dhis2DataSet(
-            id=DATA_SET_UID,
-            name="PR - WorldPop Population",
-            shortName="PR - WP Pop",
-            dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
-            organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
-        ).model_dump(),
-    ]
+    payload: dict[str, Any] = {
+        "categoryOptions": [
+            Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="PR: Male", shortName="PR: Male").model_dump(),
+            Dhis2CategoryOption(id=CAT_OPTION_FEMALE_UID, name="PR: Female", shortName="PR: Female").model_dump(),
+        ],
+        "categories": [
+            Dhis2Category(
+                id=CATEGORY_UID,
+                name="PR: Sex",
+                shortName="PR: Sex",
+                categoryOptions=[Dhis2Ref(id=CAT_OPTION_MALE_UID), Dhis2Ref(id=CAT_OPTION_FEMALE_UID)],
+            ).model_dump(),
+        ],
+        "categoryCombos": [
+            Dhis2CategoryCombo(
+                id=CAT_COMBO_UID,
+                name="PR: Sex",
+                categories=[Dhis2Ref(id=CATEGORY_UID)],
+            ).model_dump(),
+        ],
+        "dataElements": [
+            Dhis2DataElement(
+                id=DATA_ELEMENT_UID,
+                name="PR: WorldPop Population",
+                shortName="PR: WP Pop",
+                categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
+            ).model_dump(),
+        ],
+        "dataSets": [
+            Dhis2DataSet(
+                id=DATA_SET_UID,
+                name="PR: WorldPop Population",
+                shortName="PR: WP Pop",
+                dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
+                organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
+            ).model_dump(),
+        ],
+    }
 
     result = client.post_metadata(payload)
     stats = result.get("stats", {})
@@ -292,9 +265,9 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
     female_coc_uid = ""
     for coc in cocs:
         option_ids = {co["id"] for co in coc.get("categoryOptions", [])}
-        if male_co_uid in option_ids:
+        if CAT_OPTION_MALE_UID in option_ids:
             male_coc_uid = coc["id"]
-        elif female_co_uid in option_ids:
+        elif CAT_OPTION_FEMALE_UID in option_ids:
             female_coc_uid = coc["id"]
 
     if not male_coc_uid or not female_coc_uid:
@@ -329,30 +302,52 @@ def _poll_async_result(task_id: str) -> dict[str, Any]:
             elapsed = int(time.monotonic() - start)
             print(f"  Poll #{attempt} ({elapsed}s): status={status}")
             if status == "finished":
-                if body.get("error"):
-                    msg = f"Async task {task_id} error: {body.get('error_message', 'unknown')}"
-                    raise RuntimeError(msg)
                 return body  # type: ignore[no-any-return]
             time.sleep(POLL_INTERVAL_SECONDS)
     msg = f"Async task {task_id} timed out after {POLL_TIMEOUT_SECONDS}s"
     raise TimeoutError(msg)
 
 
-@task(retries=2, retry_delay_seconds=[2, 5])
-def fetch_worldpop_population(org_unit: OrgUnitGeo, year: int) -> WorldPopResult:
-    """Query the WorldPop age-sex API for a single org unit polygon.
+def _query_worldpop_polygon(polygon_geojson: dict[str, Any], year: int) -> tuple[float, float]:
+    """Submit a single Polygon to the WorldPop API and return (male, female) totals.
 
-    Args:
-        org_unit: Org unit with Polygon/MultiPolygon geometry.
-        year: Population year (2000-2020).
-
-    Returns:
-        WorldPopResult with male and female population totals.
+    Tries the ``wpgpas`` (age-sex pyramid) dataset first. If it returns an
+    error (the dataset has limited geographic coverage -- mostly Africa),
+    falls back to ``wpgppop`` (total population) with a 50/50 male/female
+    split.
     """
+    geojson_str = json.dumps(polygon_geojson)
+
+    # Try age-sex pyramid first
+    body = _submit_and_poll(dataset="wpgpas", year=year, geojson_str=geojson_str)
+
+    if not body.get("error"):
+        pyramid = body.get("data", {}).get("agesexpyramid", {})
+        if isinstance(pyramid, list):
+            male = sum(float(row.get("male", 0)) for row in pyramid)
+            female = sum(float(row.get("female", 0)) for row in pyramid)
+        else:
+            male = sum(float(pyramid.get(f"M_{i}", 0)) for i in range(17))
+            female = sum(float(pyramid.get(f"F_{i}", 0)) for i in range(17))
+        return male, female
+
+    # Fall back to total population with 50/50 split
+    print("    wpgpas unavailable for this region, falling back to wpgppop")
+    body = _submit_and_poll(dataset="wpgppop", year=year, geojson_str=geojson_str)
+    if body.get("error"):
+        msg = f"WorldPop error: {body.get('error_message', 'unknown')}"
+        raise RuntimeError(msg)
+    total = float(body.get("data", {}).get("total_population", 0))
+    half = total / 2
+    return half, half
+
+
+def _submit_and_poll(dataset: str, year: int, geojson_str: str) -> dict[str, Any]:
+    """Submit a WorldPop stats request and poll for the result."""
     data: dict[str, str] = {
-        "dataset": "wpgpas",
+        "dataset": dataset,
         "year": str(year),
-        "geojson": json.dumps(org_unit.geometry),
+        "geojson": geojson_str,
         "runasync": "true",
     }
 
@@ -363,19 +358,41 @@ def fetch_worldpop_population(org_unit: OrgUnitGeo, year: int) -> WorldPopResult
 
     if body.get("status") == "created":
         task_id = body.get("taskid", "")
-        print(f"Async task created for {org_unit.name}: {task_id}, polling...")
         body = _poll_async_result(task_id)
 
-    pyramid = body.get("data", {}).get("agesexpyramid", {})
+    return body  # type: ignore[no-any-return]
 
-    # The tasks endpoint returns a list of age-group objects with male/female
-    # keys, while inline responses use M_0..M_16 / F_0..F_16 dict keys.
-    if isinstance(pyramid, list):
-        male_total = sum(float(row.get("male", 0)) for row in pyramid)
-        female_total = sum(float(row.get("female", 0)) for row in pyramid)
+
+@task(retries=2, retry_delay_seconds=[2, 5])
+def fetch_worldpop_population(org_unit: OrgUnitGeo, year: int) -> WorldPopResult:
+    """Query the WorldPop age-sex API for a single org unit.
+
+    Handles both Polygon and MultiPolygon geometry by splitting
+    MultiPolygons into individual Polygon queries and summing results.
+
+    Args:
+        org_unit: Org unit with Polygon/MultiPolygon geometry.
+        year: Population year (2000-2020).
+
+    Returns:
+        WorldPopResult with male and female population totals.
+    """
+    geom = org_unit.geometry
+    geom_type = geom.get("type", "")
+
+    if geom_type == "MultiPolygon":
+        polygons = [{"type": "Polygon", "coordinates": coords} for coords in geom.get("coordinates", [])]
+        print(f"{org_unit.name}: MultiPolygon with {len(polygons)} parts")
     else:
-        male_total = sum(float(pyramid.get(f"M_{i}", 0)) for i in range(17))
-        female_total = sum(float(pyramid.get(f"F_{i}", 0)) for i in range(17))
+        polygons = [geom]
+
+    male_total = 0.0
+    female_total = 0.0
+    for i, poly in enumerate(polygons):
+        print(f"  {org_unit.name} part {i + 1}/{len(polygons)}: querying WorldPop...")
+        male, female = _query_worldpop_polygon(poly, year)
+        male_total += male
+        female_total += female
 
     print(f"{org_unit.name}: male={male_total:,.0f}, female={female_total:,.0f}")
     return WorldPopResult(

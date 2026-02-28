@@ -123,6 +123,18 @@ SAMPLE_WORLDPOP_TASK_RESPONSE = {
     },
 }
 
+SAMPLE_WORLDPOP_ERROR_RESPONSE = {
+    "status": "finished",
+    "error": True,
+    "error_message": "No User Description for this type of error: IndexError",
+}
+
+SAMPLE_WORLDPOP_POP_RESPONSE = {
+    "status": "finished",
+    "error": False,
+    "data": {"total_population": 9550.0},
+}
+
 SAMPLE_COCS = [
     {"id": "COC_MALE_1", "name": "Male", "categoryOptions": [{"id": "PfWpSexMal1"}]},
     {"id": "COC_FEML_1", "name": "Female", "categoryOptions": [{"id": "PfWpSexFem1"}]},
@@ -170,7 +182,6 @@ def test_ensure_dhis2_metadata() -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
         SAMPLE_OU_WITH_GEOM,  # level-2 org units
-        [],  # no existing Male/Female category options
         SAMPLE_COCS,  # categoryOptionCombos
     ]
     mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
@@ -191,39 +202,13 @@ def test_ensure_dhis2_metadata() -> None:
     assert "dataElements" in payload
     assert "dataSets" in payload
     assert len(payload["categoryOptions"]) == 2
+    assert payload["categoryOptions"][0]["name"] == "PR: Male"
+    assert payload["categoryOptions"][1]["name"] == "PR: Female"
     assert len(payload["categories"]) == 1
     assert len(payload["categoryCombos"]) == 1
     assert len(payload["dataElements"]) == 1
     assert len(payload["dataSets"]) == 1
     assert payload["dataSets"][0]["organisationUnits"] == [{"id": "ROOT_OU"}]
-
-
-def test_ensure_dhis2_metadata_reuses_existing_cos() -> None:
-    existing_cos = [{"id": "EXISTING_M", "name": "Male"}, {"id": "EXISTING_F", "name": "Female"}]
-    # COCs reference the existing server UIDs, not our fixed constants
-    existing_cocs = [
-        {"id": "COC_MALE_1", "name": "Male", "categoryOptions": [{"id": "EXISTING_M"}]},
-        {"id": "COC_FEML_1", "name": "Female", "categoryOptions": [{"id": "EXISTING_F"}]},
-    ]
-    mock_client = MagicMock(spec=Dhis2Client)
-    mock_client.fetch_metadata.side_effect = [
-        SAMPLE_OU_WITH_GEOM,  # level-2 org units
-        existing_cos,  # existing Male/Female category options
-        existing_cocs,  # categoryOptionCombos
-    ]
-    mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
-
-    _org_units, coc_mapping = ensure_dhis2_metadata.fn(mock_client)
-
-    assert coc_mapping.male == "COC_MALE_1"
-    assert coc_mapping.female == "COC_FEML_1"
-    payload = mock_client.post_metadata.call_args[0][0]
-    assert "categoryOptions" not in payload
-    # Category should reference existing UIDs
-    cat_options = payload["categories"][0]["categoryOptions"]
-    option_ids = {co["id"] for co in cat_options}
-    assert "EXISTING_M" in option_ids
-    assert "EXISTING_F" in option_ids
     mock_client.run_maintenance.assert_called_once_with("categoryOptionComboUpdate")
 
 
@@ -296,6 +281,54 @@ def test_fetch_worldpop_population_async(mock_client_cls: MagicMock) -> None:
 
     assert result.male == EXPECTED_MALE_TOTAL
     assert result.female == EXPECTED_FEMALE_TOTAL
+
+
+@patch("dhis2_worldpop_population_import.httpx.Client")
+def test_fetch_worldpop_population_fallback(mock_client_cls: MagicMock) -> None:
+    """When wpgpas errors (e.g. no coverage), fall back to wpgppop with 50/50 split."""
+
+    def _make_client(resp: MagicMock) -> MagicMock:
+        m = MagicMock()
+        m.post.return_value = resp
+        m.get.return_value = resp
+        m.__enter__ = MagicMock(return_value=m)
+        m.__exit__ = MagicMock(return_value=False)
+        return m
+
+    # wpgpas: POST returns "created", poll GET returns error
+    resp_created_1 = MagicMock()
+    resp_created_1.json.return_value = {"status": "created", "taskid": "t1"}
+    resp_created_1.raise_for_status = MagicMock()
+
+    resp_error = MagicMock()
+    resp_error.json.return_value = SAMPLE_WORLDPOP_ERROR_RESPONSE
+    resp_error.raise_for_status = MagicMock()
+
+    # wpgppop: POST returns "created", poll GET returns total_population
+    resp_created_2 = MagicMock()
+    resp_created_2.json.return_value = {"status": "created", "taskid": "t2"}
+    resp_created_2.raise_for_status = MagicMock()
+
+    resp_pop = MagicMock()
+    resp_pop.json.return_value = SAMPLE_WORLDPOP_POP_RESPONSE
+    resp_pop.raise_for_status = MagicMock()
+
+    mock_client_cls.side_effect = [
+        _make_client(resp_created_1),  # wpgpas POST
+        _make_client(resp_error),  # wpgpas poll GET -> error
+        _make_client(resp_created_2),  # wpgppop POST
+        _make_client(resp_pop),  # wpgppop poll GET -> success
+    ]
+
+    ou = OrgUnitGeo(
+        id="ROOT_OU",
+        name="Lao PDR",
+        geometry=SAMPLE_OU_WITH_GEOM[0]["geometry"],
+    )
+    result = fetch_worldpop_population.fn(ou, 2020)
+
+    assert result.male == 4775.0  # 9550 / 2
+    assert result.female == 4775.0
 
 
 def test_build_data_values() -> None:
@@ -373,7 +406,6 @@ def test_flow_runs(mock_get_client: MagicMock, mock_httpx_cls: MagicMock) -> Non
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.side_effect = [
         SAMPLE_OU_WITH_GEOM,
-        [],  # no existing category options
         SAMPLE_COCS,
     ]
     mock_client.post_metadata.return_value = SAMPLE_METADATA_RESPONSE
