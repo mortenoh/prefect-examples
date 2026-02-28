@@ -20,6 +20,7 @@ from __future__ import annotations
 import os
 
 from prefect_dhis2.credentials import Dhis2Credentials
+from pydantic import SecretStr
 
 INSTANCES: list[dict[str, str]] = [
     {
@@ -58,7 +59,7 @@ def main() -> None:
     default_block = Dhis2Credentials(
         base_url=base_url,
         username=username,
-        password=password,
+        password=SecretStr(password),
     )
     default_block.save("dhis2", overwrite=True)
     print(f"Saved block: dhis2 -> {base_url}")
@@ -67,7 +68,7 @@ def main() -> None:
         block = Dhis2Credentials(
             base_url=inst["base_url"],
             username=inst["username"],
-            password=inst["password"],
+            password=SecretStr(inst["password"]),
         )
         block.save(inst["name"], overwrite=True)
         print(f"Saved block: {inst['name']} -> {inst['base_url']}")
