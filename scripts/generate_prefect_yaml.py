@@ -36,7 +36,7 @@ def find_flow_functions(tree: ast.Module) -> dict[str, str | None]:
                 if isinstance(func, ast.Name) and func.id == "flow":
                     is_flow = True
                     for kw in decorator.keywords:
-                        if kw.arg == "name" and isinstance(kw.value, ast.Constant):
+                        if kw.arg == "name" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
                             flow_name = kw.value.value
             if is_flow:
                 flows[node.name] = flow_name
