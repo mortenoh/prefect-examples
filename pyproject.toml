@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Progressive Prefect 3 examples — from hello-world to production patterns."
 requires-python = ">=3.13"
 dependencies = [
-    "prefect>=3.6",
+    "prefect>=3.6.20",
     "prefect-aws",
     "prefect-dhis2",
     "pandas",
@@ -22,7 +22,8 @@ dev = [
     "mypy>=1",
     "pandas-stubs>=3.0.0.260204",
     "pytest>=8",
-    "ruff>=0.9",
+    "pyright>=1.1",
+    "ruff>=0.15.4",
 ]
 
 [build-system]
@@ -61,6 +62,13 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["geopandas", "geopandas.*", "shapely", "shapely.*"]
 ignore_missing_imports = true
+
+# ---------- pyright ----------
+[tool.pyright]
+pythonVersion = "3.13"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
 
 # ---------- pytest ----------
 [tool.pytest.ini_options]

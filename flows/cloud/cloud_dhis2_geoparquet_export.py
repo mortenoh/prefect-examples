@@ -149,12 +149,12 @@ def upload_to_s3(data: bytes, key: str) -> tuple[str, StorageBackend]:
         minio_creds = MinIOCredentials(
             minio_root_user="admin",
             minio_root_password=SecretStr("admin"),
+            aws_client_parameters=AwsClientParameters(endpoint_url="http://localhost:9000"),
         )
         bucket = S3Bucket(
             bucket_name="prefect-data",
             credentials=minio_creds,
             bucket_folder="exports",
-            aws_client_parameters=AwsClientParameters(endpoint_url="http://localhost:9000"),
         )
         bucket.upload_from_file_object(io.BytesIO(data), key)
         print(f"Uploaded {len(data):,} bytes to s3://prefect-data/exports/{key}")

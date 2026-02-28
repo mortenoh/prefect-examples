@@ -124,7 +124,7 @@ def test_export_geoparquet_produces_bytes() -> None:
 def test_export_geoparquet_roundtrip() -> None:
     gdf = build_geodataframe.fn(SAMPLE_ORG_UNITS)
     data = export_geoparquet.fn(gdf)
-    gdf_back = gpd.read_parquet(io.BytesIO(data))
+    gdf_back = gpd.read_parquet(io.BytesIO(data))  # pyright: ignore[reportArgumentType]
     assert len(gdf_back) == len(gdf)
     assert set(gdf_back.columns) == set(gdf.columns)
     assert gdf_back.crs is not None

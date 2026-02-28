@@ -5,6 +5,8 @@ from __future__ import annotations
 import pickle
 from unittest.mock import MagicMock, patch
 
+from pydantic import SecretStr
+
 from prefect_dhis2 import Dhis2Client, Dhis2Credentials
 
 
@@ -21,7 +23,7 @@ class TestDhis2Credentials:
         creds = Dhis2Credentials(
             base_url="https://dhis2.example.org",
             username="user",
-            password="secret",
+            password=SecretStr("secret"),
         )
         assert creds.base_url == "https://dhis2.example.org"
         assert creds.username == "user"
@@ -44,7 +46,7 @@ class TestDhis2Credentials:
         creds = Dhis2Credentials(
             base_url="https://test.dhis2.org",
             username="testuser",
-            password="testpass",
+            password=SecretStr("testpass"),
         )
         data = creds.model_dump()
         restored = Dhis2Credentials(**data)

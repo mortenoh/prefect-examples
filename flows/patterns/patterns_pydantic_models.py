@@ -57,7 +57,7 @@ def extract_users(config: PipelineConfig) -> list[UserRecord]:
     Returns:
         A list of validated UserRecord instances.
     """
-    raw: list[dict[str, str | int]] = [
+    raw: list[dict[str, Any]] = [
         {"name": "Alice", "email": "alice@example.com", "age": 30},
         {"name": "Bob", "email": "bob@example.com", "age": 25},
         {"name": "Charlie", "email": "charlie@example.com", "age": 35},

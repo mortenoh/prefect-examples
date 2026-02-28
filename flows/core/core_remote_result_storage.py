@@ -36,13 +36,13 @@ def create_s3_storage() -> str | None:
         creds = MinIOCredentials(
             minio_root_user="admin",
             minio_root_password=SecretStr("admin"),
+            aws_client_parameters=AwsClientParameters(
+                endpoint_url="http://localhost:9000",
+            ),
         )
         bucket = S3Bucket(
             bucket_name="prefect-results",
             credentials=creds,
-            aws_client_parameters=AwsClientParameters(
-                endpoint_url="http://localhost:9000",
-            ),
         )
         # Verify S3 connectivity before registering the block --
         # .save() only stores config in the Prefect server, it does not

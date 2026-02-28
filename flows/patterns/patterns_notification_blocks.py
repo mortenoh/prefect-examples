@@ -42,6 +42,8 @@ def configure_notification_blocks() -> dict[str, Any]:
         url="https://monitoring.example.com/alerts",
         method="POST",
         json_data={"text": "{{subject}}: {{body}}"},
+        headers=None,
+        cookies=None,
         secrets=SecretDict({"api_token": "placeholder-token"}),
     )
 
@@ -86,6 +88,8 @@ def demonstrate_template_resolution() -> dict[str, Any]:
             "source": "{{name}}",
             "auth": "Bearer {{api_token}}",
         },
+        headers=None,
+        cookies=None,
         secrets=SecretDict({"api_token": "secret-xyz-789"}),
     )
 

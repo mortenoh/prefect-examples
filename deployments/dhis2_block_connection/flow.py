@@ -25,7 +25,7 @@ from prefect.artifacts import create_markdown_artifact
 from prefect.runtime import deployment
 from pydantic import BaseModel
 
-from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials, get_dhis2_credentials
+from prefect_examples.dhis2 import Dhis2Client, Dhis2Credentials, Dhis2ServerInfo, get_dhis2_credentials
 
 
 class ConnectionReport(BaseModel):
@@ -38,9 +38,9 @@ class ConnectionReport(BaseModel):
 
 
 @task
-def verify_connection(client: Dhis2Client) -> dict:
+def verify_connection(client: Dhis2Client) -> Dhis2ServerInfo:
     data = client.get_server_info()
-    print(f"Connected to DHIS2 v{data.get('version', 'unknown')}")
+    print(f"Connected to DHIS2 v{data.version or 'unknown'}")
     return data
 
 
@@ -55,7 +55,7 @@ def fetch_org_unit_count(client: Dhis2Client) -> int:
 def build_report(
     creds: Dhis2Credentials,
     instance: str,
-    server_info: dict,
+    server_info: Dhis2ServerInfo,
     org_unit_count: int,
 ) -> ConnectionReport:
     return ConnectionReport(
@@ -63,7 +63,7 @@ def build_report(
         instance=instance,
         host=creds.base_url,
         username=creds.username,
-        server_version=server_info.get("version", "unknown"),
+        server_version=server_info.version or "unknown",
         org_unit_count=org_unit_count,
     )
 
