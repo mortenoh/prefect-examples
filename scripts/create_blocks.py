@@ -17,7 +17,6 @@ Usage:
 
 from __future__ import annotations
 
-import asyncio
 import os
 
 from prefect_dhis2.credentials import Dhis2Credentials
@@ -50,7 +49,7 @@ INSTANCES: list[dict[str, str]] = [
 ]
 
 
-async def main() -> None:
+def main() -> None:
     # Default "dhis2" block -- from env vars or play server fallback
     base_url = os.environ.get("DHIS2_BASE_URL", "https://play.im.dhis2.org/dev")
     username = os.environ.get("DHIS2_USERNAME", "admin")
@@ -61,7 +60,7 @@ async def main() -> None:
         username=username,
         password=password,
     )
-    await default_block.save("dhis2", overwrite=True)
+    default_block.save("dhis2", overwrite=True)
     print(f"Saved block: dhis2 -> {base_url}")
 
     for inst in INSTANCES:
@@ -70,11 +69,11 @@ async def main() -> None:
             username=inst["username"],
             password=inst["password"],
         )
-        await block.save(inst["name"], overwrite=True)
+        block.save(inst["name"], overwrite=True)
         print(f"Saved block: {inst['name']} -> {inst['base_url']}")
 
     print(f"\nCreated {len(INSTANCES) + 1} DHIS2 credentials blocks.")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
