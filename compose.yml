@@ -2,7 +2,7 @@ x-prefect-env: &prefect-env
   PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:prefect@postgres:5432/prefect
   PREFECT_SERVER_ANALYTICS_ENABLED: "false"
   PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT: "false"
-  PYTHONPATH: /opt/prefect/src:/opt/prefect/packages/prefect-dhis2:/opt/prefect/packages/prefect-worldpop
+  PYTHONPATH: /opt/prefect/src:/opt/prefect/packages/prefect-dhis2:/opt/prefect/packages/prefect-climate
 
 x-prefect-volumes: &prefect-volumes
   - ./flows:/opt/prefect/flows
@@ -101,6 +101,34 @@ services:
     build:
       context: .
       dockerfile: deployments/dhis2_worldpop_geotiff_age_import_docker/Dockerfile
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+    restart: unless-stopped
+
+  dhis2-era5-temperature-docker:
+    build:
+      context: .
+      dockerfile: deployments/dhis2_era5_temperature_import_docker/Dockerfile
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+    restart: unless-stopped
+
+  dhis2-chirps-rainfall-docker:
+    build:
+      context: .
+      dockerfile: deployments/dhis2_chirps_rainfall_import_docker/Dockerfile
     depends_on:
       prefect-server:
         condition: service_healthy

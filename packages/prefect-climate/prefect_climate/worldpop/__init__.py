@@ -1,6 +1,6 @@
-"""prefect-worldpop -- WorldPop GeoTIFF population data for Prefect flows."""
+"""WorldPop GeoTIFF population data -- download and zonal statistics."""
 
-from prefect_worldpop.geotiff import (
+from prefect_climate.worldpop.geotiff import (
     AGE_GROUPS,
     BASE_URL,
     RELEASE,
@@ -13,7 +13,7 @@ from prefect_worldpop.geotiff import (
     population_by_sex,
     zonal_population,
 )
-from prefect_worldpop.schemas import AgePopulationResult, ImportQuery, ImportResult, RasterPair, WorldPopResult
+from prefect_climate.worldpop.schemas import AgePopulationResult, RasterPair, WorldPopResult
 
 __all__ = [
     "AGE_GROUPS",
@@ -21,8 +21,6 @@ __all__ = [
     "RELEASE",
     "VERSION",
     "AgePopulationResult",
-    "ImportQuery",
-    "ImportResult",
     "RasterPair",
     "WorldPopResult",
     "build_age_tiff_url",

@@ -40,7 +40,7 @@ https://data.worldpop.org/GIS/AgeSex_structures/Global_2000_2020_1km_UNadj/
 ## How ISO3 is used in the codebase
 
 1. **`ImportQuery.iso3`** -- The `iso3` field on `ImportQuery`
-   (`packages/prefect-worldpop/prefect_worldpop/schemas.py`) is the main entry
+   (`packages/prefect-climate/prefect_climate/schemas.py`) is the main entry
    point. It is passed through every task in the flow.
 
 2. **`build_tiff_url()`** -- Constructs the download URL by inserting the ISO3

@@ -18,6 +18,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
+from prefect_climate import ImportQuery, ImportResult
+from prefect_climate.worldpop import RasterPair, WorldPopResult, download_sex_rasters, population_by_sex
 from prefect_dhis2 import (
     CocMapping,
     DataValue,
@@ -35,8 +37,6 @@ from prefect_dhis2 import (
     OrgUnitGeo,
     get_dhis2_credentials,
 )
-from prefect_worldpop import ImportQuery, ImportResult, RasterPair, WorldPopResult
-from prefect_worldpop.geotiff import download_sex_rasters, population_by_sex
 
 logger = logging.getLogger(__name__)
 

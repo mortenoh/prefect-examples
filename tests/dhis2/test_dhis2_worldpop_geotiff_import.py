@@ -21,6 +21,9 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["dhis2_worldpop_geotiff_import"] = _mod
 _spec.loader.exec_module(_mod)
 
+from prefect_climate import ImportQuery, ImportResult  # noqa: E402
+from prefect_climate.worldpop import RasterPair, WorldPopResult  # noqa: E402
+from prefect_climate.worldpop.geotiff import build_tiff_url  # noqa: E402
 from prefect_dhis2 import (  # noqa: E402
     CocMapping,
     DataValue,
@@ -30,8 +33,6 @@ from prefect_dhis2 import (  # noqa: E402
     OrgUnitGeo,
 )
 from prefect_dhis2.credentials import Dhis2Credentials  # noqa: E402
-from prefect_worldpop import ImportQuery, ImportResult, RasterPair, WorldPopResult  # noqa: E402
-from prefect_worldpop.geotiff import build_tiff_url  # noqa: E402
 
 ensure_dhis2_metadata = _mod.ensure_dhis2_metadata
 download_worldpop_rasters = _mod.download_worldpop_rasters
@@ -109,9 +110,9 @@ def test_build_tiff_url_case_handling() -> None:
     assert "lao_T_M_" in url
 
 
-@patch("prefect_worldpop.geotiff.rioxarray.open_rasterio")
+@patch("prefect_climate.zonal.rioxarray.open_rasterio")
 def test_zonal_population(mock_open: MagicMock) -> None:
-    from prefect_worldpop.geotiff import zonal_population
+    from prefect_climate.worldpop import zonal_population
 
     mock_da = MagicMock()
     mock_clipped = MagicMock()
@@ -133,9 +134,9 @@ def test_zonal_population(mock_open: MagicMock) -> None:
     mock_da.close.assert_called_once()
 
 
-@patch("prefect_worldpop.geotiff.rioxarray.open_rasterio")
+@patch("prefect_climate.zonal.rioxarray.open_rasterio")
 def test_zonal_population_no_nodata(mock_open: MagicMock) -> None:
-    from prefect_worldpop.geotiff import zonal_population
+    from prefect_climate.worldpop import zonal_population
 
     mock_da = MagicMock()
     mock_clipped = MagicMock()
@@ -151,9 +152,9 @@ def test_zonal_population_no_nodata(mock_open: MagicMock) -> None:
     mock_clipped.where.assert_not_called()
 
 
-@patch("prefect_worldpop.geotiff.rioxarray.open_rasterio")
+@patch("prefect_climate.zonal.rioxarray.open_rasterio")
 def test_population_by_sex(mock_open: MagicMock) -> None:
-    from prefect_worldpop.geotiff import population_by_sex
+    from prefect_climate.worldpop import population_by_sex
 
     call_count = 0
 

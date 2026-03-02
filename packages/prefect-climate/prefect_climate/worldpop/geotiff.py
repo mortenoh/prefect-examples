@@ -18,9 +18,8 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-import numpy as np
-import rioxarray
-import xarray as xr
+
+from prefect_climate.zonal import zonal_sum
 
 logger = logging.getLogger(__name__)
 
@@ -169,8 +168,7 @@ def download_sex_rasters(
 def zonal_population(tiff_path: Path, geometry: dict[str, Any]) -> float:
     """Sum raster pixel values within a polygon boundary.
 
-    Opens the raster with ``rioxarray``, clips to the given GeoJSON geometry,
-    and sums all valid pixel values (excluding nodata).
+    Delegates to :func:`prefect_climate.zonal.zonal_sum`.
 
     Args:
         tiff_path: Path to a GeoTIFF file.
@@ -179,16 +177,7 @@ def zonal_population(tiff_path: Path, geometry: dict[str, Any]) -> float:
     Returns:
         Total population (sum of pixel values) inside the geometry.
     """
-    da: xr.DataArray = rioxarray.open_rasterio(tiff_path)  # type: ignore[assignment]
-    try:
-        clipped: xr.DataArray = da.rio.clip([geometry], all_touched=True)
-        nodata = clipped.rio.nodata
-        if nodata is not None:
-            clipped = clipped.where(clipped != nodata)
-        total: float = float(np.nansum(clipped.values))
-    finally:
-        da.close()
-    return total
+    return zonal_sum(tiff_path, geometry)
 
 
 def population_by_sex(

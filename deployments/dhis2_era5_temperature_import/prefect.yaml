@@ -1,0 +1,10 @@
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /opt/prefect/deployments/dhis2_era5_temperature_import
+
+deployments:
+  - name: dhis2-era5-temperature-import
+    entrypoint: flow.py:dhis2_era5_temperature_import_flow
+    schedules: []
+    work_pool:
+      name: default

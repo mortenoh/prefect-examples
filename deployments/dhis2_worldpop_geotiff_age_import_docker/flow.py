@@ -15,6 +15,14 @@ from pathlib import Path
 from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
+from prefect_climate import ImportQuery, ImportResult
+from prefect_climate.worldpop import (
+    AGE_GROUPS,
+    AgePopulationResult,
+    build_age_tiff_url,
+    download_tiff,
+    zonal_population,
+)
 from prefect_dhis2 import (
     DataValue,
     Dhis2Category,
@@ -30,8 +38,6 @@ from prefect_dhis2 import (
     OrgUnitGeo,
     get_dhis2_credentials,
 )
-from prefect_worldpop import AgePopulationResult, ImportQuery, ImportResult
-from prefect_worldpop.geotiff import AGE_GROUPS, build_age_tiff_url, download_tiff, zonal_population
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)

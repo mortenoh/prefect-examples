@@ -1,10 +1,10 @@
 [project]
-name = "prefect-worldpop"
+name = "prefect-climate"
 version = "0.1.0"
-description = "WorldPop GeoTIFF download, zonal statistics, and DHIS2 import schemas."
+description = "Raster download, zonal statistics, and DHIS2 import for climate and population data."
 requires-python = ">=3.10"
 license = "Apache-2.0"
-keywords = ["prefect", "worldpop", "geotiff", "population", "raster"]
+keywords = ["prefect", "climate", "population", "geotiff", "raster", "era5", "chirps", "worldpop"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -17,6 +17,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
+    "earthkit-data",
     "httpx>=0.24",
     "numpy",
     "prefect-dhis2",
@@ -27,7 +28,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/morteoh/prefect-examples"
-Documentation = "https://github.com/morteoh/prefect-examples/tree/main/packages/prefect-worldpop/docs"
+Documentation = "https://github.com/morteoh/prefect-examples/tree/main/packages/prefect-climate/docs"
 Repository = "https://github.com/morteoh/prefect-examples"
 
 [dependency-groups]

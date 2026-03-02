@@ -20,6 +20,8 @@ _mod = importlib.util.module_from_spec(_spec)
 sys.modules["dhis2_worldpop_geotiff_age_import"] = _mod
 _spec.loader.exec_module(_mod)
 
+from prefect_climate import ImportQuery, ImportResult  # noqa: E402
+from prefect_climate.worldpop import AGE_GROUPS, AgePopulationResult, build_age_tiff_url  # noqa: E402
 from prefect_dhis2 import (  # noqa: E402
     DataValue,
     Dhis2Client,
@@ -27,8 +29,6 @@ from prefect_dhis2 import (  # noqa: E402
     OrgUnitGeo,
 )
 from prefect_dhis2.credentials import Dhis2Credentials  # noqa: E402
-from prefect_worldpop import AgePopulationResult, ImportQuery, ImportResult  # noqa: E402
-from prefect_worldpop.geotiff import AGE_GROUPS, build_age_tiff_url  # noqa: E402
 
 ensure_dhis2_metadata = _mod.ensure_dhis2_metadata
 download_single_raster = _mod.download_single_raster
