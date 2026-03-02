@@ -194,8 +194,8 @@ def test_ensure_dhis2_metadata() -> None:
     assert "dataElements" in payload
     assert "dataSets" in payload
     assert len(payload["categoryOptions"]) == 2
-    assert payload["categoryOptions"][0]["name"] == "PR: Male"
-    assert payload["categoryOptions"][1]["name"] == "PR: Female"
+    assert payload["categoryOptions"][0]["name"] == "PR: WP: Male"
+    assert payload["categoryOptions"][1]["name"] == "PR: WP: Female"
     assert len(payload["categories"]) == 1
     assert len(payload["categoryCombos"]) == 1
     assert len(payload["dataElements"]) == 1

@@ -51,7 +51,7 @@ def test_ensure_dhis2_metadata() -> None:
     assert org_unit.id == "ROOT_OU"
     payload = mock_client.post_metadata.call_args[0][0]
     assert len(payload["dataElements"]) == 10
-    assert payload["dataSets"][0]["name"] == "PR - World Bank Health Indicators"
+    assert payload["dataSets"][0]["name"] == "PR: WB: World Bank Health Indicators"
     assert payload["dataSets"][0]["periodType"] == "Yearly"
     assert payload["dataSets"][0]["organisationUnits"] == [{"id": "ROOT_OU"}]
 

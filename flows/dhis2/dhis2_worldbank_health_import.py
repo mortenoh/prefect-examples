@@ -47,43 +47,49 @@ class IndicatorConfig(BaseModel):
 
 INDICATORS: list[IndicatorConfig] = [
     IndicatorConfig(
-        wb_code="SH.DYN.MORT", de_uid="PfWbU5Mort1", name="PR - Under-5 Mortality Rate", shortName="PR - U5 Mortality"
+        wb_code="SH.DYN.MORT",
+        de_uid="PfWbU5Mort1",
+        name="PR: WB: Under-5 Mortality Rate",
+        shortName="PR: WB: U5 Mortality",
     ),
     IndicatorConfig(
         wb_code="SP.DYN.IMRT.IN",
         de_uid="PfWbInfMrt1",
-        name="PR - Infant Mortality Rate",
-        shortName="PR - Inf Mortality",
+        name="PR: WB: Infant Mortality Rate",
+        shortName="PR: WB: Inf Mortality",
     ),
     IndicatorConfig(
         wb_code="SH.STA.MMRT",
         de_uid="PfWbMatMrt1",
-        name="PR - Maternal Mortality Ratio",
-        shortName="PR - Mat Mortality",
+        name="PR: WB: Maternal Mortality Ratio",
+        shortName="PR: WB: Mat Mortality",
     ),
     IndicatorConfig(
-        wb_code="SP.DYN.LE00.IN", de_uid="PfWbLifExp1", name="PR - Life Expectancy", shortName="PR - Life Expect"
+        wb_code="SP.DYN.LE00.IN", de_uid="PfWbLifExp1", name="PR: WB: Life Expectancy", shortName="PR: WB: Life Expect"
     ),
     IndicatorConfig(
         wb_code="SH.XPD.CHEX.GD.ZS",
         de_uid="PfWbHlthEx1",
-        name="PR - Health Expenditure % GDP",
-        shortName="PR - Hlth Expend",
+        name="PR: WB: Health Expenditure % GDP",
+        shortName="PR: WB: Hlth Expend",
     ),
     IndicatorConfig(
-        wb_code="SH.TBS.INCD", de_uid="PfWbTbIncd1", name="PR - TB Incidence", shortName="PR - TB Incidence"
+        wb_code="SH.TBS.INCD", de_uid="PfWbTbIncd1", name="PR: WB: TB Incidence", shortName="PR: WB: TB Incidence"
     ),
     IndicatorConfig(
-        wb_code="SH.IMM.MEAS", de_uid="PfWbMeasIm1", name="PR - Measles Immunization", shortName="PR - Measles Imm"
+        wb_code="SH.IMM.MEAS",
+        de_uid="PfWbMeasIm1",
+        name="PR: WB: Measles Immunization",
+        shortName="PR: WB: Measles Imm",
     ),
     IndicatorConfig(
-        wb_code="SH.STA.STNT.ZS", de_uid="PfWbStntPr1", name="PR - Stunting Prevalence", shortName="PR - Stunting"
+        wb_code="SH.STA.STNT.ZS", de_uid="PfWbStntPr1", name="PR: WB: Stunting Prevalence", shortName="PR: WB: Stunting"
     ),
     IndicatorConfig(
-        wb_code="SP.DYN.TFRT.IN", de_uid="PfWbFertRt1", name="PR - Fertility Rate", shortName="PR - Fertility"
+        wb_code="SP.DYN.TFRT.IN", de_uid="PfWbFertRt1", name="PR: WB: Fertility Rate", shortName="PR: WB: Fertility"
     ),
     IndicatorConfig(
-        wb_code="NY.GDP.PCAP.CD", de_uid="PfWbGdpPCp1", name="PR - GDP Per Capita", shortName="PR - GDP PCap"
+        wb_code="NY.GDP.PCAP.CD", de_uid="PfWbGdpPCp1", name="PR: WB: GDP Per Capita", shortName="PR: WB: GDP PCap"
     ),
 ]
 
@@ -204,8 +210,8 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
 
     data_set = Dhis2DataSet(
         id=DATA_SET_UID,
-        name="PR - World Bank Health Indicators",
-        shortName="PR - WB Health",
+        name="PR: WB: World Bank Health Indicators",
+        shortName="PR: WB: WB Health",
         periodType="Yearly",
         dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=ind.de_uid)) for ind in INDICATORS],
         organisationUnits=[Dhis2Ref(id=org_unit.id)],

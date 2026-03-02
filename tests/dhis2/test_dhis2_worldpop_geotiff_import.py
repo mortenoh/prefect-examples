@@ -226,12 +226,12 @@ def test_ensure_dhis2_metadata() -> None:
     assert "dataElements" in payload
     assert "dataSets" in payload
     assert len(payload["categoryOptions"]) == 2
-    assert payload["categoryOptions"][0]["name"] == "GT: Male"
-    assert payload["categoryOptions"][1]["name"] == "GT: Female"
+    assert payload["categoryOptions"][0]["name"] == "PR: GT: Male"
+    assert payload["categoryOptions"][1]["name"] == "PR: GT: Female"
     assert len(payload["categories"]) == 1
     assert len(payload["categoryCombos"]) == 1
     assert len(payload["dataElements"]) == 1
-    assert payload["dataElements"][0]["name"] == "GT: WorldPop GeoTIFF Population"
+    assert payload["dataElements"][0]["name"] == "PR: GT: WorldPop GeoTIFF Population"
     assert len(payload["dataSets"]) == 1
     assert payload["dataSets"][0]["organisationUnits"] == [{"id": "ROOT_OU"}]
     mock_client.run_maintenance.assert_called_once_with("categoryOptionComboUpdate")

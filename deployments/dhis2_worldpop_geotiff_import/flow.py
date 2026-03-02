@@ -96,37 +96,37 @@ def ensure_dhis2_metadata(
 
     payload = Dhis2MetadataPayload(
         categoryOptions=[
-            Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="GT: Male", shortName="GT: Male"),
-            Dhis2CategoryOption(id=CAT_OPTION_FEMALE_UID, name="GT: Female", shortName="GT: Female"),
+            Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="PR: GT: Male", shortName="PR: GT: Male"),
+            Dhis2CategoryOption(id=CAT_OPTION_FEMALE_UID, name="PR: GT: Female", shortName="PR: GT: Female"),
         ],
         categories=[
             Dhis2Category(
                 id=CATEGORY_UID,
-                name="GT: Sex",
-                shortName="GT: Sex",
+                name="PR: GT: Sex",
+                shortName="PR: GT: Sex",
                 categoryOptions=[Dhis2Ref(id=CAT_OPTION_MALE_UID), Dhis2Ref(id=CAT_OPTION_FEMALE_UID)],
             ),
         ],
         categoryCombos=[
             Dhis2CategoryCombo(
                 id=CAT_COMBO_UID,
-                name="GT: Sex",
+                name="PR: GT: Sex",
                 categories=[Dhis2Ref(id=CATEGORY_UID)],
             ),
         ],
         dataElements=[
             Dhis2DataElement(
                 id=DATA_ELEMENT_UID,
-                name="GT: WorldPop GeoTIFF Population",
-                shortName="GT: WP GeoTIFF Pop",
+                name="PR: GT: WorldPop GeoTIFF Population",
+                shortName="PR: GT: WP GeoTIFF Pop",
                 categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
             ),
         ],
         dataSets=[
             Dhis2DataSet(
                 id=DATA_SET_UID,
-                name="GT: WorldPop GeoTIFF Population",
-                shortName="GT: WP GeoTIFF Pop",
+                name="PR: GT: WorldPop GeoTIFF Population",
+                shortName="PR: GT: WP GeoTIFF Pop",
                 dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
                 organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
             ),

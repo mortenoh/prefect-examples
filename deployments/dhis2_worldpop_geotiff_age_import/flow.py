@@ -1,12 +1,9 @@
-"""DHIS2 WorldPop GeoTIFF Population Import.
+"""DHIS2 WorldPop GeoTIFF Age-Sex Population Import.
 
-Downloads WorldPop R2025A sex-disaggregated GeoTIFF rasters, extracts zonal
-population statistics for DHIS2 organisation unit boundaries, and writes
-male/female population values into DHIS2 using category combinations.
-
-Unlike the API-based flow (dhis2_worldpop_population_import), this flow uses
-pre-aggregated total-male / total-female summary rasters that cover 231
-countries (2015-2030) with full sex disaggregation -- no fallback needed.
+Downloads WorldPop R2025A age/sex-disaggregated GeoTIFF rasters (40 per
+country/year), extracts zonal population statistics for DHIS2 organisation unit
+boundaries, and writes age-sex population values into DHIS2 using a
+Sex x Age category combination (2 x 20 = 40 COCs).
 """
 
 from __future__ import annotations
@@ -19,7 +16,6 @@ from dotenv import load_dotenv
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect_dhis2 import (
-    CocMapping,
     DataValue,
     Dhis2Category,
     Dhis2CategoryCombo,
@@ -31,25 +27,41 @@ from prefect_dhis2 import (
     Dhis2DataValueSet,
     Dhis2MetadataPayload,
     Dhis2Ref,
-    MetadataResult,
     OrgUnitGeo,
     get_dhis2_credentials,
 )
-from prefect_worldpop import ImportQuery, ImportResult, RasterPair, WorldPopResult
-from prefect_worldpop.geotiff import download_sex_rasters, population_by_sex
+from prefect_worldpop import AgePopulationResult, ImportQuery, ImportResult
+from prefect_worldpop.geotiff import AGE_GROUPS, download_age_rasters, zonal_population
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Constants -- distinct UIDs so both flows can coexist
+# Constants -- distinct UIDs so all flows can coexist
 # ---------------------------------------------------------------------------
 
-DATA_ELEMENT_UID = "PfGtPopEst1"
-DATA_SET_UID = "PfGtPopSet1"
-CAT_OPTION_MALE_UID = "PfGtSexMal1"
-CAT_OPTION_FEMALE_UID = "PfGtSexFem1"
-CATEGORY_UID = "PfGtSexCat1"
-CAT_COMBO_UID = "PfGtSexCCo1"
+DATA_ELEMENT_UID = "PfAgPopEst1"
+DATA_SET_UID = "PfAgPopSet1"
+CAT_OPTION_MALE_UID = "PfAgSexMal1"
+CAT_OPTION_FEMALE_UID = "PfAgSexFem1"
+SEX_CATEGORY_UID = "PfAgSexCat1"
+AGE_CATEGORY_UID = "PfAgAgeCat1"
+CAT_COMBO_UID = "PfAgSxAgCC1"
+
+# Age category option UIDs: PfAgAg00Op1, PfAgAg01Op1, PfAgAg05Op1, ..., PfAgAg90Op1
+AGE_CAT_OPTION_UIDS: dict[int, str] = {age: f"PfAgAg{age:02d}Op1" for age in AGE_GROUPS}
+
+
+# ---------------------------------------------------------------------------
+# Local model (coc_mapping is dict, not CocMapping)
+# ---------------------------------------------------------------------------
+
+
+class AgeMetadataResult(BaseModel):
+    """Metadata result with age-sex COC mapping."""
+
+    org_units: list[OrgUnitGeo]
+    coc_mapping: dict[str, str]  # keys like "M_0", "F_25" -> COC UID
 
 
 # ---------------------------------------------------------------------------
@@ -61,18 +73,19 @@ CAT_COMBO_UID = "PfGtSexCCo1"
 def ensure_dhis2_metadata(
     client: Dhis2Client,
     org_unit_level: int,
-) -> MetadataResult:
-    """Ensure category options, category, category combo, DE, and DS exist.
+) -> AgeMetadataResult:
+    """Ensure age-sex category options, categories, combo, DE, and DS exist.
 
-    Fetches org units at the specified level with polygon geometry for
-    zonal statistics extraction.
+    Creates 22 category options (2 sex + 20 age), 2 categories, 1 category
+    combo, 1 data element, and 1 data set. Resolves the 40 auto-generated
+    categoryOptionCombos.
 
     Args:
         client: Authenticated DHIS2 client.
         org_unit_level: DHIS2 organisation unit hierarchy level.
 
     Returns:
-        MetadataResult with org units and COC mapping.
+        AgeMetadataResult with org units and COC mapping.
     """
     raw_ous = client.fetch_metadata(
         "organisationUnits",
@@ -94,39 +107,59 @@ def ensure_dhis2_metadata(
         msg = f"No level-{org_unit_level} org units with Polygon/MultiPolygon geometry"
         raise ValueError(msg)
 
+    # Build category options: 2 sex + 20 age
+    sex_cat_options = [
+        Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="PR: AGE: Male", shortName="PR: AGE: Male"),
+        Dhis2CategoryOption(id=CAT_OPTION_FEMALE_UID, name="PR: AGE: Female", shortName="PR: AGE: Female"),
+    ]
+    age_cat_options = [
+        Dhis2CategoryOption(
+            id=AGE_CAT_OPTION_UIDS[age],
+            name=f"PR: AGE: {age}",
+            shortName=f"PR: AGE: {age}",
+        )
+        for age in AGE_GROUPS
+    ]
+
     payload = Dhis2MetadataPayload(
-        categoryOptions=[
-            Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="PR: GT: Male", shortName="PR: GT: Male"),
-            Dhis2CategoryOption(id=CAT_OPTION_FEMALE_UID, name="PR: GT: Female", shortName="PR: GT: Female"),
-        ],
+        categoryOptions=sex_cat_options + age_cat_options,
         categories=[
             Dhis2Category(
-                id=CATEGORY_UID,
-                name="PR: GT: Sex",
-                shortName="PR: GT: Sex",
-                categoryOptions=[Dhis2Ref(id=CAT_OPTION_MALE_UID), Dhis2Ref(id=CAT_OPTION_FEMALE_UID)],
+                id=SEX_CATEGORY_UID,
+                name="PR: AGE: Sex",
+                shortName="PR: AGE: Sex",
+                categoryOptions=[
+                    Dhis2Ref(id=CAT_OPTION_MALE_UID),
+                    Dhis2Ref(id=CAT_OPTION_FEMALE_UID),
+                ],
+            ),
+            Dhis2Category(
+                id=AGE_CATEGORY_UID,
+                name="PR: AGE: Age Group",
+                shortName="PR: AGE: Age Group",
+                categoryOptions=[Dhis2Ref(id=AGE_CAT_OPTION_UIDS[age]) for age in AGE_GROUPS],
             ),
         ],
         categoryCombos=[
             Dhis2CategoryCombo(
                 id=CAT_COMBO_UID,
-                name="PR: GT: Sex",
-                categories=[Dhis2Ref(id=CATEGORY_UID)],
+                name="PR: AGE: Sex x Age",
+                categories=[Dhis2Ref(id=SEX_CATEGORY_UID), Dhis2Ref(id=AGE_CATEGORY_UID)],
             ),
         ],
         dataElements=[
             Dhis2DataElement(
                 id=DATA_ELEMENT_UID,
-                name="PR: GT: WorldPop GeoTIFF Population",
-                shortName="PR: GT: WP GeoTIFF Pop",
+                name="PR: AGE: Population",
+                shortName="PR: AGE: Population",
                 categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
             ),
         ],
         dataSets=[
             Dhis2DataSet(
                 id=DATA_SET_UID,
-                name="PR: GT: WorldPop GeoTIFF Population",
-                shortName="PR: GT: WP GeoTIFF Pop",
+                name="PR: AGE: Population",
+                shortName="PR: AGE: Population",
                 dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
                 organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
             ),
@@ -149,44 +182,48 @@ def ensure_dhis2_metadata(
     client.run_maintenance("categoryOptionComboUpdate")
     print("Triggered categoryOptionCombo regeneration")
 
-    # Resolve auto-generated categoryOptionCombos
+    # Resolve auto-generated categoryOptionCombos (40 total)
     cocs = client.fetch_metadata(
         "categoryOptionCombos",
         fields="id,name,categoryOptions[id]",
         filters=["categoryCombo.id:eq:" + CAT_COMBO_UID],
     )
 
-    male_coc_uid = ""
-    female_coc_uid = ""
+    coc_mapping: dict[str, str] = {}
     for coc in cocs:
         option_ids = {co["id"] for co in coc.get("categoryOptions", [])}
+        # Determine sex
         if CAT_OPTION_MALE_UID in option_ids:
-            male_coc_uid = coc["id"]
+            sex = "M"
         elif CAT_OPTION_FEMALE_UID in option_ids:
-            female_coc_uid = coc["id"]
+            sex = "F"
+        else:
+            continue
+        # Determine age
+        for age, uid in AGE_CAT_OPTION_UIDS.items():
+            if uid in option_ids:
+                coc_mapping[f"{sex}_{age}"] = coc["id"]
+                break
 
-    if not male_coc_uid or not female_coc_uid:
-        msg = f"Could not resolve COCs for category combo {CAT_COMBO_UID}"
+    if len(coc_mapping) != 40:
+        msg = f"Expected 40 COCs, resolved {len(coc_mapping)} for combo {CAT_COMBO_UID}"
         raise ValueError(msg)
 
-    print(f"Resolved COCs: male={male_coc_uid}, female={female_coc_uid}")
-    return MetadataResult(
-        org_units=org_units,
-        coc_mapping=CocMapping(male=male_coc_uid, female=female_coc_uid),
-    )
+    print(f"Resolved {len(coc_mapping)} COCs")
+    return AgeMetadataResult(org_units=org_units, coc_mapping=coc_mapping)
 
 
 @task(
-    task_run_name="download-worldpop-rasters-{iso3}-{year}",
+    task_run_name="download-age-rasters-{iso3}-{year}",
     retries=2,
     retry_delay_seconds=[5, 15],
 )
-def download_worldpop_rasters(
+def download_worldpop_age_rasters(
     iso3: str,
     year: int,
     cache_dir: Path,
-) -> RasterPair:
-    """Download male and female GeoTIFF rasters for a country/year.
+) -> dict[tuple[str, int], Path]:
+    """Download all 40 age/sex GeoTIFF rasters for a country/year.
 
     Args:
         iso3: ISO 3166-1 alpha-3 country code.
@@ -194,80 +231,75 @@ def download_worldpop_rasters(
         cache_dir: Local directory for cached downloads.
 
     Returns:
-        RasterPair with male and female file paths.
+        Dict mapping (sex, age) tuples to local file paths.
     """
-    print(f"Downloading WorldPop rasters for {iso3}/{year}...")
-    male_path, female_path = download_sex_rasters(iso3, year, cache_dir)
-    print(f"Downloaded: {male_path.name}, {female_path.name}")
-    return RasterPair(male=male_path, female=female_path)
+    print(f"Downloading WorldPop age-sex rasters for {iso3}/{year} (40 files)...")
+    rasters = download_age_rasters(iso3, year, cache_dir)
+    print(f"Downloaded {len(rasters)} rasters")
+    return rasters
 
 
 @task(task_run_name="compute-population-{org_unit.name}")
 def compute_population(
     org_unit: OrgUnitGeo,
-    rasters: RasterPair,
-) -> WorldPopResult:
-    """Extract zonal population from GeoTIFF rasters for a single org unit.
-
-    Clips each raster to the org unit polygon boundary and sums pixel values
-    to get the total male and female population.
+    rasters: dict[tuple[str, int], Path],
+) -> AgePopulationResult:
+    """Extract zonal population from all 40 rasters for a single org unit.
 
     Args:
         org_unit: Organisation unit with polygon geometry.
-        rasters: Paths to male and female GeoTIFF rasters.
+        rasters: Dict mapping (sex, age) to GeoTIFF paths.
 
     Returns:
-        WorldPopResult with male and female population totals.
+        AgePopulationResult with population values for all 40 combos.
     """
-    male, female = population_by_sex(rasters.male, rasters.female, org_unit.geometry)
-    print(f"{org_unit.name}: male={male:,.0f}, female={female:,.0f}")
-    return WorldPopResult(
+    values: dict[str, float] = {}
+    for (sex, age), tiff_path in rasters.items():
+        pop = zonal_population(tiff_path, org_unit.geometry)
+        values[f"{sex}_{age}"] = pop
+    total = sum(values.values())
+    print(f"{org_unit.name}: total={total:,.0f} across {len(values)} age-sex groups")
+    return AgePopulationResult(
         org_unit_id=org_unit.id,
         org_unit_name=org_unit.name,
-        male=male,
-        female=female,
+        values=values,
     )
 
 
 @task(task_run_name="build-data-values-{year}")
 def build_data_values(
-    results: list[WorldPopResult],
+    results: list[AgePopulationResult],
     year: int,
-    coc_mapping: CocMapping,
+    coc_mapping: dict[str, str],
 ) -> Dhis2DataValueSet:
-    """Build DHIS2 data values from population results.
+    """Build DHIS2 data values from age-sex population results.
 
-    Creates two DataValues per org unit (male + female), each tagged with the
-    appropriate categoryOptionCombo UID.
+    Creates 40 DataValues per org unit, each tagged with the appropriate
+    categoryOptionCombo UID.
 
     Args:
         results: Population results from zonal statistics.
         year: Data year for the period.
-        coc_mapping: Resolved COC UIDs for male and female.
+        coc_mapping: Maps "M_0", "F_25" etc. to COC UIDs.
 
     Returns:
         Dhis2DataValueSet containing all data values.
     """
     values: list[DataValue] = []
     for r in results:
-        values.append(
-            DataValue(
-                dataElement=DATA_ELEMENT_UID,
-                period=str(year),
-                orgUnit=r.org_unit_id,
-                categoryOptionCombo=coc_mapping.male,
-                value=str(round(r.male)),
+        for key, pop in r.values.items():
+            coc_uid = coc_mapping.get(key)
+            if coc_uid is None:
+                continue
+            values.append(
+                DataValue(
+                    dataElement=DATA_ELEMENT_UID,
+                    period=str(year),
+                    orgUnit=r.org_unit_id,
+                    categoryOptionCombo=coc_uid,
+                    value=str(round(pop)),
+                )
             )
-        )
-        values.append(
-            DataValue(
-                dataElement=DATA_ELEMENT_UID,
-                period=str(year),
-                orgUnit=r.org_unit_id,
-                categoryOptionCombo=coc_mapping.female,
-                value=str(round(r.female)),
-            )
-        )
     print(f"Built {len(values)} data values for {len(results)} org units")
     return Dhis2DataValueSet(dataValues=values)
 
@@ -314,7 +346,7 @@ def import_to_dhis2(
         print(f"Import response: {result}")
 
     lines = [
-        "## DHIS2 WorldPop GeoTIFF Population Import",
+        "## DHIS2 WorldPop GeoTIFF Age-Sex Population Import",
         "",
         f"**DHIS2 target:** {dhis2_url}",
         f"**Data set:** `{DATA_SET_UID}`",
@@ -351,15 +383,15 @@ def import_to_dhis2(
 # ---------------------------------------------------------------------------
 
 
-@flow(name="dhis2_worldpop_geotiff_import", log_prints=True)
-def dhis2_worldpop_geotiff_import_flow(
+@flow(name="dhis2_worldpop_geotiff_age_import", log_prints=True)
+def dhis2_worldpop_geotiff_age_import_flow(
     query: ImportQuery | None = None,
 ) -> ImportResult:
-    """Fetch WorldPop GeoTIFF population data by sex and import into DHIS2.
+    """Fetch WorldPop age-sex GeoTIFF population data and import into DHIS2.
 
-    Downloads R2025A total-male/total-female summary rasters, extracts zonal
-    population for each org unit at the specified hierarchy level, and writes
-    results into DHIS2 using category combinations.
+    Downloads R2025A age/sex-disaggregated rasters (40 per country/year),
+    extracts zonal population for each org unit, and writes results into
+    DHIS2 using a Sex x Age category combination.
 
     Args:
         query: Query parameters (iso3, org_unit_level, years).
@@ -377,13 +409,13 @@ def dhis2_worldpop_geotiff_import_flow(
 
     metadata = ensure_dhis2_metadata(client, query.org_unit_level)
 
-    cache_dir = Path(tempfile.gettempdir()) / "worldpop_geotiff"
+    cache_dir = Path(tempfile.gettempdir()) / "worldpop_geotiff_age"
 
     all_data_value_sets: list[Dhis2DataValueSet] = []
     for year in query.years:
-        rasters = download_worldpop_rasters(query.iso3, year, cache_dir)
+        rasters = download_worldpop_age_rasters(query.iso3, year, cache_dir)
 
-        results: list[WorldPopResult] = []
+        results: list[AgePopulationResult] = []
         for ou in metadata.org_units:
             wp_result = compute_population(ou, rasters)
             results.append(wp_result)
@@ -399,12 +431,10 @@ def dhis2_worldpop_geotiff_import_flow(
 
     result = import_to_dhis2(client, creds.base_url, metadata.org_units, combined)
 
-    create_markdown_artifact(key="dhis2-worldpop-geotiff-import", markdown=result.markdown)
+    create_markdown_artifact(key="dhis2-worldpop-geotiff-age-import", markdown=result.markdown)
     return result
 
 
 if __name__ == "__main__":
     load_dotenv()
-    dhis2_worldpop_geotiff_import_flow.serve(
-        name="dhis2-worldpop-geotiff-import-docker",
-    )
+    dhis2_worldpop_geotiff_age_import_flow()

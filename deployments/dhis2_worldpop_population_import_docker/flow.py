@@ -201,37 +201,39 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
 
     payload: dict[str, Any] = {
         "categoryOptions": [
-            Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="PR: Male", shortName="PR: Male").model_dump(),
-            Dhis2CategoryOption(id=CAT_OPTION_FEMALE_UID, name="PR: Female", shortName="PR: Female").model_dump(),
+            Dhis2CategoryOption(id=CAT_OPTION_MALE_UID, name="PR: WP: Male", shortName="PR: WP: Male").model_dump(),
+            Dhis2CategoryOption(
+                id=CAT_OPTION_FEMALE_UID, name="PR: WP: Female", shortName="PR: WP: Female"
+            ).model_dump(),
         ],
         "categories": [
             Dhis2Category(
                 id=CATEGORY_UID,
-                name="PR: Sex",
-                shortName="PR: Sex",
+                name="PR: WP: Sex",
+                shortName="PR: WP: Sex",
                 categoryOptions=[Dhis2Ref(id=CAT_OPTION_MALE_UID), Dhis2Ref(id=CAT_OPTION_FEMALE_UID)],
             ).model_dump(),
         ],
         "categoryCombos": [
             Dhis2CategoryCombo(
                 id=CAT_COMBO_UID,
-                name="PR: Sex",
+                name="PR: WP: Sex",
                 categories=[Dhis2Ref(id=CATEGORY_UID)],
             ).model_dump(),
         ],
         "dataElements": [
             Dhis2DataElement(
                 id=DATA_ELEMENT_UID,
-                name="PR: WorldPop Population",
-                shortName="PR: WP Pop",
+                name="PR: WP: WorldPop Population",
+                shortName="PR: WP: WP Pop",
                 categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
             ).model_dump(),
         ],
         "dataSets": [
             Dhis2DataSet(
                 id=DATA_SET_UID,
-                name="PR: WorldPop Population",
-                shortName="PR: WP Pop",
+                name="PR: WP: WorldPop Population",
+                shortName="PR: WP: WP Pop",
                 dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
                 organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
             ).model_dump(),

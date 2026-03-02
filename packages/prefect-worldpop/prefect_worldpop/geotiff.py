@@ -32,6 +32,8 @@ BASE_URL = "https://data.worldpop.org/GIS/AgeSex_structures/Global_2015_2030/R20
 RELEASE = "R2025A"
 VERSION = "v1"
 
+AGE_GROUPS: list[int] = [0, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90]
+
 
 # ---------------------------------------------------------------------------
 # URL construction
@@ -91,6 +93,50 @@ def download_tiff(url: str, cache_dir: Path) -> Path:
 
     logger.info("Saved %s (%.1f MB)", dest.name, dest.stat().st_size / 1e6)
     return dest
+
+
+def build_age_tiff_url(iso3: str, age: int, sex: str, year: int) -> str:
+    """Construct the URL for a WorldPop age-specific raster.
+
+    Args:
+        iso3: ISO 3166-1 alpha-3 country code (e.g. "SLE").
+        age: Age group lower bound (0, 1, 5, 10, ..., 90).
+        sex: ``"M"`` for male or ``"F"`` for female.
+        year: Population year (2015-2030).
+
+    Returns:
+        Full URL to the GeoTIFF file.
+    """
+    iso_upper = iso3.upper()
+    iso_lower = iso3.lower()
+    return (
+        f"{BASE_URL}/{year}/{iso_upper}/{VERSION}/100m/constrained/"
+        f"{iso_lower}_{sex.lower()}_{age:02d}_{year}_CN_100m_{RELEASE}_{VERSION}.tif"
+    )
+
+
+def download_age_rasters(
+    iso3: str,
+    year: int,
+    cache_dir: Path,
+) -> dict[tuple[str, int], Path]:
+    """Download all 40 age/sex-disaggregated rasters for a country/year.
+
+    Args:
+        iso3: ISO 3166-1 alpha-3 country code.
+        year: Population year (2015-2030).
+        cache_dir: Local directory for cached downloads.
+
+    Returns:
+        Dict mapping ``(sex, age)`` tuples to local file paths.
+    """
+    result: dict[tuple[str, int], Path] = {}
+    for sex in ("M", "F"):
+        for age in AGE_GROUPS:
+            url = build_age_tiff_url(iso3, age, sex, year)
+            path = download_tiff(url, cache_dir)
+            result[(sex, age)] = path
+    return result
 
 
 def download_sex_rasters(

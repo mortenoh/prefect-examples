@@ -96,3 +96,17 @@ services:
     environment:
       PREFECT_API_URL: http://prefect-server:4200/api
     restart: unless-stopped
+
+  dhis2-worldpop-geotiff-age-docker:
+    build:
+      context: .
+      dockerfile: deployments/dhis2_worldpop_geotiff_age_import_docker/Dockerfile
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+    restart: unless-stopped

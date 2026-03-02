@@ -69,6 +69,7 @@ deploy: register-blocks create-blocks ## Register blocks, create instances, and 
 	cd deployments/dhis2_worldbank_health_import && uv run prefect deploy --all
 	cd deployments/dhis2_worldpop_population_import && uv run prefect deploy --all
 	cd deployments/dhis2_worldpop_geotiff_import && uv run prefect deploy --all
+	cd deployments/dhis2_worldpop_geotiff_age_import && uv run prefect deploy --all
 
 register-blocks: ## Register custom block types with Prefect server
 	uv run prefect block register -m prefect_dhis2

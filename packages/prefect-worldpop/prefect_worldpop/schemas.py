@@ -24,6 +24,14 @@ class RasterPair(BaseModel):
     female: Path
 
 
+class AgePopulationResult(BaseModel):
+    """Population result for a single org unit with age/sex disaggregation."""
+
+    org_unit_id: str
+    org_unit_name: str
+    values: dict[str, float]  # keys like "M_0", "F_25"
+
+
 class ImportQuery(BaseModel):
     """Parameters for a WorldPop GeoTIFF population import."""
 
