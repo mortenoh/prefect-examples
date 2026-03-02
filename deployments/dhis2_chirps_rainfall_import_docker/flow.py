@@ -323,4 +323,6 @@ def dhis2_chirps_rainfall_import_flow(
 
 if __name__ == "__main__":
     load_dotenv()
-    dhis2_chirps_rainfall_import_flow()
+    dhis2_chirps_rainfall_import_flow.serve(
+        name="dhis2-chirps-rainfall-import-docker",
+    )
