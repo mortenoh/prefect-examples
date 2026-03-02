@@ -368,7 +368,8 @@ def dhis2_worldpop_geotiff_import_flow(
         ImportResult with counts and markdown summary.
     """
     if query is None:
-        query = ImportQuery(iso3="LAO")
+        query = ImportQuery(iso3="SLE")
+        print(f"No query provided, using default: iso3={query.iso3}, level={query.org_unit_level}, years={query.years}")
 
     creds = get_dhis2_credentials()
     print(f"DHIS2 target: {creds.base_url}")

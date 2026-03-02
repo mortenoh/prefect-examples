@@ -27,7 +27,7 @@ class RasterPair(BaseModel):
 class ImportQuery(BaseModel):
     """Parameters for a WorldPop GeoTIFF population import."""
 
-    iso3: str = Field(description="ISO 3166-1 alpha-3 country code (e.g. 'LAO')")
+    iso3: str = Field(description="ISO 3166-1 alpha-3 country code (e.g. 'SLE')")
     org_unit_level: int = Field(default=2, description="DHIS2 org unit level to import at")
     years: list[int] = Field(default=list(range(2020, 2026)))
 
