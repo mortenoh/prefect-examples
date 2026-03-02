@@ -31,7 +31,7 @@ from prefect_dhis2 import (
     get_dhis2_credentials,
 )
 from prefect_worldpop import AgePopulationResult, ImportQuery, ImportResult
-from prefect_worldpop.geotiff import AGE_GROUPS, download_age_rasters, zonal_population
+from prefect_worldpop.geotiff import AGE_GROUPS, build_age_tiff_url, download_tiff, zonal_population
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -214,29 +214,33 @@ def ensure_dhis2_metadata(
 
 
 @task(
-    task_run_name="download-age-rasters-{iso3}-{year}",
+    task_run_name="download-{sex}-{age:02d}-{iso3}-{year}",
     retries=2,
     retry_delay_seconds=[5, 15],
 )
-def download_worldpop_age_rasters(
+def download_single_raster(
     iso3: str,
     year: int,
+    sex: str,
+    age: int,
     cache_dir: Path,
-) -> dict[tuple[str, int], Path]:
-    """Download all 40 age/sex GeoTIFF rasters for a country/year.
+) -> Path:
+    """Download a single age/sex GeoTIFF raster.
 
     Args:
         iso3: ISO 3166-1 alpha-3 country code.
         year: Population year (2015-2030).
+        sex: "M" or "F".
+        age: Age group lower bound.
         cache_dir: Local directory for cached downloads.
 
     Returns:
-        Dict mapping (sex, age) tuples to local file paths.
+        Path to the downloaded GeoTIFF file.
     """
-    print(f"Downloading WorldPop age-sex rasters for {iso3}/{year} (40 files)...")
-    rasters = download_age_rasters(iso3, year, cache_dir)
-    print(f"Downloaded {len(rasters)} rasters")
-    return rasters
+    url = build_age_tiff_url(iso3, age, sex, year)
+    path = download_tiff(url, cache_dir)
+    print(f"Downloaded {path.name} ({path.stat().st_size / 1e6:.1f} MB)")
+    return path
 
 
 @task(task_run_name="compute-population-{org_unit.name}")
@@ -413,7 +417,11 @@ def dhis2_worldpop_geotiff_age_import_flow(
 
     all_data_value_sets: list[Dhis2DataValueSet] = []
     for year in query.years:
-        rasters = download_worldpop_age_rasters(query.iso3, year, cache_dir)
+        rasters: dict[tuple[str, int], Path] = {}
+        for sex in ("M", "F"):
+            for age in AGE_GROUPS:
+                path = download_single_raster(query.iso3, year, sex, age, cache_dir)
+                rasters[(sex, age)] = path
 
         results: list[AgePopulationResult] = []
         for ou in metadata.org_units:

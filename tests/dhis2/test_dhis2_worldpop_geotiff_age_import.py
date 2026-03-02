@@ -31,7 +31,7 @@ from prefect_worldpop import AgePopulationResult, ImportQuery, ImportResult  # n
 from prefect_worldpop.geotiff import AGE_GROUPS, build_age_tiff_url  # noqa: E402
 
 ensure_dhis2_metadata = _mod.ensure_dhis2_metadata
-download_worldpop_age_rasters = _mod.download_worldpop_age_rasters
+download_single_raster = _mod.download_single_raster
 compute_population = _mod.compute_population
 build_data_values = _mod.build_data_values
 import_to_dhis2 = _mod.import_to_dhis2
@@ -295,11 +295,11 @@ def test_import_to_dhis2_empty() -> None:
 
 
 @patch("dhis2_worldpop_geotiff_age_import.zonal_population")
-@patch("dhis2_worldpop_geotiff_age_import.download_age_rasters")
+@patch("dhis2_worldpop_geotiff_age_import.download_tiff")
 @patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(
     mock_get_client: MagicMock,
-    mock_download: MagicMock,
+    mock_download_tiff: MagicMock,
     mock_zonal: MagicMock,
 ) -> None:
     mock_client = MagicMock(spec=Dhis2Client)
@@ -311,8 +311,11 @@ def test_flow_runs(
     mock_client.post_data_values.return_value = SAMPLE_IMPORT_RESPONSE
     mock_get_client.return_value = mock_client
 
-    # download_age_rasters returns dict[(sex, age)] -> Path
-    mock_download.return_value = {(sex, age): Path(f"{sex}_{age}.tif") for sex in ("M", "F") for age in AGE_GROUPS}
+    # download_tiff returns a Path; mock stat for the print statement
+    mock_path = MagicMock(spec=Path)
+    mock_path.stat.return_value.st_size = 5_000_000
+    mock_path.name = "test.tif"
+    mock_download_tiff.return_value = mock_path
     mock_zonal.return_value = 500.0
 
     state = dhis2_worldpop_geotiff_age_import_flow(
@@ -325,3 +328,5 @@ def test_flow_runs(
     assert result.imported == 40
     assert len(result.org_units) == 1
     assert result.org_units[0].id == "ROOT_OU"
+    # 40 rasters downloaded individually
+    assert mock_download_tiff.call_count == 40
