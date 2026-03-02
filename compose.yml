@@ -2,7 +2,7 @@ x-prefect-env: &prefect-env
   PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:prefect@postgres:5432/prefect
   PREFECT_SERVER_ANALYTICS_ENABLED: "false"
   PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT: "false"
-  PYTHONPATH: /opt/prefect/src:/opt/prefect/packages/prefect-dhis2
+  PYTHONPATH: /opt/prefect/src:/opt/prefect/packages/prefect-dhis2:/opt/prefect/packages/prefect-worldpop
 
 x-prefect-volumes: &prefect-volumes
   - ./flows:/opt/prefect/flows
@@ -73,6 +73,20 @@ services:
     build:
       context: .
       dockerfile: deployments/dhis2_worldpop_population_import_docker/Dockerfile
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+    restart: unless-stopped
+
+  dhis2-worldpop-geotiff-docker:
+    build:
+      context: .
+      dockerfile: deployments/dhis2_worldpop_geotiff_import_docker/Dockerfile
     depends_on:
       prefect-server:
         condition: service_healthy

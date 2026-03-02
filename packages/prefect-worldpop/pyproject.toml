@@ -1,0 +1,53 @@
+[project]
+name = "prefect-worldpop"
+version = "0.1.0"
+description = "WorldPop GeoTIFF download, zonal statistics, and DHIS2 import schemas."
+requires-python = ">=3.10"
+license = "Apache-2.0"
+keywords = ["prefect", "worldpop", "geotiff", "population", "raster"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "httpx>=0.24",
+    "numpy",
+    "prefect-dhis2",
+    "pydantic>=2",
+    "rioxarray",
+    "xarray",
+]
+
+[project.urls]
+Homepage = "https://github.com/morteoh/prefect-examples"
+Documentation = "https://github.com/morteoh/prefect-examples/tree/main/packages/prefect-worldpop/docs"
+Repository = "https://github.com/morteoh/prefect-examples"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.9",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# ---------- Ruff ----------
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+# ---------- pytest ----------
+[tool.pytest.ini_options]
+testpaths = ["tests"]

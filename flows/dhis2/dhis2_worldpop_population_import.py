@@ -292,7 +292,7 @@ def _poll_async_result(task_id: str) -> dict[str, Any]:
     url = f"{WORLDPOP_TASKS_URL}/{task_id}"
     start = time.monotonic()
     attempt = 0
-    with httpx.Client(timeout=30) as client:
+    with httpx.Client(timeout=120) as client:
         while time.monotonic() - start < POLL_TIMEOUT_SECONDS:
             attempt += 1
             resp = client.get(url)
@@ -351,7 +351,7 @@ def _submit_and_poll(dataset: str, year: int, geojson_str: str) -> dict[str, Any
         "runasync": "true",
     }
 
-    with httpx.Client(timeout=30) as client:
+    with httpx.Client(timeout=120) as client:
         resp = client.post(WORLDPOP_STATS_URL, data=data)
         resp.raise_for_status()
         body = resp.json()

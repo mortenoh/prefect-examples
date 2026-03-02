@@ -7,6 +7,7 @@ dependencies = [
     "prefect>=3.6.20",
     "prefect-aws",
     "prefect-dhis2",
+    "prefect-worldpop",
     "pandas",
     "pyarrow",
     "python-dotenv",
@@ -32,6 +33,7 @@ build-backend = "uv_build"
 
 [tool.uv.sources]
 prefect-dhis2 = { workspace = true }
+prefect-worldpop = { workspace = true }
 
 [tool.uv.workspace]
 members = ["packages/*"]
@@ -61,6 +63,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["geopandas", "geopandas.*", "shapely", "shapely.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["rioxarray", "rioxarray.*", "rasterio", "rasterio.*"]
 ignore_missing_imports = true
 
 # ---------- pyright ----------
