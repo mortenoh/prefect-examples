@@ -30,6 +30,21 @@ Every flow file calls `load_dotenv()` in its `if __name__ == "__main__"` block,
 so variables from `.env` are loaded automatically when you run a flow with
 `uv run python`.
 
+### Available variables
+
+| Variable | Required by | Description |
+|----------|-------------|-------------|
+| `PREFECT_SERVER_API_AUTH_STRING` | Docker stack | Basic auth for Prefect server (`user:pass`) |
+| `PREFECT_API_AUTH_STRING` | Docker stack | Basic auth for Prefect CLI/worker (`user:pass`) |
+| `POSTGRES_PASSWORD` | Docker stack | PostgreSQL password (default: `prefect`) |
+| `RUSTFS_ACCESS_KEY` | Docker stack | RustFS/S3 access key (default: `admin`) |
+| `RUSTFS_SECRET_KEY` | Docker stack | RustFS/S3 secret key (default: `admin`) |
+| `SLACK_WEBHOOK_URL` | Notification flows | Slack incoming webhook URL |
+| `CDSAPI_URL` | ERA5 climate flows | CDS API endpoint (default: `https://cds.climate.copernicus.eu/api`) |
+| `CDSAPI_KEY` | ERA5 climate flows | CDS API key from your [CDS profile](https://cds.climate.copernicus.eu/profile) |
+
+See [ERA5-Land](era5-land.md#cds-api-setup) for CDS registration steps.
+
 ## Run your first flow
 
 ```bash

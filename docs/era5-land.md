@@ -41,7 +41,9 @@ CDSAPI_URL=https://cds.climate.copernicus.eu/api
 CDSAPI_KEY=<your-uid>:<your-api-key>
 ```
 
-The `earthkit-data` library reads these automatically.
+The `earthkit-data` library reads these automatically. CDS access requires
+the `cdsapi` package, which is included via the `earthkit-data[cds]` extra
+in `prefect-climate`.
 
 ## earthkit-data usage
 
