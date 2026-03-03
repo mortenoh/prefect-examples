@@ -33,17 +33,17 @@ ERA5-Land data is accessed through the Climate Data Store (CDS) API.
 1. Register at <https://cds.climate.copernicus.eu/>
 2. Accept the ERA5-Land licence in your CDS profile
 3. Copy your API key from <https://cds.climate.copernicus.eu/profile>
-4. Set environment variables:
+4. Add your API key to `.env`:
 
 ```bash
 # .env
-CDSAPI_URL=https://cds.climate.copernicus.eu/api
-CDSAPI_KEY=<your-uid>:<your-api-key>
+CDSAPI_KEY=<your-api-key>
 ```
 
-The `earthkit-data` library reads these automatically. CDS access requires
-the `cdsapi` package, which is included via the `earthkit-data[cds]` extra
-in `prefect-climate`.
+`CDSAPI_URL` defaults to `https://cds.climate.copernicus.eu/api` and does
+not need to be set. The `earthkit-data` library reads these automatically.
+CDS access requires the `cdsapi` package, which is included via the
+`earthkit-data[cds]` extra in `prefect-climate`.
 
 ## earthkit-data usage
 
