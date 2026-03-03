@@ -14,6 +14,7 @@ from prefect_dhis2.models import (
     Dhis2DataValueSet,
     Dhis2MetadataPayload,
     Dhis2Ref,
+    Dhis2Sharing,
     MetadataResult,
     OrgUnitGeo,
 )
@@ -35,6 +36,7 @@ __all__ = [
     "Dhis2DataValueSet",
     "Dhis2MetadataPayload",
     "Dhis2Ref",
+    "Dhis2Sharing",
     "MetadataResult",
     "OrgUnitGeo",
     "get_dhis2_credentials",

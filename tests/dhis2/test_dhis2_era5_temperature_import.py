@@ -25,6 +25,8 @@ from prefect_climate.zonal import bounding_box  # noqa: E402
 from prefect_dhis2 import (  # noqa: E402
     DataValue,
     Dhis2Client,
+    Dhis2DataElement,
+    Dhis2DataSet,
     Dhis2DataValueSet,
     OrgUnitGeo,
 )
@@ -262,6 +264,18 @@ def test_import_to_dhis2_empty() -> None:
     assert result.total == 0
     assert "No data values" in result.markdown
     mock_client.post_data_values.assert_not_called()
+
+
+def test_sharing_default_enables_data_capture() -> None:
+    ds = Dhis2DataSet(id="x", name="x", shortName="x")
+    payload = ds.model_dump()
+    assert payload["sharing"]["public"] == "rwr-----"
+    assert payload["sharing"]["external"] is False
+
+    de = Dhis2DataElement(id="x", name="x", shortName="x")
+    payload = de.model_dump()
+    assert payload["sharing"]["public"] == "rwr-----"
+    assert payload["sharing"]["external"] is False
 
 
 # ---------------------------------------------------------------------------

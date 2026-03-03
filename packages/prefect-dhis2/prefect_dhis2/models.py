@@ -53,6 +53,13 @@ class Dhis2CategoryCombo(BaseModel):
     categories: list[Dhis2Ref]
 
 
+class Dhis2Sharing(BaseModel):
+    """DHIS2 sharing/access control settings."""
+
+    public: str = Field(default="rwr-----", description="Public access string (metadata rw + data read-only)")
+    external: bool = Field(default=False, description="External access")
+
+
 class Dhis2DataElement(BaseModel):
     """A DHIS2 data element for the metadata API."""
 
@@ -63,6 +70,7 @@ class Dhis2DataElement(BaseModel):
     valueType: str = Field(default="NUMBER", description="Value type")
     aggregationType: str = Field(default="SUM", description="Aggregation type")
     categoryCombo: Dhis2Ref | None = None
+    sharing: Dhis2Sharing = Field(default_factory=Dhis2Sharing)
 
 
 class Dhis2DataSetElement(BaseModel):
@@ -80,6 +88,7 @@ class Dhis2DataSet(BaseModel):
     periodType: str = Field(default="Yearly", description="Period type")
     dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
     organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
+    sharing: Dhis2Sharing = Field(default_factory=Dhis2Sharing)
 
 
 class Dhis2MetadataPayload(BaseModel):
