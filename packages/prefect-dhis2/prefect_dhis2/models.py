@@ -94,6 +94,7 @@ class Dhis2DataSet(BaseModel):
     shortName: str = Field(description="Short name")
     description: str = Field(default="", description="Long description shown in DHIS2 UI")
     periodType: str = Field(default="Yearly", description="Period type")
+    openFuturePeriods: int = Field(default=0, description="Number of future periods open for data entry")
     dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
     organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
     sharing: Dhis2Sharing = Field(

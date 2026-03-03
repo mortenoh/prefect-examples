@@ -10,6 +10,7 @@ population raster data into DHIS2 using the `prefect-climate` package.
 | WorldPop | `prefect_climate.worldpop` | ~100 m | Population (sex, age) |
 | ERA5-Land | `prefect_climate.era5` | ~9 km | Temperature, precipitation, humidity, wind speed, skin temperature, solar radiation, soil moisture |
 | CHIRPS | `prefect_climate.chirps` | ~5 km | Precipitation |
+| yr.no | `prefect_climate.yr` | Point-based | Temperature, precipitation, humidity, wind speed, cloud cover, air pressure (forecast) |
 
 ## Architecture
 
@@ -21,6 +22,7 @@ prefect-climate/
         worldpop/         # WorldPop GeoTIFF download + population stats
         era5/             # ERA5-Land via earthkit-data + CDS API
         chirps/           # CHIRPS v3.0 global daily precipitation
+        yr/               # yr.no Locationforecast point-based weather forecasts
 ```
 
 ### Zonal statistics
@@ -57,6 +59,7 @@ All import flows follow the same structure:
 |-----------|--------------|---------|
 | Population (yearly) | `YYYY` | `2024` |
 | Climate (monthly) | `YYYYMM` | `202401` |
+| Weather forecast (daily) | `YYYYMMDD` | `20240115` |
 
 ## ENACTS
 

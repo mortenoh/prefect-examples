@@ -66,6 +66,29 @@ def zonal_mean(tiff_path: Path, geometry: dict[str, Any]) -> float:
     return mean
 
 
+def centroid(geometry: dict[str, Any]) -> tuple[float, float]:
+    """Compute centroid (lat, lon) from a GeoJSON geometry.
+
+    Extracts all coordinates from a Polygon or MultiPolygon geometry
+    and returns the mean latitude and longitude.
+
+    Args:
+        geometry: GeoJSON geometry dict (Polygon or MultiPolygon).
+
+    Returns:
+        Tuple of (latitude, longitude) in decimal degrees.
+    """
+    lons: list[float] = []
+    lats: list[float] = []
+    _extract_coords(geometry.get("coordinates", []), lons, lats)
+
+    if not lons or not lats:
+        msg = "No coordinates found in geometry"
+        raise ValueError(msg)
+
+    return (sum(lats) / len(lats), sum(lons) / len(lons))
+
+
 def bounding_box(org_units: list[OrgUnitGeo]) -> list[float]:
     """Compute [N, W, S, E] bounding box from org unit geometries.
 

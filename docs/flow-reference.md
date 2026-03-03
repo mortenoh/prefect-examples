@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 134 example flows, organised by category.
+Detailed walkthrough of all 135 example flows, organised by category.
 
 ---
 
@@ -2917,6 +2917,35 @@ formula; wind speed from u/v components via vector magnitude. See
 
 ---
 
+### DHIS2 yr.no Weather Forecast Import
+
+**What it demonstrates:** Fetches point-based weather forecasts from the
+yr.no Locationforecast 2.0 API for each org unit centroid, aggregates hourly
+data to daily values, and imports 6 weather indicators into a DHIS2 daily
+data set.
+
+**Airflow equivalent:** PythonOperator chain with HTTP API fetch + centroid computation + DHIS2 POST.
+
+```python
+@flow(name="dhis2_yr_weather_import", log_prints=True)
+def dhis2_yr_weather_import_flow(query: ClimateQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    for ou in org_units:
+        result = fetch_org_unit_forecast(ou)  # centroid + yr.no API
+        forecast_results.append(result)
+    data_values = build_data_values(forecast_results)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_values)
+```
+
+Six DHIS2 data elements are produced: temperature (C), precipitation (mm),
+relative humidity (%), wind speed (m/s), cloud cover (%), and air pressure
+(hPa). No historical data is available -- running the flow regularly builds
+a time series of forecast data. See [yr.no weather](yr-weather.md) for
+API details.
+
+---
+
 ## Connection Patterns
 
 ### Environment-Based Configuration
@@ -3638,6 +3667,25 @@ def dhis2_era5_climate_import_flow(query: ClimateQuery | None = None) -> ImportR
     # ... 7 more downloads ...
     for ou in org_units:
         climate_data = compute_climate(ou, temp_rasters, precip_rasters, ...)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_values)
+    return result
+```
+
+### dhis2_yr_weather_import -- DHIS2 yr.no Weather Forecast Import
+
+**What it demonstrates:** Deployment wrapper (Docker-based) for the yr.no
+weather forecast import flow. Fetches point-based forecasts from yr.no
+Locationforecast API and writes 6 daily weather indicators into DHIS2.
+
+```python
+@flow(name="dhis2_yr_weather_import", log_prints=True)
+def dhis2_yr_weather_import_flow(query: ClimateQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    for ou in org_units:
+        result = fetch_org_unit_forecast(ou)
+        forecast_results.append(result)
+    data_values = build_data_values(forecast_results)
     result = import_to_dhis2(client, dhis2_url, org_units, data_values)
     return result
 ```

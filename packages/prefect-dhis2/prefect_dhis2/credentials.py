@@ -104,6 +104,11 @@ class Dhis2Client:
     def post_metadata(self, payload: dict[str, Any]) -> dict[str, Any]:
         """POST metadata to /metadata (importStrategy=CREATE_AND_UPDATE).
 
+        DHIS2 2.38+ returns 409 Conflict when there are import conflicts
+        (e.g. duplicate names or unique constraint violations). The response
+        body still contains the metadata import summary, so 409 is treated
+        as a valid response.
+
         Args:
             payload: JSON body with metadata arrays (e.g. dataElements, dataSets).
 
@@ -115,7 +120,8 @@ class Dhis2Client:
             params={"importStrategy": "CREATE_AND_UPDATE"},
             json=payload,
         )
-        resp.raise_for_status()
+        if resp.status_code != 409:
+            resp.raise_for_status()
         result: dict[str, Any] = resp.json()
         return result
 
