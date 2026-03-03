@@ -2851,8 +2851,9 @@ package handles per-raster download with caching.
 
 ### DHIS2 CHIRPS Rainfall Import
 
-**What it demonstrates:** Downloads CHIRPS v2.0 Africa monthly rainfall
-GeoTIFFs, computes zonal mean rainfall for each DHIS2 org unit, and writes
+**What it demonstrates:** Downloads CHIRPS v3.0 daily GeoTIFFs, clips to a
+bounding box derived from org unit geometries, aggregates to monthly totals,
+computes zonal mean precipitation for each DHIS2 org unit, and writes
 monthly values into DHIS2 (period format: `YYYYMM`).
 
 **Airflow equivalent:** PythonOperator chain with CHIRPS download + zonal stats + DHIS2 POST.
@@ -2862,18 +2863,19 @@ monthly values into DHIS2 (period format: `YYYYMM`).
 def dhis2_chirps_rainfall_import_flow(query: ClimateQuery | None = None) -> ImportResult:
     client = get_dhis2_credentials().get_client()
     org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    area = bounding_box(org_units)
     for month in query.months:
-        monthly_rasters[month] = download_chirps_raster(query.year, month, cache_dir)
+        monthly_rasters[month] = download_chirps_raster(query.year, month, area, cache_dir)
     for ou in org_units:
-        results.append(compute_rainfall(ou, monthly_rasters))
+        results.append(compute_precipitation(ou, monthly_rasters))
     data_value_set = build_data_values(results, query.year)
     result = import_to_dhis2(client, dhis2_url, org_units, data_value_set)
 ```
 
-CHIRPS files are gzipped GeoTIFFs (~50 MB compressed) from the Climate
-Hazards Center at UCSB. Values are millimetres of rainfall. Zonal mean is
-computed per org unit polygon using `rioxarray`. See [CHIRPS](chirps.md) for
-dataset details.
+CHIRPS v3.0 daily GeoTIFFs are fetched from the Climate Hazards Center at
+UCSB, clipped to a bounding box, and aggregated to monthly totals.
+Values are millimetres of precipitation. Zonal mean is computed per org unit
+polygon using `rioxarray`. See [CHIRPS](chirps.md) for dataset details.
 
 ---
 
@@ -3602,18 +3604,20 @@ def dhis2_worldpop_geotiff_age_import_flow(query: ImportQuery | None = None) -> 
 ### dhis2_chirps_rainfall_import -- DHIS2 CHIRPS Rainfall Import
 
 **What it demonstrates:** Deployment wrapper (with Docker variant) for the
-CHIRPS monthly rainfall import flow. Downloads Africa GeoTIFFs and writes
-zonal mean rainfall values into DHIS2.
+CHIRPS v3.0 monthly precipitation import flow. Downloads daily GeoTIFFs,
+clips to a bounding box, aggregates to monthly totals, and writes zonal
+mean precipitation values into DHIS2.
 
 ```python
 @flow(name="dhis2_chirps_rainfall_import", log_prints=True)
 def dhis2_chirps_rainfall_import_flow(query: ClimateQuery | None = None) -> ImportResult:
     client = get_dhis2_credentials().get_client()
     org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    area = bounding_box(org_units)
     for month in query.months:
-        monthly_rasters[month] = download_chirps_raster(query.year, month, cache_dir)
+        monthly_rasters[month] = download_chirps_raster(query.year, month, area, cache_dir)
     for ou in org_units:
-        results.append(compute_rainfall(ou, monthly_rasters))
+        results.append(compute_precipitation(ou, monthly_rasters))
     result = import_to_dhis2(client, dhis2_url, org_units, data_value_set)
     return result
 ```

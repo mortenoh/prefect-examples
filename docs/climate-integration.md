@@ -9,7 +9,7 @@ population raster data into DHIS2 using the `prefect-climate` package.
 |--------|---------------|-----------|-----------|
 | WorldPop | `prefect_climate.worldpop` | ~100 m | Population (sex, age) |
 | ERA5-Land | `prefect_climate.era5` | ~9 km | Temperature, precipitation, humidity, wind speed, skin temperature, solar radiation, soil moisture |
-| CHIRPS | `prefect_climate.chirps` | ~5 km | Rainfall |
+| CHIRPS | `prefect_climate.chirps` | ~5 km | Precipitation |
 
 ## Architecture
 
@@ -20,7 +20,7 @@ prefect-climate/
         zonal.py          # Zonal stats: zonal_sum, zonal_mean, bounding_box
         worldpop/         # WorldPop GeoTIFF download + population stats
         era5/             # ERA5-Land via earthkit-data + CDS API
-        chirps/           # CHIRPS v2.0 Africa monthly rainfall
+        chirps/           # CHIRPS v3.0 global daily precipitation
 ```
 
 ### Zonal statistics

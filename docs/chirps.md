@@ -12,51 +12,63 @@ data to produce gridded rainfall estimates.
 | Provider | Climate Hazards Center, UCSB |
 | Spatial resolution | ~5 km (0.05 degree) |
 | Temporal resolution | Daily, pentadal, monthly |
-| Coverage | 50S-50N (quasi-global); Africa-specific products available |
+| Coverage | Global (50S-50N) |
 | Period | 1981 -- near-present |
-| Format | GeoTIFF (gzipped for monthly Africa) |
+| Format | GeoTIFF |
 | CRS | EPSG:4326 (WGS 84) |
 
 ## URL pattern
 
-The pipeline downloads Africa monthly GeoTIFFs from the CHIRPS v2.0 archive:
+The pipeline downloads daily GeoTIFFs from the CHIRPS v3.0 archive and
+aggregates them to monthly totals locally:
 
 ```
-https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/
-    chirps-v2.0.{year}.{month:02d}.tif.gz
+https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/{flavor}/{YYYY}/
+    chirps-v3.0.{flavor}.{YYYY}.{MM}.{DD}.tif
 ```
 
-Each file is approximately 50 MB compressed, ~150 MB decompressed.
+Preliminary data uses a different path:
+
+```
+https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/prelim/sat/{YYYY}/
+    chirps-v3.0.prelim.{YYYY}.{MM}.{DD}.tif
+```
+
+Default settings use `stage="final"` and `flavor="rnl"` (rain + land).
 
 ## File format
 
-- Gzipped GeoTIFF (`.tif.gz`)
-- Values in millimetres (mm) of rainfall
+- GeoTIFF (`.tif`)
+- Values in millimetres (mm) of rainfall per day
 - NoData value: -9999
-- Single band per file (one month)
+- Single band per file (one day)
+- Monthly output is aggregated locally (sum of daily values)
 
 ## Pipeline overview
 
 1. Fetch org unit geometries from DHIS2
-2. Download monthly Africa GeoTIFFs (one per month)
-3. Decompress gzipped files
-4. Compute zonal mean rainfall per org unit per month
-5. Import monthly values into DHIS2 (period format: `YYYYMM`)
+2. Compute bounding box from org unit extents
+3. Download daily CHIRPS v3.0 GeoTIFFs for each month
+4. Clip to bounding box and aggregate daily to monthly total (mm)
+5. Compute zonal mean precipitation per org unit per month
+6. Import monthly values into DHIS2 (period format: `YYYYMM`)
+
+This approach follows the same pattern as
+[dhis2eo](https://github.com/dhis2/dhis2eo/) -- fetching daily GeoTIFFs
+from CHC servers, clipping to a bounding box, and aggregating to monthly
+totals.
 
 ## CHIRPS versions
 
 | Version | Resolution | Notes |
 |---------|-----------|-------|
-| CHIRPS v2.0 | 0.05 degree | Used in this pipeline; stable, widely validated |
-| CHIRPS v3.0 | 0.05 degree | Latest version with improved station blending |
-
-The DHIS2 Climate Tools ecosystem uses CHIRPS v3.0. This pipeline currently
-uses v2.0 for Africa monthly data. Upgrading to v3.0 requires only changing
-the base URL.
+| CHIRPS v2.0 | 0.05 degree | Stable, widely validated; Africa-specific products available |
+| CHIRPS v3.0 | 0.05 degree | Used in this pipeline; improved station blending, global daily files |
 
 ## References
 
-- [CHIRPS data portal](https://data.chc.ucsb.edu/products/CHIRPS-2.0/)
+- [CHIRPS v3.0 data portal](https://data.chc.ucsb.edu/products/CHIRPS/v3.0/)
 - [CHIRPS documentation](https://www.chc.ucsb.edu/data/chirps)
 - [Funk et al. (2015)](https://doi.org/10.1038/sdata.2015.66) -- original CHIRPS paper
 - [DHIS2 Climate Tools](https://climate-tools.dhis2.org/)
+- [dhis2eo](https://github.com/dhis2/dhis2eo/) -- aligned CHIRPS v3.0 approach

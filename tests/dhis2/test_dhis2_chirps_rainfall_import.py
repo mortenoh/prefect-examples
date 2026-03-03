@@ -21,7 +21,7 @@ sys.modules["dhis2_chirps_rainfall_import"] = _mod
 _spec.loader.exec_module(_mod)
 
 from prefect_climate import ClimateQuery, ClimateResult, ImportResult  # noqa: E402
-from prefect_climate.chirps import build_chirps_url  # noqa: E402
+from prefect_climate.chirps import build_chirps_day_url  # noqa: E402
 from prefect_dhis2 import (  # noqa: E402
     DataValue,
     Dhis2Client,
@@ -32,7 +32,7 @@ from prefect_dhis2.credentials import Dhis2Credentials  # noqa: E402
 
 ensure_dhis2_metadata = _mod.ensure_dhis2_metadata
 download_chirps_raster = _mod.download_chirps_raster
-compute_rainfall = _mod.compute_rainfall
+compute_precipitation = _mod.compute_precipitation
 build_data_values = _mod.build_data_values
 import_to_dhis2 = _mod.import_to_dhis2
 dhis2_chirps_rainfall_import_flow = _mod.dhis2_chirps_rainfall_import_flow
@@ -76,28 +76,32 @@ SAMPLE_IMPORT_RESPONSE = {
 # ---------------------------------------------------------------------------
 
 
-def test_build_chirps_url() -> None:
-    url = build_chirps_url(2024, 1)
-    assert url == "https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/chirps-v2.0.2024.01.tif.gz"
+def test_build_chirps_day_url_final_rnl() -> None:
+    url = build_chirps_day_url(2024, 1, 15)
+    assert url == ("https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/2024/chirps-v3.0.rnl.2024.01.15.tif")
 
 
-def test_build_chirps_url_december() -> None:
-    url = build_chirps_url(2023, 12)
-    assert url == "https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/chirps-v2.0.2023.12.tif.gz"
+def test_build_chirps_day_url_final_sat() -> None:
+    url = build_chirps_day_url(2024, 12, 31, stage="final", flavor="sat")
+    assert url == ("https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/sat/2024/chirps-v3.0.sat.2024.12.31.tif")
 
 
-def test_download_chirps_caching(tmp_path: Path) -> None:
-    """Test that download_chirps returns cached file when it exists."""
-    from prefect_climate.chirps import download_chirps
+def test_build_chirps_day_url_prelim() -> None:
+    url = build_chirps_day_url(2025, 3, 1, stage="prelim")
+    assert url == (
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/prelim/sat/2025/chirps-v3.0.prelim.2025.03.01.tif"
+    )
 
-    cached = tmp_path / "chirps-v2.0.2024.01.tif"
-    cached.write_bytes(b"fake tiff data")
 
-    url = "https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/chirps-v2.0.2024.01.tif.gz"
-    result = download_chirps(url, tmp_path)
+def test_build_chirps_day_url_prelim_ignores_flavor() -> None:
+    url = build_chirps_day_url(2025, 6, 15, stage="prelim", flavor="rnl")
+    assert "prelim/sat/" in url
+    assert "chirps-v3.0.prelim." in url
 
-    assert result == cached
-    assert result.exists()
+
+def test_build_chirps_day_url_zero_padded() -> None:
+    url = build_chirps_day_url(2024, 2, 5)
+    assert ".2024.02.05.tif" in url
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +129,7 @@ def test_ensure_dhis2_metadata() -> None:
     assert payload.get("categories", []) == []
     assert payload.get("categoryCombos", []) == []
     assert len(payload["dataElements"]) == 1
-    assert payload["dataElements"][0]["name"] == "PR: CHIRPS: Rainfall"
+    assert payload["dataElements"][0]["name"] == "PR: CHIRPS: Precipitation"
     assert payload["dataSets"][0]["periodType"] == "Monthly"
 
 
@@ -138,7 +142,7 @@ def test_ensure_dhis2_metadata_no_polygon() -> None:
 
 
 @patch("dhis2_chirps_rainfall_import.zonal_mean")
-def test_compute_rainfall(mock_zonal: MagicMock) -> None:
+def test_compute_precipitation(mock_zonal: MagicMock) -> None:
     mock_zonal.return_value = 150.5
 
     ou = OrgUnitGeo(
@@ -147,7 +151,7 @@ def test_compute_rainfall(mock_zonal: MagicMock) -> None:
         geometry=SAMPLE_OU_WITH_GEOM[0]["geometry"],
     )
     monthly_rasters = {1: Path("jan.tif"), 2: Path("feb.tif"), 3: Path("mar.tif")}
-    result = compute_rainfall.fn(ou, monthly_rasters)
+    result = compute_precipitation.fn(ou, monthly_rasters)
 
     assert isinstance(result, ClimateResult)
     assert result.org_unit_id == "ROOT_OU"
@@ -236,13 +240,15 @@ def test_import_to_dhis2_empty() -> None:
 # ---------------------------------------------------------------------------
 
 
+@patch("dhis2_chirps_rainfall_import.bounding_box")
 @patch("dhis2_chirps_rainfall_import.zonal_mean")
-@patch("dhis2_chirps_rainfall_import.download_chirps")
+@patch("dhis2_chirps_rainfall_import.fetch_chirps_monthly")
 @patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(
     mock_get_client: MagicMock,
-    mock_download: MagicMock,
+    mock_fetch_monthly: MagicMock,
     mock_zonal: MagicMock,
+    mock_bbox: MagicMock,
 ) -> None:
     mock_client = MagicMock(spec=Dhis2Client)
     mock_client.fetch_metadata.return_value = SAMPLE_OU_WITH_GEOM
@@ -250,7 +256,8 @@ def test_flow_runs(
     mock_client.post_data_values.return_value = SAMPLE_IMPORT_RESPONSE
     mock_get_client.return_value = mock_client
 
-    mock_download.return_value = Path("chirps.tif")
+    mock_bbox.return_value = [8.5, -13.3, 8.4, -13.2]
+    mock_fetch_monthly.return_value = Path("chirps.tif")
     mock_zonal.return_value = 150.0
 
     state = dhis2_chirps_rainfall_import_flow(
@@ -263,3 +270,9 @@ def test_flow_runs(
     assert result.imported == 12
     assert len(result.org_units) == 1
     assert result.org_units[0].id == "ROOT_OU"
+
+    # Verify bounding_box was called and area was passed to fetch_chirps_monthly
+    mock_bbox.assert_called_once()
+    assert mock_fetch_monthly.call_count == 3
+    for call in mock_fetch_monthly.call_args_list:
+        assert call[0][2] == [8.5, -13.3, 8.4, -13.2]  # area argument

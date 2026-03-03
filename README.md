@@ -176,7 +176,7 @@ Flows are organized into topic groups:
 | dhis2 | DHIS2 WorldPop Population Import | WorldPop API spatial query, sex-disaggregated category combos |
 | dhis2 | DHIS2 WorldPop GeoTIFF Import | WorldPop constrained GeoTIFF, zonal sum, population estimates |
 | dhis2 | DHIS2 WorldPop GeoTIFF Age Import | Age-disaggregated WorldPop GeoTIFF, category combos per age group |
-| dhis2 | DHIS2 CHIRPS Rainfall Import | CHIRPS v2.0 Africa monthly GeoTIFF, zonal mean rainfall |
+| dhis2 | DHIS2 CHIRPS Rainfall Import | CHIRPS v3.0 daily GeoTIFF, bbox clipping, zonal mean precipitation |
 | dhis2 | DHIS2 ERA5 Climate Import | ERA5-Land 7 climate variables, unit conversions, derived indicators |
 | cloud | S3 Parquet Export | Pydantic models, pandas transform, parquet write to S3 (RustFS) |
 | cloud | DHIS2 GeoParquet Export | GeoDataFrame, GeoParquet, DHIS2 geometry to S3 |
