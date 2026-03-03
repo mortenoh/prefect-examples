@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 135 example flows, organised by category.
+Detailed walkthrough of all 138 example flows, organised by category.
 
 ---
 
@@ -2946,6 +2946,89 @@ API details.
 
 ---
 
+### DHIS2 Open-Meteo Historical Weather Import
+
+**What it demonstrates:** Fetches point-based historical weather data from the
+Open-Meteo Archive API (1940--present) for each org unit centroid, aggregates
+hourly data to daily values, and imports 6 weather indicators into a DHIS2
+daily data set.
+
+**Airflow equivalent:** PythonOperator chain with HTTP API fetch + centroid computation + DHIS2 POST.
+
+```python
+@flow(name="dhis2_openmeteo_historical_import", log_prints=True)
+def dhis2_openmeteo_historical_import_flow(query: ClimateQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    for ou in org_units:
+        result = fetch_org_unit_historical(ou, query.year, query.months)
+        weather_results.append(result)
+    data_values = build_data_values(weather_results)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_values)
+```
+
+Six DHIS2 data elements are produced: temperature (C), precipitation (mm),
+relative humidity (%), wind speed (m/s), cloud cover (%), and air pressure
+(hPa). Uses `query.year` and `query.months` to select the time window.
+See [Open-Meteo](openmeteo.md) for API details.
+
+---
+
+### DHIS2 Open-Meteo Weather Forecast Import
+
+**What it demonstrates:** Fetches point-based weather forecasts from the
+Open-Meteo Forecast API (up to 16 days) for each org unit centroid,
+aggregates hourly data to daily values, and imports 6 weather indicators
+into a DHIS2 daily data set.
+
+**Airflow equivalent:** PythonOperator chain with HTTP API fetch + centroid computation + DHIS2 POST.
+
+```python
+@flow(name="dhis2_openmeteo_forecast_import", log_prints=True)
+def dhis2_openmeteo_forecast_import_flow(query: ClimateQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    for ou in org_units:
+        result = fetch_org_unit_forecast(ou)
+        forecast_results.append(result)
+    data_values = build_data_values(forecast_results)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_values)
+```
+
+Same 6 weather variables as the historical flow. No date parameters needed --
+always fetches the current 16-day forecast window.
+See [Open-Meteo](openmeteo.md) for API details.
+
+---
+
+### DHIS2 Open-Meteo Air Quality Import
+
+**What it demonstrates:** Fetches point-based air quality data from the
+Open-Meteo Air Quality API for each org unit centroid, aggregates hourly
+data to daily values, and imports 7 air quality indicators into a DHIS2
+daily data set.
+
+**Airflow equivalent:** PythonOperator chain with HTTP API fetch + centroid computation + DHIS2 POST.
+
+```python
+@flow(name="dhis2_openmeteo_air_quality_import", log_prints=True)
+def dhis2_openmeteo_air_quality_import_flow(query: ClimateQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    for ou in org_units:
+        result = fetch_org_unit_air_quality(ou)
+        aq_results.append(result)
+    data_values = build_data_values(aq_results)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_values)
+```
+
+Seven DHIS2 data elements are produced: PM2.5, PM10, ozone, NO2, SO2, CO
+(all daily mean), and European AQI (daily max). The AQI uses `max()`
+aggregation to capture worst-case daily air quality.
+See [Open-Meteo](openmeteo.md) for API details.
+
+---
+
 ## Connection Patterns
 
 ### Environment-Based Configuration
@@ -3688,4 +3771,24 @@ def dhis2_yr_weather_import_flow(query: ClimateQuery | None = None) -> ImportRes
     data_values = build_data_values(forecast_results)
     result = import_to_dhis2(client, dhis2_url, org_units, data_values)
     return result
+```
+
+### dhis2_openmeteo_import -- DHIS2 Open-Meteo Import (3 flows)
+
+**What it demonstrates:** Combined deployment (Docker-based) serving three
+Open-Meteo flows: historical weather, weather forecast, and air quality.
+All three use point-based centroid queries and hourly-to-daily aggregation.
+
+```python
+# Historical: 6 weather variables, 1940--present
+@flow(name="dhis2_openmeteo_historical_import", log_prints=True)
+def dhis2_openmeteo_historical_import_flow(query: ClimateQuery | None = None) -> ImportResult: ...
+
+# Forecast: 6 weather variables, 16-day window
+@flow(name="dhis2_openmeteo_forecast_import", log_prints=True)
+def dhis2_openmeteo_forecast_import_flow(query: ClimateQuery | None = None) -> ImportResult: ...
+
+# Air quality: 7 variables (PM2.5, PM10, O3, NO2, SO2, CO, AQI)
+@flow(name="dhis2_openmeteo_air_quality_import", log_prints=True)
+def dhis2_openmeteo_air_quality_import_flow(query: ClimateQuery | None = None) -> ImportResult: ...
 ```

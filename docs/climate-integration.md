@@ -11,6 +11,9 @@ population raster data into DHIS2 using the `prefect-climate` package.
 | ERA5-Land | `prefect_climate.era5` | ~9 km | Temperature, precipitation, humidity, wind speed, skin temperature, solar radiation, soil moisture |
 | CHIRPS | `prefect_climate.chirps` | ~5 km | Precipitation |
 | yr.no | `prefect_climate.yr` | Point-based | Temperature, precipitation, humidity, wind speed, cloud cover, air pressure (forecast) |
+| Open-Meteo Historical | `prefect_climate.openmeteo` | Point-based | Temperature, precipitation, humidity, wind speed, cloud cover, air pressure (1940--present) |
+| Open-Meteo Forecast | `prefect_climate.openmeteo` | Point-based | Temperature, precipitation, humidity, wind speed, cloud cover, air pressure (16-day forecast) |
+| Open-Meteo Air Quality | `prefect_climate.openmeteo` | Point-based | PM2.5, PM10, ozone, NO2, SO2, CO, European AQI |
 
 ## Architecture
 
@@ -23,6 +26,7 @@ prefect-climate/
         era5/             # ERA5-Land via earthkit-data + CDS API
         chirps/           # CHIRPS v3.0 global daily precipitation
         yr/               # yr.no Locationforecast point-based weather forecasts
+        openmeteo/        # Open-Meteo historical weather, forecast, and air quality
 ```
 
 ### Zonal statistics

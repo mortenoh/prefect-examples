@@ -34,7 +34,7 @@ flows/
   patterns/             21 flows -- Pydantic, factories, error handling
   data_engineering/     20 flows -- file I/O, APIs, config-driven pipelines
   analytics/            20 flows -- statistics, dimensional modeling, lineage
-  dhis2/                19 flows -- DHIS2 integration, climate/population import
+  dhis2/                22 flows -- DHIS2 integration, climate/population import
   cloud/                12 flows -- S3/cloud, WorldPop, World Bank patterns
 src/prefect_examples/   Shared task library
 packages/prefect-dhis2/ DHIS2 integration package (workspace dependency)
@@ -179,6 +179,9 @@ Flows are organized into topic groups:
 | dhis2 | DHIS2 CHIRPS Rainfall Import | CHIRPS v3.0 daily GeoTIFF, bbox clipping, zonal mean precipitation |
 | dhis2 | DHIS2 ERA5 Climate Import | ERA5-Land 7 climate variables, unit conversions, derived indicators |
 | dhis2 | DHIS2 yr.no Weather Forecast Import | yr.no Locationforecast 6 weather variables, point-based daily forecasts |
+| dhis2 | DHIS2 Open-Meteo Historical Weather Import | Open-Meteo Archive 6 weather variables, daily historical data (1940--present) |
+| dhis2 | DHIS2 Open-Meteo Weather Forecast Import | Open-Meteo Forecast 6 weather variables, point-based 16-day forecasts |
+| dhis2 | DHIS2 Open-Meteo Air Quality Import | Open-Meteo 7 air quality variables (PM2.5, PM10, ozone, NO2, SO2, CO, AQI) |
 | cloud | S3 Parquet Export | Pydantic models, pandas transform, parquet write to S3 (RustFS) |
 | cloud | DHIS2 GeoParquet Export | GeoDataFrame, GeoParquet, DHIS2 geometry to S3 |
 | cloud | WorldPop Dataset Catalog | Hierarchical REST API navigation, dataset discovery |

@@ -50,6 +50,7 @@ nav:
     - Climate Integration: climate-integration.md
     - ERA5-Land: era5-land.md
     - CHIRPS: chirps.md
+    - Open-Meteo: openmeteo.md
     - GeoTIFF Format: geotiff-format.md
     - ISO3 Country Codes: iso3-country-codes.md
     - xarray and rioxarray: xarray-rioxarray-guide.md
