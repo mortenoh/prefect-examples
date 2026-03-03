@@ -266,15 +266,17 @@ def test_import_to_dhis2_empty() -> None:
     mock_client.post_data_values.assert_not_called()
 
 
-def test_sharing_default_enables_data_capture() -> None:
+def test_sharing_defaults() -> None:
+    # Data sets support data sharing -- default is metadata rw + data read-only
     ds = Dhis2DataSet(id="x", name="x", shortName="x")
     payload = ds.model_dump()
     assert payload["sharing"]["public"] == "rwr-----"
     assert payload["sharing"]["external"] is False
 
+    # Data elements only support metadata sharing -- no data access positions
     de = Dhis2DataElement(id="x", name="x", shortName="x")
     payload = de.model_dump()
-    assert payload["sharing"]["public"] == "rwr-----"
+    assert payload["sharing"]["public"] == "rw------"
     assert payload["sharing"]["external"] is False
 
 

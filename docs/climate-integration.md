@@ -41,9 +41,11 @@ All import flows follow the same structure:
 
 1. **`ensure_dhis2_metadata`** -- Create/update DHIS2 data elements,
    data sets, and (optionally) category combos. All metadata objects
-   include a `sharing` property defaulting to `rwr-----` (metadata
-   read/write, data read-only) so imported data is publicly visible
-   but cannot be modified without explicit permission.
+   include a `sharing` property: data sets default to `rwr-----`
+   (metadata read/write, data read-only) so imported data is publicly
+   visible but cannot be modified without explicit permission; data
+   elements default to `rw------` (metadata read/write only, as DHIS2
+   does not support data-level sharing on data elements).
 2. **Download rasters** -- Fetch data from the source (CDS API, HTTP, etc.)
 3. **Compute zonal stats** -- One task per org unit
 4. **Build data values** -- Convert results to DHIS2 DataValueSet format

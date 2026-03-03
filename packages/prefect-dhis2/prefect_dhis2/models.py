@@ -54,9 +54,15 @@ class Dhis2CategoryCombo(BaseModel):
 
 
 class Dhis2Sharing(BaseModel):
-    """DHIS2 sharing/access control settings."""
+    """DHIS2 sharing/access control settings.
 
-    public: str = Field(default="rwr-----", description="Public access string (metadata rw + data read-only)")
+    The access string is 8 characters: positions 1-2 control metadata access,
+    positions 3-4 control data access, positions 5-8 are reserved.
+    Data sharing (positions 3-4) is only supported on data sets -- data
+    elements must use metadata-only access (``rw------``).
+    """
+
+    public: str = Field(default="rw------", description="Public access string (metadata rw)")
     external: bool = Field(default=False, description="External access")
 
 
@@ -88,7 +94,10 @@ class Dhis2DataSet(BaseModel):
     periodType: str = Field(default="Yearly", description="Period type")
     dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
     organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
-    sharing: Dhis2Sharing = Field(default_factory=Dhis2Sharing)
+    sharing: Dhis2Sharing = Field(
+        default_factory=lambda: Dhis2Sharing(public="rwr-----"),
+        description="Data sets support data sharing (metadata rw + data read-only)",
+    )
 
 
 class Dhis2MetadataPayload(BaseModel):
