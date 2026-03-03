@@ -19,20 +19,44 @@ estimates of atmospheric, land-surface, and soil variables at approximately
 
 ## Variables used
 
-The climate flow imports three variables from
-`reanalysis-era5-land-monthly-means`:
+The climate flow imports eight variables from
+`reanalysis-era5-land-monthly-means` and produces seven climate
+indicators per org unit per month:
+
+### Downloaded variables and unit conversions
 
 | Variable | CDS variable | NetCDF col | Raw units | Target | Conversion |
 |----------|-------------|-----------|-----------|--------|------------|
 | Temperature | `2m_temperature` | `t2m` | Kelvin | Celsius | `value - 273.15` |
 | Precipitation | `total_precipitation` | `tp` | m/day (mean daily rate) | mm/month | `value * days * 1000` |
 | Dewpoint | `2m_dewpoint_temperature` | `d2m` | Kelvin | Celsius | `value - 273.15` |
+| Wind U | `10m_u_component_of_wind` | `u10` | m/s | m/s | none |
+| Wind V | `10m_v_component_of_wind` | `v10` | m/s | m/s | none |
+| Skin temperature | `skin_temperature` | `skt` | Kelvin | Celsius | `value - 273.15` |
+| Solar radiation | `surface_solar_radiation_downwards` | `ssrd` | J/m2/day | W/m2 | `value / 86400` |
+| Soil moisture | `volumetric_soil_water_layer_1` | `swvl1` | m3/m3 | m3/m3 | none |
 
-Relative humidity is derived from temperature (T) and dewpoint (Td) in
+### Derived variables
+
+**Relative humidity** is derived from temperature (T) and dewpoint (Td) in
 Celsius using the Magnus formula:
 
 ```
 RH = 100 * exp(17.625 * Td / (243.04 + Td)) / exp(17.625 * T / (243.04 + T))
+```
+
+**Wind speed** is derived from the eastward (u) and northward (v) wind
+components at 10 m height:
+
+```
+WS = sqrt(u10^2 + v10^2)
+```
+
+**Solar radiation** is converted from daily energy (J/m2) to mean daily
+irradiance (W/m2). Since 1 watt = 1 joule per second:
+
+```
+W/m2 = J/m2/day / 86400 s/day
 ```
 
 ### Available ERA5-Land variables
@@ -95,8 +119,18 @@ format conversion transparently.
 ```python
 import earthkit.data
 
-# Request multiple variables in separate calls
-for variable in ["2m_temperature", "total_precipitation", "2m_dewpoint_temperature"]:
+# Request each variable in a separate CDS call
+variables = [
+    "2m_temperature",
+    "total_precipitation",
+    "2m_dewpoint_temperature",
+    "10m_u_component_of_wind",
+    "10m_v_component_of_wind",
+    "skin_temperature",
+    "surface_solar_radiation_downwards",
+    "volumetric_soil_water_layer_1",
+]
+for variable in variables:
     ds = earthkit.data.from_source(
         "cds",
         "reanalysis-era5-land-monthly-means",
@@ -114,12 +148,12 @@ for variable in ["2m_temperature", "total_precipitation", "2m_dewpoint_temperatu
 
 1. Fetch org unit geometries from DHIS2
 2. Compute bounding box from org unit extents
-3. Download ERA5-Land monthly temperature, precipitation, and dewpoint
-4. Convert units (Kelvin to Celsius, m to mm/month)
+3. Download 8 ERA5-Land monthly variables (temp, precip, dewpoint, wind u/v, skin temp, solar rad, soil moisture)
+4. Convert units (K to C, m to mm/month, J/m2 to W/m2)
 5. Save each month as GeoTIFF (one per variable)
 6. Compute zonal mean per org unit per month
-7. Derive relative humidity from temperature and dewpoint
-8. Import monthly values into DHIS2 (period format: `YYYYMM`)
+7. Derive relative humidity (Magnus formula) and wind speed (vector magnitude)
+8. Import 7 monthly indicators into DHIS2 (period format: `YYYYMM`)
 
 ### DHIS2 data model
 
@@ -128,7 +162,25 @@ Data Set: PR: ERA5: Climate (PfE5ClmSet1)
   |- Data Element: PR: ERA5: Mean Temperature    (PfE5TmpEst1)
   |- Data Element: PR: ERA5: Total Precipitation (PfE5PrcEst1)
   |- Data Element: PR: ERA5: Relative Humidity   (PfE5HumEst1)
+  |- Data Element: PR: ERA5: Wind Speed          (PfE5WndEst1)
+  |- Data Element: PR: ERA5: Skin Temperature    (PfE5SknEst1)
+  |- Data Element: PR: ERA5: Solar Radiation     (PfE5RadEst1)
+  |- Data Element: PR: ERA5: Soil Moisture       (PfE5SoiEst1)
 ```
+
+### Health relevance
+
+Each variable supports specific health surveillance use cases:
+
+| Variable | Health relevance |
+|----------|-----------------|
+| **Temperature** | Heat-related illness, malaria transmission windows (optimal 20-30 C) |
+| **Precipitation** | Waterborne disease risk, flooding, mosquito breeding habitat |
+| **Relative humidity** | Pathogen survival and airborne transmission, respiratory illness |
+| **Wind speed** | Disease vector dispersal (malaria, dengue mosquitoes), air quality |
+| **Skin temperature** | Urban heat islands, heat stress assessment, land surface conditions |
+| **Solar radiation** | UV exposure risk, vitamin D synthesis, evapotranspiration driver |
+| **Soil moisture** | Waterborne disease risk, agricultural health, flood prediction |
 
 ## References
 

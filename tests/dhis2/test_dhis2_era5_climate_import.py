@@ -21,7 +21,7 @@ sys.modules["dhis2_era5_climate_import"] = _mod
 _spec.loader.exec_module(_mod)
 
 from prefect_climate import ClimateQuery, ImportResult  # noqa: E402
-from prefect_climate.era5 import relative_humidity  # noqa: E402
+from prefect_climate.era5 import relative_humidity, wind_speed  # noqa: E402
 from prefect_climate.zonal import bounding_box  # noqa: E402
 from prefect_dhis2 import (  # noqa: E402
     DataValue,
@@ -43,6 +43,10 @@ dhis2_era5_climate_import_flow = _mod.dhis2_era5_climate_import_flow
 TEMPERATURE_DE_UID = _mod.TEMPERATURE_DE_UID
 PRECIPITATION_DE_UID = _mod.PRECIPITATION_DE_UID
 HUMIDITY_DE_UID = _mod.HUMIDITY_DE_UID
+WIND_SPEED_DE_UID = _mod.WIND_SPEED_DE_UID
+SKIN_TEMP_DE_UID = _mod.SKIN_TEMP_DE_UID
+SOLAR_RAD_DE_UID = _mod.SOLAR_RAD_DE_UID
+SOIL_MOISTURE_DE_UID = _mod.SOIL_MOISTURE_DE_UID
 DATA_SET_UID = _mod.DATA_SET_UID
 
 # ---------------------------------------------------------------------------
@@ -182,6 +186,39 @@ def test_precipitation_conversion() -> None:
     assert result == pytest.approx(290.0)
 
 
+def test_wind_speed() -> None:
+    """Verify wind speed derivation: WS = sqrt(u^2 + v^2)."""
+    # Classic 3-4-5 right triangle
+    assert wind_speed(3.0, 4.0) == pytest.approx(5.0)
+
+    # Zero wind
+    assert wind_speed(0.0, 0.0) == pytest.approx(0.0)
+
+    # Pure eastward wind (v=0)
+    assert wind_speed(7.5, 0.0) == pytest.approx(7.5)
+
+    # Negative components (wind can blow in any direction)
+    assert wind_speed(-3.0, -4.0) == pytest.approx(5.0)
+
+
+def test_solar_radiation_conversion() -> None:
+    """Verify solar radiation conversion: J/m2/day -> W/m2.
+
+    ERA5-Land monthly means provide the mean daily energy flux in J/m2.
+    Dividing by 86400 (seconds per day) gives mean irradiance in W/m2.
+    1 W = 1 J/s, so J/m2 / 86400 s = W/m2.
+    """
+    # 86400 J/m2/day should be exactly 1.0 W/m2
+    raw_value = 86400.0  # J/m2/day
+    result = raw_value / 86400
+    assert result == pytest.approx(1.0)
+
+    # Typical tropical monthly mean: ~18 MJ/m2/day = ~208 W/m2
+    raw_value = 18_000_000.0  # J/m2/day
+    result = raw_value / 86400
+    assert result == pytest.approx(208.333, rel=1e-3)
+
+
 # ---------------------------------------------------------------------------
 # Task tests
 # ---------------------------------------------------------------------------
@@ -206,20 +243,24 @@ def test_ensure_dhis2_metadata() -> None:
     assert payload.get("categoryOptions", []) == []
     assert payload.get("categories", []) == []
     assert payload.get("categoryCombos", []) == []
-    # 3 data elements for temperature, precipitation, humidity
-    assert len(payload["dataElements"]) == 3
+    # 7 data elements for all climate variables
+    assert len(payload["dataElements"]) == 7
     de_names = {de["name"] for de in payload["dataElements"]}
     assert de_names == {
         "PR: ERA5: Mean Temperature",
         "PR: ERA5: Total Precipitation",
         "PR: ERA5: Relative Humidity",
+        "PR: ERA5: Wind Speed",
+        "PR: ERA5: Skin Temperature",
+        "PR: ERA5: Solar Radiation",
+        "PR: ERA5: Soil Moisture",
     }
-    # 1 unified data set with 3 data set elements
+    # 1 unified data set with 7 data set elements
     assert len(payload["dataSets"]) == 1
     ds = payload["dataSets"][0]
     assert ds["name"] == "PR: ERA5: Climate"
     assert ds["periodType"] == "Monthly"
-    assert len(ds["dataSetElements"]) == 3
+    assert len(ds["dataSetElements"]) == 7
 
 
 def test_ensure_dhis2_metadata_no_polygon() -> None:
@@ -232,43 +273,92 @@ def test_ensure_dhis2_metadata_no_polygon() -> None:
 
 @patch("dhis2_era5_climate_import.zonal_mean")
 @patch("dhis2_era5_climate_import.relative_humidity")
-def test_compute_climate(mock_rh: MagicMock, mock_zonal: MagicMock) -> None:
-    # zonal_mean returns different values for temp, precip, dewpoint
+@patch("dhis2_era5_climate_import.wind_speed")
+def test_compute_climate(mock_ws: MagicMock, mock_rh: MagicMock, mock_zonal: MagicMock) -> None:
+    # zonal_mean is called 8 times per month:
+    #   temp, precip, dewpoint, wind_u, wind_v, skin_temp, solar_rad, soil_moisture
     mock_zonal.side_effect = [
-        25.3,
-        142.0,
-        20.1,  # month 1: temp, precip, dewpoint
-        26.1,
-        98.5,
-        21.0,  # month 2: temp, precip, dewpoint
-        27.5,
-        55.0,
-        22.3,  # month 3: temp, precip, dewpoint
+        # month 1
+        25.3,  # temp
+        142.0,  # precip
+        20.1,  # dewpoint
+        3.0,  # wind u (m/s, eastward)
+        4.0,  # wind v (m/s, northward)
+        30.2,  # skin temperature (Celsius)
+        215.0,  # solar radiation (W/m2)
+        0.25,  # soil moisture (m3/m3)
+        # month 2
+        26.1,  # temp
+        98.5,  # precip
+        21.0,  # dewpoint
+        2.5,  # wind u
+        3.5,  # wind v
+        31.0,  # skin temp
+        220.0,  # solar rad
+        0.22,  # soil moisture
+        # month 3
+        27.5,  # temp
+        55.0,  # precip
+        22.3,  # dewpoint
+        1.0,  # wind u
+        2.0,  # wind v
+        32.5,  # skin temp
+        230.0,  # solar rad
+        0.18,  # soil moisture
     ]
     mock_rh.return_value = 74.5
+    mock_ws.return_value = 5.0
 
     ou = OrgUnitGeo(
         id="ROOT_OU",
         name="Freetown",
         geometry=SAMPLE_OU_WITH_GEOM[0]["geometry"],
     )
-    temp_rasters = {1: Path("temp_01.tif"), 2: Path("temp_02.tif"), 3: Path("temp_03.tif")}
-    precip_rasters = {1: Path("precip_01.tif"), 2: Path("precip_02.tif"), 3: Path("precip_03.tif")}
-    dewpoint_rasters = {1: Path("dew_01.tif"), 2: Path("dew_02.tif"), 3: Path("dew_03.tif")}
+    months_range = {1: Path("01.tif"), 2: Path("02.tif"), 3: Path("03.tif")}
+    temp_rasters = {m: Path(f"temp_{m:02d}.tif") for m in months_range}
+    precip_rasters = {m: Path(f"precip_{m:02d}.tif") for m in months_range}
+    dewpoint_rasters = {m: Path(f"dew_{m:02d}.tif") for m in months_range}
+    wind_u_rasters = {m: Path(f"u10_{m:02d}.tif") for m in months_range}
+    wind_v_rasters = {m: Path(f"v10_{m:02d}.tif") for m in months_range}
+    skin_temp_rasters = {m: Path(f"skt_{m:02d}.tif") for m in months_range}
+    solar_rad_rasters = {m: Path(f"ssrd_{m:02d}.tif") for m in months_range}
+    soil_moisture_rasters = {m: Path(f"swvl1_{m:02d}.tif") for m in months_range}
 
-    result = compute_climate.fn(ou, temp_rasters, precip_rasters, dewpoint_rasters)
+    result = compute_climate.fn(
+        ou,
+        temp_rasters,
+        precip_rasters,
+        dewpoint_rasters,
+        wind_u_rasters,
+        wind_v_rasters,
+        skin_temp_rasters,
+        solar_rad_rasters,
+        soil_moisture_rasters,
+    )
 
-    assert "temperature" in result
-    assert "precipitation" in result
-    assert "humidity" in result
-    assert len(result["temperature"]) == 3
-    assert len(result["precipitation"]) == 3
-    assert len(result["humidity"]) == 3
+    # All 7 output keys present
+    assert set(result.keys()) == {
+        "temperature",
+        "precipitation",
+        "humidity",
+        "wind_speed",
+        "skin_temperature",
+        "solar_radiation",
+        "soil_moisture",
+    }
+    for key in result:
+        assert len(result[key]) == 3
+
     assert result["temperature"][1] == 25.3
     assert result["precipitation"][1] == 142.0
     assert result["humidity"][1] == 74.5
-    assert mock_zonal.call_count == 9  # 3 vars * 3 months
+    assert result["wind_speed"][1] == 5.0
+    assert result["skin_temperature"][1] == 30.2
+    assert result["solar_radiation"][1] == 215.0
+    assert result["soil_moisture"][1] == 0.25
+    assert mock_zonal.call_count == 24  # 8 zonal_mean calls * 3 months
     assert mock_rh.call_count == 3
+    assert mock_ws.call_count == 3
 
 
 def test_build_data_values() -> None:
@@ -277,16 +367,28 @@ def test_build_data_values() -> None:
         "temperature": {1: 25.3, 2: 26.1, 3: 27.5},
         "precipitation": {1: 142.0, 2: 98.5, 3: 55.0},
         "humidity": {1: 74.5, 2: 78.2, 3: 65.1},
+        "wind_speed": {1: 5.0, 2: 4.3, 3: 2.2},
+        "skin_temperature": {1: 30.2, 2: 31.0, 3: 32.5},
+        "solar_radiation": {1: 215.0, 2: 220.0, 3: 230.0},
+        "soil_moisture": {1: 0.25, 2: 0.22, 3: 0.18},
     }
     dvs = build_data_values.fn([(ou, climate_data)], 2024)
 
     assert isinstance(dvs, Dhis2DataValueSet)
-    assert len(dvs.dataValues) == 9  # 3 vars * 3 months
+    assert len(dvs.dataValues) == 21  # 7 vars * 3 months
     periods = {dv.period for dv in dvs.dataValues}
     assert periods == {"202401", "202402", "202403"}
 
     de_uids = {dv.dataElement for dv in dvs.dataValues}
-    assert de_uids == {TEMPERATURE_DE_UID, PRECIPITATION_DE_UID, HUMIDITY_DE_UID}
+    assert de_uids == {
+        TEMPERATURE_DE_UID,
+        PRECIPITATION_DE_UID,
+        HUMIDITY_DE_UID,
+        WIND_SPEED_DE_UID,
+        SKIN_TEMP_DE_UID,
+        SOLAR_RAD_DE_UID,
+        SOIL_MOISTURE_DE_UID,
+    }
 
     for dv in dvs.dataValues:
         assert dv.orgUnit == "ROOT_OU"
@@ -299,10 +401,14 @@ def test_build_data_values_multiple_org_units() -> None:
         "temperature": {m: 20.0 + m for m in range(1, 13)},
         "precipitation": {m: 100.0 + m for m in range(1, 13)},
         "humidity": {m: 70.0 + m for m in range(1, 13)},
+        "wind_speed": {m: 3.0 + m * 0.1 for m in range(1, 13)},
+        "skin_temperature": {m: 25.0 + m for m in range(1, 13)},
+        "solar_radiation": {m: 200.0 + m for m in range(1, 13)},
+        "soil_moisture": {m: 0.2 + m * 0.01 for m in range(1, 13)},
     }
     dvs = build_data_values.fn([(ou1, climate_data), (ou2, climate_data)], 2024)
-    # 3 vars * 12 months * 2 org units = 72
-    assert len(dvs.dataValues) == 72
+    # 7 vars * 12 months * 2 org units = 168
+    assert len(dvs.dataValues) == 168
 
 
 def test_import_to_dhis2() -> None:
@@ -366,11 +472,13 @@ def test_sharing_defaults() -> None:
 
 @patch("dhis2_era5_climate_import.zonal_mean")
 @patch("dhis2_era5_climate_import.relative_humidity")
+@patch("dhis2_era5_climate_import.wind_speed")
 @patch("dhis2_era5_climate_import.fetch_era5_monthly")
 @patch.object(Dhis2Credentials, "get_client")
 def test_flow_runs(
     mock_get_client: MagicMock,
     mock_fetch_era5: MagicMock,
+    mock_ws: MagicMock,
     mock_rh: MagicMock,
     mock_zonal: MagicMock,
 ) -> None:
@@ -383,6 +491,7 @@ def test_flow_runs(
     mock_fetch_era5.return_value = {m: Path(f"era5_{m:02d}.tif") for m in range(1, 4)}
     mock_zonal.return_value = 25.0
     mock_rh.return_value = 75.0
+    mock_ws.return_value = 5.0
 
     state = dhis2_era5_climate_import_flow(
         query=ClimateQuery(iso3="SLE", year=2024, months=[1, 2, 3]),
@@ -395,9 +504,14 @@ def test_flow_runs(
     assert len(result.org_units) == 1
     assert result.org_units[0].id == "ROOT_OU"
 
-    # fetch_era5_monthly should be called 3 times (temp, precip, dewpoint)
-    assert mock_fetch_era5.call_count == 3
+    # fetch_era5_monthly should be called 8 times (one per CDS variable)
+    assert mock_fetch_era5.call_count == 8
     variables_called = [call.args[0] for call in mock_fetch_era5.call_args_list]
     assert "2m_temperature" in variables_called
     assert "total_precipitation" in variables_called
     assert "2m_dewpoint_temperature" in variables_called
+    assert "10m_u_component_of_wind" in variables_called
+    assert "10m_v_component_of_wind" in variables_called
+    assert "skin_temperature" in variables_called
+    assert "surface_solar_radiation_downwards" in variables_called
+    assert "volumetric_soil_water_layer_1" in variables_called

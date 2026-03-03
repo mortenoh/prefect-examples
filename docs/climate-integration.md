@@ -8,7 +8,7 @@ population raster data into DHIS2 using the `prefect-climate` package.
 | Source | Package module | Resolution | Variables |
 |--------|---------------|-----------|-----------|
 | WorldPop | `prefect_climate.worldpop` | ~100 m | Population (sex, age) |
-| ERA5-Land | `prefect_climate.era5` | ~9 km | Temperature, precipitation, humidity |
+| ERA5-Land | `prefect_climate.era5` | ~9 km | Temperature, precipitation, humidity, wind speed, skin temperature, solar radiation, soil moisture |
 | CHIRPS | `prefect_climate.chirps` | ~5 km | Rainfall |
 
 ## Architecture

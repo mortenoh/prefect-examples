@@ -1,9 +1,15 @@
 """DHIS2 ERA5-Land Monthly Climate Import.
 
-Downloads ERA5-Land monthly-mean 2m temperature, total precipitation, and 2m
-dewpoint temperature via earthkit-data. Computes zonal mean temperature and
-precipitation, derives relative humidity from temperature and dewpoint, and
-writes monthly values into DHIS2.
+Downloads ERA5-Land monthly-mean variables via earthkit-data and imports
+zonal statistics into DHIS2. Seven climate indicators are produced:
+
+1. **Mean temperature** (Celsius) -- from ``2m_temperature``
+2. **Total precipitation** (mm/month) -- from ``total_precipitation``
+3. **Relative humidity** (%) -- derived from temperature and dewpoint
+4. **Wind speed** (m/s) -- derived from ``10m_u/v_component_of_wind``
+5. **Skin temperature** (Celsius) -- from ``skin_temperature``
+6. **Solar radiation** (W/m2) -- from ``surface_solar_radiation_downwards``
+7. **Soil moisture** (m3/m3) -- from ``volumetric_soil_water_layer_1``
 
 Requires CDS API credentials set via environment variables:
 - ``CDSAPI_URL`` (default: ``https://cds.climate.copernicus.eu/api``)
@@ -24,6 +30,7 @@ from prefect_climate import (
     ImportResult,
     bounding_box,
     relative_humidity,
+    wind_speed,
     zonal_mean,
 )
 from prefect_climate.era5 import fetch_era5_monthly
@@ -46,9 +53,15 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-TEMPERATURE_DE_UID = "PfE5TmpEst1"
-PRECIPITATION_DE_UID = "PfE5PrcEst1"
-HUMIDITY_DE_UID = "PfE5HumEst1"
+# Data element UIDs -- one per climate variable imported into DHIS2.
+TEMPERATURE_DE_UID = "PfE5TmpEst1"  # Mean 2 m air temperature (Celsius)
+PRECIPITATION_DE_UID = "PfE5PrcEst1"  # Total precipitation (mm/month)
+HUMIDITY_DE_UID = "PfE5HumEst1"  # Relative humidity (%)
+WIND_SPEED_DE_UID = "PfE5WndEst1"  # Wind speed at 10 m (m/s)
+SKIN_TEMP_DE_UID = "PfE5SknEst1"  # Land surface / skin temperature (Celsius)
+SOLAR_RAD_DE_UID = "PfE5RadEst1"  # Surface solar radiation downwards (W/m2)
+SOIL_MOISTURE_DE_UID = "PfE5SoiEst1"  # Volumetric soil water layer 1 (m3/m3)
+
 DATA_SET_UID = "PfE5ClmSet1"
 
 
@@ -64,7 +77,8 @@ def ensure_dhis2_metadata(
 ) -> list[OrgUnitGeo]:
     """Ensure data elements and data set exist; return org units with geometry.
 
-    Creates three data elements (temperature, precipitation, humidity) and one
+    Creates seven data elements (temperature, precipitation, humidity,
+    wind speed, skin temperature, solar radiation, soil moisture) and one
     unified climate data set. No category combos needed -- monthly periods
     handle the time dimension.
 
@@ -112,6 +126,26 @@ def ensure_dhis2_metadata(
                 name="PR: ERA5: Relative Humidity",
                 shortName="PR: ERA5: Rel Humidity",
             ),
+            Dhis2DataElement(
+                id=WIND_SPEED_DE_UID,
+                name="PR: ERA5: Wind Speed",
+                shortName="PR: ERA5: Wind Speed",
+            ),
+            Dhis2DataElement(
+                id=SKIN_TEMP_DE_UID,
+                name="PR: ERA5: Skin Temperature",
+                shortName="PR: ERA5: Skin Temp",
+            ),
+            Dhis2DataElement(
+                id=SOLAR_RAD_DE_UID,
+                name="PR: ERA5: Solar Radiation",
+                shortName="PR: ERA5: Solar Rad",
+            ),
+            Dhis2DataElement(
+                id=SOIL_MOISTURE_DE_UID,
+                name="PR: ERA5: Soil Moisture",
+                shortName="PR: ERA5: Soil Moisture",
+            ),
         ],
         dataSets=[
             Dhis2DataSet(
@@ -123,6 +157,10 @@ def ensure_dhis2_metadata(
                     Dhis2DataSetElement(dataElement=Dhis2Ref(id=TEMPERATURE_DE_UID)),
                     Dhis2DataSetElement(dataElement=Dhis2Ref(id=PRECIPITATION_DE_UID)),
                     Dhis2DataSetElement(dataElement=Dhis2Ref(id=HUMIDITY_DE_UID)),
+                    Dhis2DataSetElement(dataElement=Dhis2Ref(id=WIND_SPEED_DE_UID)),
+                    Dhis2DataSetElement(dataElement=Dhis2Ref(id=SKIN_TEMP_DE_UID)),
+                    Dhis2DataSetElement(dataElement=Dhis2Ref(id=SOLAR_RAD_DE_UID)),
+                    Dhis2DataSetElement(dataElement=Dhis2Ref(id=SOIL_MOISTURE_DE_UID)),
                 ],
                 organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
             ),
@@ -180,37 +218,76 @@ def compute_climate(
     temp_rasters: dict[int, Path],
     precip_rasters: dict[int, Path],
     dewpoint_rasters: dict[int, Path],
+    wind_u_rasters: dict[int, Path],
+    wind_v_rasters: dict[int, Path],
+    skin_temp_rasters: dict[int, Path],
+    solar_rad_rasters: dict[int, Path],
+    soil_moisture_rasters: dict[int, Path],
 ) -> dict[str, dict[int, float]]:
     """Compute zonal climate stats for each month.
 
-    Computes mean temperature, total precipitation, and derives relative
-    humidity from temperature and dewpoint using the Magnus formula.
+    For each month and org unit, computes the spatial mean of each raster
+    variable over the org unit polygon. Two variables are derived:
+
+    - **Relative humidity** (%): from temperature and dewpoint via Magnus formula
+    - **Wind speed** (m/s): from u and v components via ``sqrt(u^2 + v^2)``
+
+    The remaining five variables (temperature, precipitation, skin temperature,
+    solar radiation, soil moisture) are direct zonal means of their
+    already-converted rasters.
 
     Args:
         org_unit: Organisation unit with polygon geometry.
-        temp_rasters: Temperature GeoTIFFs per month.
-        precip_rasters: Precipitation GeoTIFFs per month.
-        dewpoint_rasters: Dewpoint GeoTIFFs per month.
+        temp_rasters: 2 m air temperature (Celsius) GeoTIFFs per month.
+        precip_rasters: Total precipitation (mm/month) GeoTIFFs per month.
+        dewpoint_rasters: 2 m dewpoint temperature (Celsius) GeoTIFFs per month.
+        wind_u_rasters: Eastward 10 m wind component (m/s) GeoTIFFs per month.
+        wind_v_rasters: Northward 10 m wind component (m/s) GeoTIFFs per month.
+        skin_temp_rasters: Land surface temperature (Celsius) GeoTIFFs per month.
+        solar_rad_rasters: Downward solar radiation (W/m2) GeoTIFFs per month.
+        soil_moisture_rasters: Volumetric soil water layer 1 (m3/m3) per month.
 
     Returns:
         Dict with keys ``"temperature"``, ``"precipitation"``,
-        ``"humidity"``, each mapping month number to value.
+        ``"humidity"``, ``"wind_speed"``, ``"skin_temperature"``,
+        ``"solar_radiation"``, ``"soil_moisture"``, each mapping
+        month number to the computed value.
     """
     temperature: dict[int, float] = {}
     precipitation: dict[int, float] = {}
     humidity: dict[int, float] = {}
+    ws: dict[int, float] = {}
+    skin_temp: dict[int, float] = {}
+    solar_rad: dict[int, float] = {}
+    soil_moisture: dict[int, float] = {}
 
     months = sorted(temp_rasters.keys())
     for month in months:
+        # Direct zonal means (units already converted at download time)
         temp_val = zonal_mean(temp_rasters[month], org_unit.geometry)
         temperature[month] = round(temp_val, 1)
 
         precip_val = zonal_mean(precip_rasters[month], org_unit.geometry)
         precipitation[month] = round(precip_val, 1)
 
+        # Relative humidity: derived from temperature and dewpoint
         dewpoint_val = zonal_mean(dewpoint_rasters[month], org_unit.geometry)
         rh = relative_humidity(temp_val, dewpoint_val)
         humidity[month] = round(rh, 1)
+
+        # Wind speed: derived from u and v component zonal means
+        u_val = zonal_mean(wind_u_rasters[month], org_unit.geometry)
+        v_val = zonal_mean(wind_v_rasters[month], org_unit.geometry)
+        ws[month] = round(wind_speed(u_val, v_val), 1)
+
+        # Skin temperature: land surface temperature (Celsius)
+        skin_temp[month] = round(zonal_mean(skin_temp_rasters[month], org_unit.geometry), 1)
+
+        # Solar radiation: mean daily irradiance (W/m2)
+        solar_rad[month] = round(zonal_mean(solar_rad_rasters[month], org_unit.geometry), 1)
+
+        # Soil moisture: volumetric fraction (m3/m3), 3 decimal places
+        soil_moisture[month] = round(zonal_mean(soil_moisture_rasters[month], org_unit.geometry), 3)
 
     print(
         f"{org_unit.name}: {len(months)} months, "
@@ -222,6 +299,10 @@ def compute_climate(
         "temperature": temperature,
         "precipitation": precipitation,
         "humidity": humidity,
+        "wind_speed": ws,
+        "skin_temperature": skin_temp,
+        "solar_radiation": solar_rad,
+        "soil_moisture": soil_moisture,
     }
 
 
@@ -246,6 +327,10 @@ def build_data_values(
         "temperature": TEMPERATURE_DE_UID,
         "precipitation": PRECIPITATION_DE_UID,
         "humidity": HUMIDITY_DE_UID,
+        "wind_speed": WIND_SPEED_DE_UID,
+        "skin_temperature": SKIN_TEMP_DE_UID,
+        "solar_radiation": SOLAR_RAD_DE_UID,
+        "soil_moisture": SOIL_MOISTURE_DE_UID,
     }
 
     values: list[DataValue] = []
@@ -349,10 +434,9 @@ def dhis2_era5_climate_import_flow(
 ) -> ImportResult:
     """Fetch ERA5-Land monthly climate data and import into DHIS2.
 
-    Downloads ERA5-Land 2m temperature, total precipitation, and 2m dewpoint
-    temperature via earthkit-data. Computes zonal mean temperature and
-    precipitation, derives relative humidity, and writes monthly values into
-    DHIS2.
+    Downloads 8 ERA5-Land variables via earthkit-data, computes zonal means
+    per org unit, derives relative humidity and wind speed, and writes
+    7 monthly climate indicators into DHIS2.
 
     Args:
         query: Query parameters (iso3, org_unit_level, year, months).
@@ -375,31 +459,34 @@ def dhis2_era5_climate_import_flow(
 
     cache_dir = Path(tempfile.gettempdir()) / "era5_climate"
 
-    temp_rasters = download_era5_variable(
-        "2m_temperature",
-        query.year,
-        query.months,
-        area,
-        cache_dir,
-    )
-    precip_rasters = download_era5_variable(
-        "total_precipitation",
-        query.year,
-        query.months,
-        area,
-        cache_dir,
-    )
-    dewpoint_rasters = download_era5_variable(
-        "2m_dewpoint_temperature",
-        query.year,
-        query.months,
-        area,
-        cache_dir,
-    )
+    # -- Download ERA5-Land variables ----------------------------------------
+    # Each call fetches one CDS variable for all requested months and saves
+    # per-month GeoTIFFs.  Unit conversions happen inside fetch_era5_monthly.
+    download_args = (query.year, query.months, area, cache_dir)
 
+    temp_rasters = download_era5_variable("2m_temperature", *download_args)
+    precip_rasters = download_era5_variable("total_precipitation", *download_args)
+    dewpoint_rasters = download_era5_variable("2m_dewpoint_temperature", *download_args)
+    wind_u_rasters = download_era5_variable("10m_u_component_of_wind", *download_args)
+    wind_v_rasters = download_era5_variable("10m_v_component_of_wind", *download_args)
+    skin_temp_rasters = download_era5_variable("skin_temperature", *download_args)
+    solar_rad_rasters = download_era5_variable("surface_solar_radiation_downwards", *download_args)
+    soil_moisture_rasters = download_era5_variable("volumetric_soil_water_layer_1", *download_args)
+
+    # -- Compute zonal stats per org unit ------------------------------------
     climate_results: list[tuple[OrgUnitGeo, dict[str, dict[int, float]]]] = []
     for ou in org_units:
-        climate_data = compute_climate(ou, temp_rasters, precip_rasters, dewpoint_rasters)
+        climate_data = compute_climate(
+            ou,
+            temp_rasters,
+            precip_rasters,
+            dewpoint_rasters,
+            wind_u_rasters,
+            wind_v_rasters,
+            skin_temp_rasters,
+            solar_rad_rasters,
+            soil_moisture_rasters,
+        )
         climate_results.append((ou, climate_data))
 
     data_value_set = build_data_values(climate_results, query.year)
