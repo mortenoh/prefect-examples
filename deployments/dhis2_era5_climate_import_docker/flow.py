@@ -115,36 +115,58 @@ def ensure_dhis2_metadata(
                 id=TEMPERATURE_DE_UID,
                 name="PR: ERA5: Mean Temperature",
                 shortName="PR: ERA5: Mean Temp",
+                description="Monthly mean 2 m air temperature from ERA5-Land reanalysis. Unit: degrees Celsius (C).",
             ),
             Dhis2DataElement(
                 id=PRECIPITATION_DE_UID,
                 name="PR: ERA5: Total Precipitation",
                 shortName="PR: ERA5: Total Precip",
+                description="Monthly total precipitation from ERA5-Land reanalysis. Unit: millimetres (mm).",
             ),
             Dhis2DataElement(
                 id=HUMIDITY_DE_UID,
                 name="PR: ERA5: Relative Humidity",
                 shortName="PR: ERA5: Rel Humidity",
+                description=(
+                    "Monthly mean relative humidity derived from 2 m temperature"
+                    " and dewpoint using the Magnus formula. Unit: percent (%)."
+                ),
             ),
             Dhis2DataElement(
                 id=WIND_SPEED_DE_UID,
                 name="PR: ERA5: Wind Speed",
                 shortName="PR: ERA5: Wind Speed",
+                description=(
+                    "Monthly mean wind speed at 10 m height derived from u and v"
+                    " components (sqrt(u^2 + v^2)). Unit: metres per second (m/s)."
+                ),
             ),
             Dhis2DataElement(
                 id=SKIN_TEMP_DE_UID,
                 name="PR: ERA5: Skin Temperature",
                 shortName="PR: ERA5: Skin Temp",
+                description=(
+                    "Monthly mean land surface (skin) temperature from ERA5-Land reanalysis. Unit: degrees Celsius (C)."
+                ),
             ),
             Dhis2DataElement(
                 id=SOLAR_RAD_DE_UID,
                 name="PR: ERA5: Solar Radiation",
                 shortName="PR: ERA5: Solar Rad",
+                description=(
+                    "Monthly mean surface downward solar radiation from ERA5-Land"
+                    " reanalysis. Unit: watts per square metre (W/m2)."
+                ),
             ),
             Dhis2DataElement(
                 id=SOIL_MOISTURE_DE_UID,
                 name="PR: ERA5: Soil Moisture",
                 shortName="PR: ERA5: Soil Moisture",
+                description=(
+                    "Monthly mean volumetric soil water content in the top layer"
+                    " (0-7 cm) from ERA5-Land reanalysis."
+                    " Unit: cubic metres per cubic metre (m3/m3)."
+                ),
             ),
         ],
         dataSets=[
@@ -152,6 +174,11 @@ def ensure_dhis2_metadata(
                 id=DATA_SET_UID,
                 name="PR: ERA5: Climate",
                 shortName="PR: ERA5: Climate",
+                description=(
+                    "ERA5-Land monthly climate indicators for health surveillance:"
+                    " temperature, precipitation, humidity, wind speed,"
+                    " skin temperature, solar radiation, and soil moisture."
+                ),
                 periodType="Monthly",
                 dataSetElements=[
                     Dhis2DataSetElement(dataElement=Dhis2Ref(id=TEMPERATURE_DE_UID)),

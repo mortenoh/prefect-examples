@@ -85,6 +85,11 @@ def ensure_dhis2_metadata(
                 id=DATA_ELEMENT_UID,
                 name="PR: CHIRPS: Rainfall",
                 shortName="PR: CHIRPS: Rainfall",
+                description=(
+                    "Monthly total rainfall from CHIRPS v2.0 (Climate Hazards"
+                    " group InfraRed Precipitation with Station data)."
+                    " Unit: millimetres (mm)."
+                ),
             ),
         ],
         dataSets=[
@@ -92,6 +97,7 @@ def ensure_dhis2_metadata(
                 id=DATA_SET_UID,
                 name="PR: CHIRPS: Rainfall",
                 shortName="PR: CHIRPS: Rainfall",
+                description="CHIRPS v2.0 monthly rainfall estimates at ~5 km resolution for Africa.",
                 periodType="Monthly",
                 dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
                 organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],

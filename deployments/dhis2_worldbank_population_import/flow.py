@@ -48,6 +48,7 @@ class Dhis2DataElement(BaseModel):
     id: str = Field(description="Fixed UID")
     name: str = Field(description="Display name")
     shortName: str = Field(description="Short name")
+    description: str = Field(default="", description="Long description shown in DHIS2 UI")
     domainType: str = Field(default="AGGREGATE", description="AGGREGATE or TRACKER")
     valueType: str = Field(default="NUMBER", description="Value type")
     aggregationType: str = Field(default="SUM", description="Aggregation type")
@@ -65,6 +66,7 @@ class Dhis2DataSet(BaseModel):
     id: str = Field(description="Fixed UID")
     name: str = Field(description="Display name")
     shortName: str = Field(description="Short name")
+    description: str = Field(default="", description="Long description shown in DHIS2 UI")
     periodType: str = Field(default="Yearly", description="Period type")
     dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
     organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
@@ -145,11 +147,16 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
         id=DATA_ELEMENT_UID,
         name="PR: WB: Population",
         shortName="PR: WB: Population",
+        description=(
+            "Yearly total population from the World Bank World Development"
+            " Indicators (SP.POP.TOTL). Unit: number of people."
+        ),
     )
     data_set = Dhis2DataSet(
         id=DATA_SET_UID,
         name="PR: WB: Population",
         shortName="PR: WB: Population",
+        description="World Bank total population estimates by country and year.",
         periodType="Yearly",
         dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
         organisationUnits=[Dhis2Ref(id=org_unit.id)],

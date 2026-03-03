@@ -158,6 +158,11 @@ def ensure_dhis2_metadata(
                 id=DATA_ELEMENT_UID,
                 name="PR: AGE: Population",
                 shortName="PR: AGE: Population",
+                description=(
+                    "Yearly population estimate from WorldPop age-sex GeoTIFF,"
+                    " disaggregated by sex and 5-year age group."
+                    " Unit: number of people."
+                ),
                 categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
             ),
         ],
@@ -166,6 +171,10 @@ def ensure_dhis2_metadata(
                 id=DATA_SET_UID,
                 name="PR: AGE: Population",
                 shortName="PR: AGE: Population",
+                description=(
+                    "WorldPop age-sex population estimates at ~100 m resolution,"
+                    " disaggregated by sex and 5-year age group."
+                ),
                 dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
                 organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
             ),

@@ -43,6 +43,7 @@ class IndicatorConfig(BaseModel):
     de_uid: str = Field(description="DHIS2 data element UID")
     name: str = Field(description="Data element display name")
     shortName: str = Field(description="Data element short name")
+    description: str = Field(description="Data element description including unit")
 
 
 INDICATORS: list[IndicatorConfig] = [
@@ -51,45 +52,85 @@ INDICATORS: list[IndicatorConfig] = [
         de_uid="PfWbU5Mort1",
         name="PR: WB: Under-5 Mortality Rate",
         shortName="PR: WB: U5 Mortality",
+        description=(
+            "Yearly under-5 mortality rate from World Bank WDI (SH.DYN.MORT). Unit: deaths per 1,000 live births."
+        ),
     ),
     IndicatorConfig(
         wb_code="SP.DYN.IMRT.IN",
         de_uid="PfWbInfMrt1",
         name="PR: WB: Infant Mortality Rate",
         shortName="PR: WB: Inf Mortality",
+        description=(
+            "Yearly infant mortality rate from World Bank WDI (SP.DYN.IMRT.IN). Unit: deaths per 1,000 live births."
+        ),
     ),
     IndicatorConfig(
         wb_code="SH.STA.MMRT",
         de_uid="PfWbMatMrt1",
         name="PR: WB: Maternal Mortality Ratio",
         shortName="PR: WB: Mat Mortality",
+        description=(
+            "Yearly maternal mortality ratio from World Bank WDI (SH.STA.MMRT). Unit: deaths per 100,000 live births."
+        ),
     ),
     IndicatorConfig(
-        wb_code="SP.DYN.LE00.IN", de_uid="PfWbLifExp1", name="PR: WB: Life Expectancy", shortName="PR: WB: Life Expect"
+        wb_code="SP.DYN.LE00.IN",
+        de_uid="PfWbLifExp1",
+        name="PR: WB: Life Expectancy",
+        shortName="PR: WB: Life Expect",
+        description="Yearly life expectancy at birth from World Bank WDI (SP.DYN.LE00.IN). Unit: years.",
     ),
     IndicatorConfig(
         wb_code="SH.XPD.CHEX.GD.ZS",
         de_uid="PfWbHlthEx1",
         name="PR: WB: Health Expenditure % GDP",
         shortName="PR: WB: Hlth Expend",
+        description=(
+            "Yearly current health expenditure as share of GDP from World Bank"
+            " WDI (SH.XPD.CHEX.GD.ZS). Unit: percent (%)."
+        ),
     ),
     IndicatorConfig(
-        wb_code="SH.TBS.INCD", de_uid="PfWbTbIncd1", name="PR: WB: TB Incidence", shortName="PR: WB: TB Incidence"
+        wb_code="SH.TBS.INCD",
+        de_uid="PfWbTbIncd1",
+        name="PR: WB: TB Incidence",
+        shortName="PR: WB: TB Incidence",
+        description="Yearly tuberculosis incidence from World Bank WDI (SH.TBS.INCD). Unit: cases per 100,000 people.",
     ),
     IndicatorConfig(
         wb_code="SH.IMM.MEAS",
         de_uid="PfWbMeasIm1",
         name="PR: WB: Measles Immunization",
         shortName="PR: WB: Measles Imm",
+        description=(
+            "Yearly measles immunization coverage among children aged 12-23 months"
+            " from World Bank WDI (SH.IMM.MEAS). Unit: percent (%)."
+        ),
     ),
     IndicatorConfig(
-        wb_code="SH.STA.STNT.ZS", de_uid="PfWbStntPr1", name="PR: WB: Stunting Prevalence", shortName="PR: WB: Stunting"
+        wb_code="SH.STA.STNT.ZS",
+        de_uid="PfWbStntPr1",
+        name="PR: WB: Stunting Prevalence",
+        shortName="PR: WB: Stunting",
+        description=(
+            "Yearly stunting prevalence (height-for-age < -2 SD) among children"
+            " under 5 from World Bank WDI (SH.STA.STNT.ZS). Unit: percent (%)."
+        ),
     ),
     IndicatorConfig(
-        wb_code="SP.DYN.TFRT.IN", de_uid="PfWbFertRt1", name="PR: WB: Fertility Rate", shortName="PR: WB: Fertility"
+        wb_code="SP.DYN.TFRT.IN",
+        de_uid="PfWbFertRt1",
+        name="PR: WB: Fertility Rate",
+        shortName="PR: WB: Fertility",
+        description="Yearly total fertility rate from World Bank WDI (SP.DYN.TFRT.IN). Unit: births per woman.",
     ),
     IndicatorConfig(
-        wb_code="NY.GDP.PCAP.CD", de_uid="PfWbGdpPCp1", name="PR: WB: GDP Per Capita", shortName="PR: WB: GDP PCap"
+        wb_code="NY.GDP.PCAP.CD",
+        de_uid="PfWbGdpPCp1",
+        name="PR: WB: GDP Per Capita",
+        shortName="PR: WB: GDP PCap",
+        description="Yearly GDP per capita from World Bank WDI (NY.GDP.PCAP.CD). Unit: current US dollars (USD).",
     ),
 ]
 
@@ -106,6 +147,7 @@ class Dhis2DataElement(BaseModel):
     id: str = Field(description="Fixed UID")
     name: str = Field(description="Display name")
     shortName: str = Field(description="Short name")
+    description: str = Field(default="", description="Long description shown in DHIS2 UI")
     domainType: str = Field(default="AGGREGATE", description="AGGREGATE or TRACKER")
     valueType: str = Field(default="NUMBER", description="Value type")
     aggregationType: str = Field(default="SUM", description="Aggregation type")
@@ -123,6 +165,7 @@ class Dhis2DataSet(BaseModel):
     id: str = Field(description="Fixed UID")
     name: str = Field(description="Display name")
     shortName: str = Field(description="Short name")
+    description: str = Field(default="", description="Long description shown in DHIS2 UI")
     periodType: str = Field(default="Yearly", description="Period type")
     dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
     organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
@@ -204,6 +247,7 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
             id=ind.de_uid,
             name=ind.name,
             shortName=ind.shortName,
+            description=ind.description,
         )
         for ind in INDICATORS
     ]
@@ -212,6 +256,11 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> OrgUnit:
         id=DATA_SET_UID,
         name="PR: WB: World Bank Health Indicators",
         shortName="PR: WB: WB Health",
+        description=(
+            "World Bank World Development Indicators (WDI) for health surveillance:"
+            " mortality, life expectancy, immunization, disease incidence,"
+            " and economic indicators."
+        ),
         periodType="Yearly",
         dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=ind.de_uid)) for ind in INDICATORS],
         organisationUnits=[Dhis2Ref(id=org_unit.id)],

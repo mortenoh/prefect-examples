@@ -119,6 +119,10 @@ def ensure_dhis2_metadata(
                 id=DATA_ELEMENT_UID,
                 name="PR: GT: WorldPop GeoTIFF Population",
                 shortName="PR: GT: WP GeoTIFF Pop",
+                description=(
+                    "Yearly population estimate from WorldPop constrained"
+                    " GeoTIFF, disaggregated by sex. Unit: number of people."
+                ),
                 categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
             ),
         ],
@@ -127,6 +131,9 @@ def ensure_dhis2_metadata(
                 id=DATA_SET_UID,
                 name="PR: GT: WorldPop GeoTIFF Population",
                 shortName="PR: GT: WP GeoTIFF Pop",
+                description=(
+                    "WorldPop constrained GeoTIFF population estimates at ~100 m resolution, disaggregated by sex."
+                ),
                 dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
                 organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
             ),

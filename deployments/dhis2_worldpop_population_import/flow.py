@@ -85,6 +85,7 @@ class Dhis2DataElement(BaseModel):
     id: str = Field(description="Fixed UID")
     name: str = Field(description="Display name")
     shortName: str = Field(description="Short name")
+    description: str = Field(default="", description="Long description shown in DHIS2 UI")
     domainType: str = Field(default="AGGREGATE", description="AGGREGATE or TRACKER")
     valueType: str = Field(default="NUMBER", description="Value type")
     aggregationType: str = Field(default="SUM", description="Aggregation type")
@@ -103,6 +104,7 @@ class Dhis2DataSet(BaseModel):
     id: str = Field(description="Fixed UID")
     name: str = Field(description="Display name")
     shortName: str = Field(description="Short name")
+    description: str = Field(default="", description="Long description shown in DHIS2 UI")
     periodType: str = Field(default="Yearly", description="Period type")
     dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
     organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
@@ -226,6 +228,10 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
                 id=DATA_ELEMENT_UID,
                 name="PR: WP: WorldPop Population",
                 shortName="PR: WP: WP Pop",
+                description=(
+                    "Yearly population estimate from WorldPop constrained model,"
+                    " disaggregated by sex. Unit: number of people."
+                ),
                 categoryCombo=Dhis2Ref(id=CAT_COMBO_UID),
             ).model_dump(),
         ],
@@ -234,6 +240,10 @@ def ensure_dhis2_metadata(client: Dhis2Client) -> tuple[list[OrgUnitGeo], CocMap
                 id=DATA_SET_UID,
                 name="PR: WP: WorldPop Population",
                 shortName="PR: WP: WP Pop",
+                description=(
+                    "WorldPop constrained population estimates disaggregated"
+                    " by sex, using WorldPop API spatial queries."
+                ),
                 dataSetElements=[Dhis2DataSetElement(dataElement=Dhis2Ref(id=DATA_ELEMENT_UID))],
                 organisationUnits=[Dhis2Ref(id=ou.id) for ou in org_units],
             ).model_dump(),
