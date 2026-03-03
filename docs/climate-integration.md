@@ -8,7 +8,7 @@ population raster data into DHIS2 using the `prefect-climate` package.
 | Source | Package module | Resolution | Variables |
 |--------|---------------|-----------|-----------|
 | WorldPop | `prefect_climate.worldpop` | ~100 m | Population (sex, age) |
-| ERA5-Land | `prefect_climate.era5` | ~9 km | Temperature, precipitation, soil moisture |
+| ERA5-Land | `prefect_climate.era5` | ~9 km | Temperature, precipitation, humidity |
 | CHIRPS | `prefect_climate.chirps` | ~5 km | Rainfall |
 
 ## Architecture
@@ -41,9 +41,9 @@ All import flows follow the same structure:
 
 1. **`ensure_dhis2_metadata`** -- Create/update DHIS2 data elements,
    data sets, and (optionally) category combos. All metadata objects
-   include a `sharing` property: data sets default to `rwr-----`
-   (metadata read/write, data read-only) so imported data is publicly
-   visible but cannot be modified without explicit permission; data
+   include a `sharing` property: data sets default to `rwrw----`
+   (metadata read/write, data read/write) so imported data is publicly
+   visible and accessible in data entry; data
    elements default to `rw------` (metadata read/write only, as DHIS2
    does not support data-level sharing on data elements).
 2. **Download rasters** -- Fetch data from the source (CDS API, HTTP, etc.)

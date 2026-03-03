@@ -122,7 +122,7 @@ services they access:
 | Deployment | Required `.env` variables |
 |---|---|
 | All DHIS2 import flows | `DHIS2_BASE_URL`, `DHIS2_USERNAME`, `DHIS2_PASSWORD` |
-| `dhis2-era5-temperature-docker` | Above + `CDSAPI_KEY` |
+| `dhis2-era5-climate-docker` | Above + `CDSAPI_KEY` |
 
 `CDSAPI_KEY` is your Copernicus Climate Data Store API key
 (see [ERA5-Land](era5-land.md#cds-api-setup)). `CDSAPI_URL` defaults to

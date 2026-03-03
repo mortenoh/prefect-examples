@@ -111,10 +111,10 @@ services:
       PREFECT_API_URL: http://prefect-server:4200/api
     restart: unless-stopped
 
-  dhis2-era5-temperature-docker:
+  dhis2-era5-climate-docker:
     build:
       context: .
-      dockerfile: deployments/dhis2_era5_temperature_import_docker/Dockerfile
+      dockerfile: deployments/dhis2_era5_climate_import_docker/Dockerfile
     depends_on:
       prefect-server:
         condition: service_healthy

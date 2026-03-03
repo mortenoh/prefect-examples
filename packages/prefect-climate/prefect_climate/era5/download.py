@@ -1,8 +1,9 @@
-"""ERA5-Land monthly-mean temperature download via earthkit-data.
+"""ERA5-Land monthly-mean data download via earthkit-data.
 
 Uses the CDS (Climate Data Store) API through ``earthkit.data`` to fetch
-ERA5-Land monthly averaged 2m temperature. Results are converted from
-Kelvin to Celsius and saved as GeoTIFF files.
+ERA5-Land monthly averaged variables. Temperature and dewpoint are converted
+from Kelvin to Celsius; precipitation is converted from mean hourly rate (m)
+to monthly total (mm). Results are saved as GeoTIFF files.
 
 CDS credentials are read from environment variables by earthkit-data:
 - ``CDSAPI_URL`` (default: ``https://cds.climate.copernicus.eu/api``)
@@ -105,9 +106,18 @@ def fetch_era5_monthly(
         da: xr.DataArray = xds[var_name].sel({time_dim: time_sel})
 
         # Convert Kelvin to Celsius for temperature variables
-        if "temperature" in variable.lower() or var_name in ("t2m", "t2m_mean"):
+        if "temperature" in variable.lower() or var_name in ("t2m", "t2m_mean", "d2m"):
             da = da - KELVIN_OFFSET
             logger.info("Converted %s month %02d from K to C", var_name, month)
+
+        # Convert precipitation from mean daily rate (m/day) to monthly total (mm).
+        # ERA5-Land monthly means give the average daily total, not hourly.
+        if "precipitation" in variable.lower() or var_name in ("tp",):
+            import calendar
+
+            days_in_month = calendar.monthrange(year, month)[1]
+            da = da * days_in_month * 1000
+            logger.info("Converted %s month %02d from m/day to mm (%d days)", var_name, month, days_in_month)
 
         # Ensure CRS is set (ERA5 uses EPSG:4326)
         if da.rio.crs is None:

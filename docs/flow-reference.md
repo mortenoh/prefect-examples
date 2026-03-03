@@ -2752,7 +2752,7 @@ def dhis2_worldbank_health_import_flow(query: HealthQuery | None = None) -> Impo
 ```
 
 Four tasks form a pipeline: (1) ensure 10 data elements and 1 data set exist in
-DHIS2 with sharing set to `rwr-----` (metadata read/write, data read-only),
+DHIS2 with sharing set to `rwrw----` (metadata read/write, data read/write),
 (2) fetch each indicator from the World Bank API in a loop, (3) build data
 values mapping indicator results to DHIS2 data element UIDs, (4) POST all values
 in a single import. Covers indicators including under-5 mortality, life expectancy,
@@ -2781,8 +2781,8 @@ def dhis2_worldpop_population_import_flow(query: ImportQuery | None = None) -> I
 ```
 
 Four tasks form a pipeline: (1) ensure category options, category, category
-combo, data element, and data set exist in DHIS2 with sharing set to `rwr-----`
-(metadata read/write, data read-only) -- then resolve auto-generated
+combo, data element, and data set exist in DHIS2 with sharing set to `rwrw----`
+(metadata read/write, data read/write) -- then resolve auto-generated
 categoryOptionCombo UIDs, (2) query the WorldPop `wpgpas` API for each org unit
 polygon, summing M_0..M_16 for male and F_0..F_16 for female totals, (3) build
 data values with categoryOptionCombo disaggregation (2 per org unit), (4) POST

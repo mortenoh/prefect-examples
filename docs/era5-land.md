@@ -19,9 +19,21 @@ estimates of atmospheric, land-surface, and soil variables at approximately
 
 ## Variables used
 
-The flow imports **monthly averaged 2m temperature**
-(`reanalysis-era5-land-monthly-means`, variable `2m_temperature`). The raw
-data is in Kelvin; the pipeline converts to Celsius before import.
+The climate flow imports three variables from
+`reanalysis-era5-land-monthly-means`:
+
+| Variable | CDS variable | NetCDF col | Raw units | Target | Conversion |
+|----------|-------------|-----------|-----------|--------|------------|
+| Temperature | `2m_temperature` | `t2m` | Kelvin | Celsius | `value - 273.15` |
+| Precipitation | `total_precipitation` | `tp` | m/day (mean daily rate) | mm/month | `value * days * 1000` |
+| Dewpoint | `2m_dewpoint_temperature` | `d2m` | Kelvin | Celsius | `value - 273.15` |
+
+Relative humidity is derived from temperature (T) and dewpoint (Td) in
+Celsius using the Magnus formula:
+
+```
+RH = 100 * exp(17.625 * Td / (243.04 + Td)) / exp(17.625 * T / (243.04 + T))
+```
 
 ### Available ERA5-Land variables
 
@@ -52,7 +64,7 @@ The full variable catalogue is available at
 
 | Dataset ID | Description |
 |---|---|
-| `reanalysis-era5-land-monthly-means` | Monthly averaged values (used by the temperature flow) |
+| `reanalysis-era5-land-monthly-means` | Monthly averaged values (used by the climate flow) |
 | `reanalysis-era5-land` | Hourly values (higher temporal resolution, larger downloads) |
 
 ## CDS API setup
@@ -83,28 +95,40 @@ format conversion transparently.
 ```python
 import earthkit.data
 
-ds = earthkit.data.from_source(
-    "cds",
-    "reanalysis-era5-land-monthly-means",
-    variable="2m_temperature",
-    product_type="monthly_averaged_reanalysis",
-    year="2024",
-    month=["01", "02", "03"],
-    time="00:00",
-    area=[10, -14, 7, -10],  # [N, W, S, E]
-)
-xds = ds.to_xarray()
+# Request multiple variables in separate calls
+for variable in ["2m_temperature", "total_precipitation", "2m_dewpoint_temperature"]:
+    ds = earthkit.data.from_source(
+        "cds",
+        "reanalysis-era5-land-monthly-means",
+        variable=variable,
+        product_type="monthly_averaged_reanalysis",
+        year="2024",
+        month=["01", "02", "03"],
+        time="00:00",
+        area=[10, -14, 7, -10],  # [N, W, S, E]
+    )
+    xds = ds.to_xarray()
 ```
 
 ## Pipeline overview
 
 1. Fetch org unit geometries from DHIS2
 2. Compute bounding box from org unit extents
-3. Download ERA5-Land monthly temperature via earthkit-data
-4. Convert Kelvin to Celsius
-5. Save each month as GeoTIFF
+3. Download ERA5-Land monthly temperature, precipitation, and dewpoint
+4. Convert units (Kelvin to Celsius, m to mm/month)
+5. Save each month as GeoTIFF (one per variable)
 6. Compute zonal mean per org unit per month
-7. Import monthly values into DHIS2 (period format: `YYYYMM`)
+7. Derive relative humidity from temperature and dewpoint
+8. Import monthly values into DHIS2 (period format: `YYYYMM`)
+
+### DHIS2 data model
+
+```
+Data Set: PR: ERA5: Climate (PfE5ClmSet1)
+  |- Data Element: PR: ERA5: Mean Temperature    (PfE5TmpEst1)
+  |- Data Element: PR: ERA5: Total Precipitation (PfE5PrcEst1)
+  |- Data Element: PR: ERA5: Relative Humidity   (PfE5HumEst1)
+```
 
 ## References
 

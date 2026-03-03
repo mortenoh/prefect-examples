@@ -95,8 +95,8 @@ class Dhis2DataSet(BaseModel):
     dataSetElements: list[Dhis2DataSetElement] = Field(default_factory=list, description="Data elements in the set")
     organisationUnits: list[Dhis2Ref] = Field(default_factory=list, description="Assigned org units")
     sharing: Dhis2Sharing = Field(
-        default_factory=lambda: Dhis2Sharing(public="rwr-----"),
-        description="Data sets support data sharing (metadata rw + data read-only)",
+        default_factory=lambda: Dhis2Sharing(public="rwrw----"),
+        description="Data sets support data sharing (metadata rw + data rw)",
     )
 
 
@@ -113,7 +113,15 @@ class Dhis2MetadataPayload(BaseModel):
 class Dhis2DataValueSet(BaseModel):
     """Payload for POST /api/dataValueSets."""
 
+    dataSet: str = Field(default="", description="Target data set UID (avoids ambiguous detection)", exclude=True)
     dataValues: list[DataValue] = Field(default_factory=list)
+
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        """Serialize, including dataSet only when set."""
+        data = super().model_dump(**kwargs)
+        if self.dataSet:
+            data["dataSet"] = self.dataSet
+        return data
 
 
 class MetadataResult(BaseModel):

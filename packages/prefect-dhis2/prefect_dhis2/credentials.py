@@ -85,6 +85,10 @@ class Dhis2Client:
     def post_data_values(self, payload: dict[str, Any]) -> dict[str, Any]:
         """POST data values to /dataValueSets.
 
+        DHIS2 2.38+ returns 409 Conflict when the import has conflicts
+        (e.g. rejected values). The response body still contains the import
+        summary, so 409 is treated as a valid response.
+
         Args:
             payload: JSON body with ``dataValues`` list.
 
@@ -92,7 +96,8 @@ class Dhis2Client:
             Parsed DHIS2 import summary response.
         """
         resp = self._http.post("/dataValueSets", json=payload)
-        resp.raise_for_status()
+        if resp.status_code != 409:
+            resp.raise_for_status()
         result: dict[str, Any] = resp.json()
         return result
 
