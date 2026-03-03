@@ -40,10 +40,10 @@ ERA5-Land data is accessed through the Climate Data Store (CDS) API.
 CDSAPI_KEY=<your-api-key>
 ```
 
-`CDSAPI_URL` defaults to `https://cds.climate.copernicus.eu/api` and does
-not need to be set. The `earthkit-data` library reads these automatically.
-CDS access requires the `cdsapi` package, which is included via the
-`earthkit-data[cds]` extra in `prefect-climate`.
+`CDSAPI_URL` defaults to `https://cds.climate.copernicus.eu/api` (set
+automatically by the `prefect-climate` package) and does not need to be
+configured. CDS access requires the `cdsapi` package, which is included
+via the `earthkit-data[cds]` extra in `prefect-climate`.
 
 ## earthkit-data usage
 

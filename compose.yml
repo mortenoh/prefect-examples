@@ -123,6 +123,7 @@ services:
         required: false
     environment:
       PREFECT_API_URL: http://prefect-server:4200/api
+      CDSAPI_URL: https://cds.climate.copernicus.eu/api
     restart: unless-stopped
 
   dhis2-chirps-rainfall-docker:

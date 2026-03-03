@@ -12,7 +12,12 @@ CDS credentials are read from environment variables by earthkit-data:
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
+
+# earthkit-data requires both CDSAPI_URL and CDSAPI_KEY in the environment.
+# Set the URL default before importing earthkit so its prompt system finds it.
+os.environ.setdefault("CDSAPI_URL", "https://cds.climate.copernicus.eu/api")
 
 import earthkit.data
 import numpy as np
