@@ -1,0 +1,1858 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Progressive Prefect 3 examples — from hello-world to production patterns.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>yr.no Weather Forecast - Prefect Examples</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#yrno-weather-forecast" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Prefect Examples" class="md-header__button md-logo" aria-label="Prefect Examples" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Prefect Examples
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              yr.no Weather Forecast
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mortenoh/prefect-examples" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Prefect Examples" class="md-nav__button md-logo" aria-label="Prefect Examples" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Prefect Examples
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mortenoh/prefect-examples" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core-concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flow-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../feature-coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature Coverage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Sources
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Sources
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../climate-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Climate Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../era5-land/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ERA5-Land
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chirps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CHIRPS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../openmeteo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Open-Meteo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../geotiff-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GeoTIFF Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../iso3-country-codes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ISO3 Country Codes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../xarray-rioxarray-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    xarray and rioxarray
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#key-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key characteristics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API endpoints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API requirements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#user-agent-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User-Agent header
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coordinate-precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coordinate precision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#https" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTPS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caching-and-conditional-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caching and conditional requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rate-limiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limiting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#response-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Available variables
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available variables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#instant-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instant variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#period-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Period variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variables-used-in-the-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variables used in the pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Variables used in the pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#daily-aggregation-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Daily aggregation logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#approach-point-based-forecasts-via-centroids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approach: point-based forecasts via centroids
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dhis2-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DHIS2 data model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DHIS2 data model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#building-a-time-series" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building a time series
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#health-relevance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Health relevance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparison-with-era5-and-chirps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison with ERA5 and CHIRPS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the flow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running the flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#direct-api-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Direct API usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="yrno-weather-forecast">yr.no Weather Forecast<a class="headerlink" href="#yrno-weather-forecast" title="Permanent link">&para;</a></h1>
+<p>yr.no is a free weather service operated by the Norwegian Meteorological
+Institute (MET Norway). The Locationforecast 2.0 API provides global
+point-based weather forecasts in GeoJSON format. No API key is required --
+only a <code>User-Agent</code> header identifying the application.</p>
+<h2 id="key-characteristics">Key characteristics<a class="headerlink" href="#key-characteristics" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Provider</td>
+<td>MET Norway (Norwegian Meteorological Institute)</td>
+</tr>
+<tr>
+<td>Spatial resolution</td>
+<td>Point-based (single lat/lon coordinate)</td>
+</tr>
+<tr>
+<td>Temporal resolution</td>
+<td>Hourly (0-48h), 6-hourly (2-10 days)</td>
+</tr>
+<tr>
+<td>Coverage</td>
+<td>Global</td>
+</tr>
+<tr>
+<td>Forecast window</td>
+<td>Up to ~9 days from current time</td>
+</tr>
+<tr>
+<td>Historical data</td>
+<td>None -- forecast only</td>
+</tr>
+<tr>
+<td>Format</td>
+<td>GeoJSON (RFC 7946)</td>
+</tr>
+<tr>
+<td>CRS</td>
+<td>EPSG:4326 (WGS 84)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="api-endpoints">API endpoints<a class="headerlink" href="#api-endpoints" title="Permanent link">&para;</a></h2>
+<p>The Locationforecast 2.0 API offers three endpoints:</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/compact</code></td>
+<td>Subset of variables sufficient for most use cases</td>
+</tr>
+<tr>
+<td><code>/complete</code></td>
+<td>Full set of variables including percentiles and cloud layers</td>
+</tr>
+<tr>
+<td><code>/status</code></td>
+<td>API health check</td>
+</tr>
+</tbody>
+</table>
+<p>The pipeline uses the <strong>complete</strong> endpoint to access all available
+variables:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>https://api.met.no/weatherapi/locationforecast/2.0/complete?lat={lat}&amp;lon={lon}
+</code></pre></div>
+<h2 id="api-requirements">API requirements<a class="headerlink" href="#api-requirements" title="Permanent link">&para;</a></h2>
+<h3 id="user-agent-header">User-Agent header<a class="headerlink" href="#user-agent-header" title="Permanent link">&para;</a></h3>
+<p>A custom <code>User-Agent</code> header is <strong>mandatory</strong>. It must contain the
+application name and contact information (GitHub URL, email, or website).
+Missing or generic User-Agent strings return <code>403 Forbidden</code>. Falsifying
+this information risks permanent blacklisting.</p>
+<p>The pipeline sets:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>User-Agent: prefect-climate/1.0 github.com/mortenoh/prefect-examples
+</code></pre></div>
+<h3 id="coordinate-precision">Coordinate precision<a class="headerlink" href="#coordinate-precision" title="Permanent link">&para;</a></h3>
+<p>Coordinates must use <strong>no more than 4 decimal places</strong>. Using 5 or more
+decimals returns <code>403 Forbidden</code>. This restriction enables effective
+server-side caching. Four decimal places give ~11 m precision, which is
+more than sufficient for weather data.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Coordinates are truncated to 4 decimals before the API call</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">lat</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># e.g. 8.4842</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">lon</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># e.g. -13.2344</span>
+</code></pre></div>
+<h3 id="https">HTTPS<a class="headerlink" href="#https" title="Permanent link">&para;</a></h3>
+<p>Always use HTTPS. Unencrypted HTTP traffic may be throttled or blocked.</p>
+<h3 id="caching-and-conditional-requests">Caching and conditional requests<a class="headerlink" href="#caching-and-conditional-requests" title="Permanent link">&para;</a></h3>
+<p>MET Norway strongly encourages caching. Every response includes:</p>
+<ul>
+<li><strong><code>Expires</code></strong> -- when the forecast data will next be updated. Do not
+  re-request before this time.</li>
+<li><strong><code>Last-Modified</code></strong> -- when the data was last changed.</li>
+</ul>
+<p>Use <code>If-Modified-Since</code> with the cached <code>Last-Modified</code> value on
+subsequent requests. A <code>304 Not Modified</code> response means the cached data
+is still current.</p>
+<h3 id="rate-limiting">Rate limiting<a class="headerlink" href="#rate-limiting" title="Permanent link">&para;</a></h3>
+<p>No hard published limit, but approximately <strong>20 requests/second</strong> is the
+practical ceiling. Monitor for <code>429 Too Many Requests</code> responses. The
+pipeline processes org units sequentially, which naturally stays well
+within limits.</p>
+<h3 id="status-codes">Status codes<a class="headerlink" href="#status-codes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>200</td>
+<td>Success, new data returned</td>
+</tr>
+<tr>
+<td>304</td>
+<td>Not Modified -- use cached data</td>
+</tr>
+<tr>
+<td>403</td>
+<td>Forbidden -- bad User-Agent or coordinate precision</td>
+</tr>
+<tr>
+<td>429</td>
+<td>Throttled -- reduce request rate</td>
+</tr>
+</tbody>
+</table>
+<h2 id="response-format">Response format<a class="headerlink" href="#response-format" title="Permanent link">&para;</a></h2>
+<p>The API returns a GeoJSON FeatureCollection with a <code>timeseries</code> array.
+Each entry has an ISO 8601 timestamp and nested data:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Feature&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">&quot;geometry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Point&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;coordinates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">-13.2344</span><span class="p">,</span><span class="w"> </span><span class="mf">8.4842</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="nt">&quot;timeseries&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="p">{</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="nt">&quot;time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-03T12:00:00Z&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">          </span><span class="nt">&quot;instant&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">            </span><span class="nt">&quot;details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">              </span><span class="nt">&quot;air_temperature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">28.5</span><span class="p">,</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">              </span><span class="nt">&quot;air_pressure_at_sea_level&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1010.2</span><span class="p">,</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">              </span><span class="nt">&quot;relative_humidity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">68.0</span><span class="p">,</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">              </span><span class="nt">&quot;wind_speed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.3</span><span class="p">,</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">              </span><span class="nt">&quot;cloud_area_fraction&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">45.0</span><span class="p">,</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">              </span><span class="nt">&quot;dew_point_temperature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">22.1</span><span class="p">,</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">              </span><span class="nt">&quot;wind_from_direction&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">210.5</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">          </span><span class="p">},</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">          </span><span class="nt">&quot;next_1_hours&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">            </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;symbol_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;partlycloudy_day&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">            </span><span class="nt">&quot;details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;precipitation_amount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">          </span><span class="p">},</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">          </span><span class="nt">&quot;next_6_hours&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">            </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;symbol_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;partlycloudy_day&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">            </span><span class="nt">&quot;details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">              </span><span class="nt">&quot;precipitation_amount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.2</span><span class="p">,</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">              </span><span class="nt">&quot;air_temperature_max&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">30.1</span><span class="p">,</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="w">              </span><span class="nt">&quot;air_temperature_min&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">27.8</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">          </span><span class="p">}</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">    </span><span class="p">]</span>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="p">}</span>
+</code></pre></div>
+<ul>
+<li><strong><code>instant.details</code></strong> -- atmospheric variables at the exact timestamp.</li>
+<li><strong><code>next_1_hours.details</code></strong> -- accumulated values for the next 1 hour
+  (available for first ~48 hours).</li>
+<li><strong><code>next_6_hours.details</code></strong> -- accumulated values for the next 6 hours
+  (available for the full forecast window).</li>
+</ul>
+<h2 id="available-variables">Available variables<a class="headerlink" href="#available-variables" title="Permanent link">&para;</a></h2>
+<h3 id="instant-variables">Instant variables<a class="headerlink" href="#instant-variables" title="Permanent link">&para;</a></h3>
+<p>Variables marked with <strong>compact</strong> are included in both <code>/compact</code> and
+<code>/complete</code>; others are <code>/complete</code> only.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Unit</th>
+<th>Compact</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>air_temperature</code></td>
+<td>C</td>
+<td>yes</td>
+<td>Air temperature at 2 m height</td>
+</tr>
+<tr>
+<td><code>air_temperature_percentile_10</code></td>
+<td>C</td>
+<td>no</td>
+<td>10th percentile air temperature</td>
+</tr>
+<tr>
+<td><code>air_temperature_percentile_90</code></td>
+<td>C</td>
+<td>no</td>
+<td>90th percentile air temperature</td>
+</tr>
+<tr>
+<td><code>air_pressure_at_sea_level</code></td>
+<td>hPa</td>
+<td>yes</td>
+<td>Air pressure reduced to sea level</td>
+</tr>
+<tr>
+<td><code>cloud_area_fraction</code></td>
+<td>%</td>
+<td>yes</td>
+<td>Total cloud cover (all heights)</td>
+</tr>
+<tr>
+<td><code>cloud_area_fraction_high</code></td>
+<td>%</td>
+<td>no</td>
+<td>Cloud cover above 5000 m</td>
+</tr>
+<tr>
+<td><code>cloud_area_fraction_medium</code></td>
+<td>%</td>
+<td>no</td>
+<td>Cloud cover 2000-5000 m</td>
+</tr>
+<tr>
+<td><code>cloud_area_fraction_low</code></td>
+<td>%</td>
+<td>no</td>
+<td>Cloud cover below 2000 m</td>
+</tr>
+<tr>
+<td><code>dew_point_temperature</code></td>
+<td>C</td>
+<td>no</td>
+<td>Dewpoint temperature at 2 m</td>
+</tr>
+<tr>
+<td><code>fog_area_fraction</code></td>
+<td>%</td>
+<td>no</td>
+<td>Area covered in fog (visibility &lt; 1 km)</td>
+</tr>
+<tr>
+<td><code>relative_humidity</code></td>
+<td>%</td>
+<td>yes</td>
+<td>Relative humidity at 2 m</td>
+</tr>
+<tr>
+<td><code>ultraviolet_index_clear_sky</code></td>
+<td>index</td>
+<td>no</td>
+<td>UV index for cloud-free conditions (0-11+)</td>
+</tr>
+<tr>
+<td><code>wind_from_direction</code></td>
+<td>degrees</td>
+<td>yes</td>
+<td>Direction wind is coming from (0 = N, 90 = E)</td>
+</tr>
+<tr>
+<td><code>wind_speed</code></td>
+<td>m/s</td>
+<td>yes</td>
+<td>Wind speed at 10 m (10-minute average)</td>
+</tr>
+<tr>
+<td><code>wind_speed_percentile_10</code></td>
+<td>m/s</td>
+<td>no</td>
+<td>10th percentile wind speed</td>
+</tr>
+<tr>
+<td><code>wind_speed_percentile_90</code></td>
+<td>m/s</td>
+<td>no</td>
+<td>90th percentile wind speed</td>
+</tr>
+<tr>
+<td><code>wind_speed_of_gust</code></td>
+<td>m/s</td>
+<td>no</td>
+<td>Maximum gust at 10 m</td>
+</tr>
+</tbody>
+</table>
+<h3 id="period-variables">Period variables<a class="headerlink" href="#period-variables" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Unit</th>
+<th>Period</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>precipitation_amount</code></td>
+<td>mm</td>
+<td>1h, 6h</td>
+<td>Expected precipitation for period</td>
+</tr>
+<tr>
+<td><code>precipitation_amount_max</code></td>
+<td>mm</td>
+<td>1h, 6h</td>
+<td>Maximum likely precipitation</td>
+</tr>
+<tr>
+<td><code>precipitation_amount_min</code></td>
+<td>mm</td>
+<td>1h, 6h</td>
+<td>Minimum likely precipitation</td>
+</tr>
+<tr>
+<td><code>probability_of_precipitation</code></td>
+<td>%</td>
+<td>1h, 6h, 12h</td>
+<td>Chance of precipitation</td>
+</tr>
+<tr>
+<td><code>probability_of_thunder</code></td>
+<td>%</td>
+<td>1h, 6h</td>
+<td>Chance of thunder</td>
+</tr>
+<tr>
+<td><code>air_temperature_max</code></td>
+<td>C</td>
+<td>6h</td>
+<td>Maximum air temperature over period</td>
+</tr>
+<tr>
+<td><code>air_temperature_min</code></td>
+<td>C</td>
+<td>6h</td>
+<td>Minimum air temperature over period</td>
+</tr>
+<tr>
+<td><code>symbol_code</code></td>
+<td>string</td>
+<td>1h, 6h, 12h</td>
+<td>Weather icon code</td>
+</tr>
+</tbody>
+</table>
+<p>Variable names follow the international
+<a href="https://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html">CF Standard Name</a>
+vocabulary (required by the EU INSPIRE directive).</p>
+<h2 id="variables-used-in-the-pipeline">Variables used in the pipeline<a class="headerlink" href="#variables-used-in-the-pipeline" title="Permanent link">&para;</a></h2>
+<p>Six variables are extracted from the <code>/complete</code> response and aggregated
+from hourly/6-hourly to <strong>daily</strong> values:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>API field</th>
+<th>Source</th>
+<th>Daily aggregation</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temperature</td>
+<td><code>air_temperature</code></td>
+<td>instant</td>
+<td>Mean of all hourly values</td>
+<td>C</td>
+</tr>
+<tr>
+<td>Precipitation</td>
+<td><code>precipitation_amount</code></td>
+<td>next_1_hours / next_6_hours</td>
+<td>Sum of all periods</td>
+<td>mm</td>
+</tr>
+<tr>
+<td>Relative humidity</td>
+<td><code>relative_humidity</code></td>
+<td>instant</td>
+<td>Mean of all hourly values</td>
+<td>%</td>
+</tr>
+<tr>
+<td>Wind speed</td>
+<td><code>wind_speed</code></td>
+<td>instant</td>
+<td>Mean of all hourly values</td>
+<td>m/s</td>
+</tr>
+<tr>
+<td>Cloud cover</td>
+<td><code>cloud_area_fraction</code></td>
+<td>instant</td>
+<td>Mean of all hourly values</td>
+<td>%</td>
+</tr>
+<tr>
+<td>Air pressure</td>
+<td><code>air_pressure_at_sea_level</code></td>
+<td>instant</td>
+<td>Mean of all hourly values</td>
+<td>hPa</td>
+</tr>
+</tbody>
+</table>
+<h3 id="daily-aggregation-logic">Daily aggregation logic<a class="headerlink" href="#daily-aggregation-logic" title="Permanent link">&para;</a></h3>
+<p>For each calendar day (UTC), the pipeline:</p>
+<ol>
+<li>Groups all timeseries entries by date.</li>
+<li>For <strong>instant variables</strong> (temperature, humidity, wind speed, cloud
+   cover, pressure): computes the arithmetic <strong>mean</strong> of all hourly values
+   within the day.</li>
+<li>For <strong>precipitation</strong>: <strong>sums</strong> the <code>precipitation_amount</code> values.
+   Prefers <code>next_1_hours</code> (higher resolution) when available; falls back
+   to <code>next_6_hours</code> for the later part of the forecast window.</li>
+</ol>
+<p>Days with no data for a given variable produce <code>None</code> (skipped during
+DHIS2 import).</p>
+<h2 id="approach-point-based-forecasts-via-centroids">Approach: point-based forecasts via centroids<a class="headerlink" href="#approach-point-based-forecasts-via-centroids" title="Permanent link">&para;</a></h2>
+<p>Unlike CHIRPS and ERA5 (which provide raster data processed with zonal
+statistics), yr.no returns point forecasts for specific coordinates.</p>
+<p>The flow computes the <strong>centroid</strong> of each org unit polygon (mean of all
+coordinate vertices) and queries yr.no for that single point. This is a
+simple approximation that works well for org units where the weather is
+relatively uniform across the area.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect_climate</span><span class="w"> </span><span class="kn">import</span> <span class="n">centroid</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">centroid</span><span class="p">(</span><span class="n">org_unit</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># e.g. (8.4842, -13.2344) for Bo District, Sierra Leone</span>
+</code></pre></div>
+<p>For large or irregularly shaped org units, the centroid may not be
+representative of conditions across the entire area. Consider this
+limitation when interpreting data for mountainous regions or coastal
+boundaries.</p>
+<h2 id="pipeline-overview">Pipeline overview<a class="headerlink" href="#pipeline-overview" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Fetch org unit geometries from DHIS2 (Polygon/MultiPolygon only)</li>
+<li>Ensure 6 data elements and 1 daily data set exist in DHIS2</li>
+<li>For each org unit:
+   a. Compute polygon centroid (mean lat/lon)
+   b. Truncate coordinates to 4 decimal places
+   c. Fetch forecast from yr.no <code>/complete</code> endpoint
+   d. Aggregate hourly timeseries to daily values</li>
+<li>Build DHIS2 data values (period format: <code>YYYYMMDD</code>)</li>
+<li>POST data values to DHIS2 <code>/api/dataValueSets</code></li>
+<li>Create markdown artifact with import summary</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@flow</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dhis2_yr_weather_import&quot;</span><span class="p">,</span> <span class="n">log_prints</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">dhis2_yr_weather_import_flow</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="n">ClimateQuery</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ImportResult</span><span class="p">:</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">client</span> <span class="o">=</span> <span class="n">get_dhis2_credentials</span><span class="p">()</span><span class="o">.</span><span class="n">get_client</span><span class="p">()</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">org_units</span> <span class="o">=</span> <span class="n">ensure_dhis2_metadata</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">query</span><span class="o">.</span><span class="n">org_unit_level</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">forecast_results</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="k">for</span> <span class="n">ou</span> <span class="ow">in</span> <span class="n">org_units</span><span class="p">:</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">fetch_org_unit_forecast</span><span class="p">(</span><span class="n">ou</span><span class="p">)</span>  <span class="c1"># centroid + yr.no API</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>        <span class="n">forecast_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">data_values</span> <span class="o">=</span> <span class="n">build_data_values</span><span class="p">(</span><span class="n">forecast_results</span><span class="p">)</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    <span class="k">return</span> <span class="n">import_to_dhis2</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">dhis2_url</span><span class="p">,</span> <span class="n">org_units</span><span class="p">,</span> <span class="n">data_values</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="dhis2-data-model">DHIS2 data model<a class="headerlink" href="#dhis2-data-model" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Data Set: WF: yr.no: Weather Forecast (WfYrFrcSet1)  [Daily, openFuturePeriods=10]
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  |- Data Element: WF: yr.no: Temperature       (WfYrTmpEst1)  -- mean C
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  |- Data Element: WF: yr.no: Precipitation      (WfYrPrcEst1)  -- sum mm
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  |- Data Element: WF: yr.no: Relative Humidity   (WfYrHumEst1)  -- mean %
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  |- Data Element: WF: yr.no: Wind Speed          (WfYrWndEst1)  -- mean m/s
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  |- Data Element: WF: yr.no: Cloud Cover         (WfYrCldEst1)  -- mean %
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  |- Data Element: WF: yr.no: Air Pressure        (WfYrPrsEst1)  -- mean hPa
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>UID</th>
+<th>Name</th>
+<th>Aggregation</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WfYrTmpEst1</code></td>
+<td>WF: yr.no: Temperature</td>
+<td>Daily mean</td>
+<td>degrees Celsius (C)</td>
+</tr>
+<tr>
+<td><code>WfYrPrcEst1</code></td>
+<td>WF: yr.no: Precipitation</td>
+<td>Daily sum</td>
+<td>millimetres (mm)</td>
+</tr>
+<tr>
+<td><code>WfYrHumEst1</code></td>
+<td>WF: yr.no: Relative Humidity</td>
+<td>Daily mean</td>
+<td>percent (%)</td>
+</tr>
+<tr>
+<td><code>WfYrWndEst1</code></td>
+<td>WF: yr.no: Wind Speed</td>
+<td>Daily mean</td>
+<td>metres per second (m/s)</td>
+</tr>
+<tr>
+<td><code>WfYrCldEst1</code></td>
+<td>WF: yr.no: Cloud Cover</td>
+<td>Daily mean</td>
+<td>percent (%)</td>
+</tr>
+<tr>
+<td><code>WfYrPrsEst1</code></td>
+<td>WF: yr.no: Air Pressure</td>
+<td>Daily mean</td>
+<td>hectopascals (hPa)</td>
+</tr>
+</tbody>
+</table>
+<p>The data set uses <code>openFuturePeriods=10</code> since forecasts extend ~9 days
+into the future.</p>
+<h3 id="building-a-time-series">Building a time series<a class="headerlink" href="#building-a-time-series" title="Permanent link">&para;</a></h3>
+<p>The yr.no API provides only <strong>future forecasts</strong> -- there is no historical
+archive. Each run of the flow imports the current ~9-day forecast window.
+Running the flow on a regular schedule (e.g. daily via cron) builds up a
+historical record of forecast data in DHIS2 over time. Overlapping
+forecast days from consecutive runs are updated in place.</p>
+<h2 id="health-relevance">Health relevance<a class="headerlink" href="#health-relevance" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Health relevance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Temperature</strong></td>
+<td>Heat-related illness, malaria transmission windows (optimal 20-30 C)</td>
+</tr>
+<tr>
+<td><strong>Precipitation</strong></td>
+<td>Waterborne disease risk, flooding, mosquito breeding habitat</td>
+</tr>
+<tr>
+<td><strong>Relative humidity</strong></td>
+<td>Pathogen survival and airborne transmission, respiratory illness</td>
+</tr>
+<tr>
+<td><strong>Wind speed</strong></td>
+<td>Disease vector dispersal, air quality, extreme weather preparedness</td>
+</tr>
+<tr>
+<td><strong>Cloud cover</strong></td>
+<td>UV exposure estimation, solar energy availability</td>
+</tr>
+<tr>
+<td><strong>Air pressure</strong></td>
+<td>Migraine triggers, respiratory conditions, storm prediction</td>
+</tr>
+</tbody>
+</table>
+<h2 id="comparison-with-era5-and-chirps">Comparison with ERA5 and CHIRPS<a class="headerlink" href="#comparison-with-era5-and-chirps" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>yr.no</th>
+<th>ERA5-Land</th>
+<th>CHIRPS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data type</td>
+<td>Forecast (future)</td>
+<td>Reanalysis (historical)</td>
+<td>Observation (historical)</td>
+</tr>
+<tr>
+<td>Spatial</td>
+<td>Point-based (centroid)</td>
+<td>~9 km raster (zonal stats)</td>
+<td>~5 km raster (zonal stats)</td>
+</tr>
+<tr>
+<td>Temporal</td>
+<td>Daily (from hourly)</td>
+<td>Monthly</td>
+<td>Monthly (from daily)</td>
+</tr>
+<tr>
+<td>Variables</td>
+<td>6 weather indicators</td>
+<td>7 climate indicators</td>
+<td>Precipitation only</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None (User-Agent only)</td>
+<td>CDS API key required</td>
+<td>None (direct download)</td>
+</tr>
+<tr>
+<td>Latency</td>
+<td>Real-time forecast</td>
+<td>~5 days behind present</td>
+<td>~3 weeks behind present</td>
+</tr>
+</tbody>
+</table>
+<p>yr.no complements ERA5 and CHIRPS by providing <strong>near-term forecast data</strong>
+rather than historical observations. This enables early warning and
+preparedness workflows in DHIS2.</p>
+<h2 id="running-the-flow">Running the flow<a class="headerlink" href="#running-the-flow" title="Permanent link">&para;</a></h2>
+<p>The flow is intended for manual or scheduled runs. Each run fetches the
+current forecast window (~9 days) and imports it into DHIS2.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Direct run</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>flows/dhis2/dhis2_yr_weather_import.py
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Via Docker deployment</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>docker<span class="w"> </span>compose<span class="w"> </span>build<span class="w"> </span>dhis2-yr-weather-docker
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>dhis2-yr-weather-docker
+</code></pre></div>
+<h3 id="direct-api-usage">Direct API usage<a class="headerlink" href="#direct-api-usage" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect_climate.yr</span><span class="w"> </span><span class="kn">import</span> <span class="n">fetch_daily_forecasts</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Fetch forecast for Freetown, Sierra Leone</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">forecasts</span> <span class="o">=</span> <span class="n">fetch_daily_forecasts</span><span class="p">(</span><span class="n">lat</span><span class="o">=</span><span class="mf">8.48</span><span class="p">,</span> <span class="n">lon</span><span class="o">=-</span><span class="mf">13.23</span><span class="p">)</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">forecasts</span><span class="p">:</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">date</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">temperature</span><span class="si">}</span><span class="s2">C, </span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">precipitation</span><span class="si">}</span><span class="s2">mm rain&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect_climate.yr</span><span class="w"> </span><span class="kn">import</span> <span class="n">fetch_forecast</span><span class="p">,</span> <span class="n">aggregate_forecast_daily</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># Two-step: fetch raw response, then aggregate</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">raw</span> <span class="o">=</span> <span class="n">fetch_forecast</span><span class="p">(</span><span class="n">lat</span><span class="o">=</span><span class="mf">8.48</span><span class="p">,</span> <span class="n">lon</span><span class="o">=-</span><span class="mf">13.23</span><span class="p">)</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">daily</span> <span class="o">=</span> <span class="n">aggregate_forecast_daily</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://api.met.no/weatherapi/locationforecast/2.0/documentation">yr.no Locationforecast 2.0 documentation</a></li>
+<li><a href="https://docs.api.met.no/doc/locationforecast/datamodel.html">Locationforecast data model</a></li>
+<li><a href="https://docs.api.met.no/doc/locationforecast/HowTO.html">Locationforecast HOWTO</a></li>
+<li><a href="https://api.met.no/doc/TermsOfService">MET Norway terms of service</a></li>
+<li><a href="https://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html">CF Standard Names</a></li>
+<li><a href="https://climate-tools.dhis2.org/">DHIS2 Climate Tools</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

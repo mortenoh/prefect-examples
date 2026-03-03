@@ -1,0 +1,2247 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Progressive Prefect 3 examples — from hello-world to production patterns.">
+      
+      
+      
+      
+        <link rel="prev" href="../chirps/">
+      
+      
+        <link rel="next" href="../geotiff-format/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Open-Meteo - Prefect Examples</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#open-meteo-weather-and-air-quality" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Prefect Examples" class="md-header__button md-logo" aria-label="Prefect Examples" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Prefect Examples
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Open-Meteo
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mortenoh/prefect-examples" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Prefect Examples" class="md-nav__button md-logo" aria-label="Prefect Examples" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Prefect Examples
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mortenoh/prefect-examples" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core-concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flow-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../feature-coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature Coverage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Sources
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Sources
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../climate-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Climate Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../era5-land/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ERA5-Land
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chirps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CHIRPS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Open-Meteo
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Open-Meteo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#key-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key characteristics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key characteristics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#historical-weather-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Historical Weather API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weather-forecast-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weather Forecast API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#air-quality-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air Quality API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API endpoints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#response-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variable-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variable catalog
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Variable catalog">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#weather-variables-historical-forecast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weather variables (historical + forecast)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#air-quality-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air quality variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#daily-aggregation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Daily aggregation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#centroid-approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Centroid approach
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dhis2-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DHIS2 data model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DHIS2 data model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-sets-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data sets (3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-elements-historical-weather-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data elements -- Historical Weather (6)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-elements-weather-forecast-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data elements -- Weather Forecast (6)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-elements-air-quality-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data elements -- Air Quality (7)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#health-relevance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Health relevance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Health relevance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#weather-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weather data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#air-quality-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air quality data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparison-with-other-data-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison with other data sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running the flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#historical-weather" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Historical weather
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weather-forecast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weather forecast
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#air-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#direct-api-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Direct API usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../geotiff-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GeoTIFF Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../iso3-country-codes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ISO3 Country Codes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../xarray-rioxarray-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    xarray and rioxarray
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#key-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key characteristics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key characteristics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#historical-weather-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Historical Weather API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weather-forecast-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weather Forecast API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#air-quality-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air Quality API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API endpoints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#response-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variable-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variable catalog
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Variable catalog">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#weather-variables-historical-forecast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weather variables (historical + forecast)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#air-quality-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air quality variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#daily-aggregation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Daily aggregation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#centroid-approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Centroid approach
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dhis2-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DHIS2 data model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DHIS2 data model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-sets-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data sets (3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-elements-historical-weather-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data elements -- Historical Weather (6)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-elements-weather-forecast-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data elements -- Weather Forecast (6)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-elements-air-quality-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data elements -- Air Quality (7)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#health-relevance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Health relevance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Health relevance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#weather-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weather data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#air-quality-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air quality data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparison-with-other-data-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison with other data sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running the flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#historical-weather" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Historical weather
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weather-forecast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weather forecast
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#air-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Air quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#direct-api-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Direct API usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="open-meteo-weather-and-air-quality">Open-Meteo Weather and Air Quality<a class="headerlink" href="#open-meteo-weather-and-air-quality" title="Permanent link">&para;</a></h1>
+<p>Open-Meteo is a free, open-source weather API that provides global weather
+forecasts, historical weather data, and air quality information. No API key
+is required and the service allows up to 10,000 API calls per day for
+non-commercial use.</p>
+<h2 id="key-characteristics">Key characteristics<a class="headerlink" href="#key-characteristics" title="Permanent link">&para;</a></h2>
+<h3 id="historical-weather-api">Historical Weather API<a class="headerlink" href="#historical-weather-api" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Provider</td>
+<td>Open-Meteo (open-source)</td>
+</tr>
+<tr>
+<td>Spatial resolution</td>
+<td>Point-based (single lat/lon coordinate)</td>
+</tr>
+<tr>
+<td>Temporal resolution</td>
+<td>Hourly</td>
+</tr>
+<tr>
+<td>Coverage</td>
+<td>Global</td>
+</tr>
+<tr>
+<td>Time range</td>
+<td>1940 -- present</td>
+</tr>
+<tr>
+<td>Format</td>
+<td>JSON</td>
+</tr>
+<tr>
+<td>CRS</td>
+<td>EPSG:4326 (WGS 84)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="weather-forecast-api">Weather Forecast API<a class="headerlink" href="#weather-forecast-api" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Provider</td>
+<td>Open-Meteo (open-source)</td>
+</tr>
+<tr>
+<td>Spatial resolution</td>
+<td>Point-based (single lat/lon coordinate)</td>
+</tr>
+<tr>
+<td>Temporal resolution</td>
+<td>Hourly</td>
+</tr>
+<tr>
+<td>Coverage</td>
+<td>Global</td>
+</tr>
+<tr>
+<td>Forecast window</td>
+<td>Up to 16 days</td>
+</tr>
+<tr>
+<td>Format</td>
+<td>JSON</td>
+</tr>
+<tr>
+<td>CRS</td>
+<td>EPSG:4326 (WGS 84)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="air-quality-api">Air Quality API<a class="headerlink" href="#air-quality-api" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Provider</td>
+<td>Open-Meteo (open-source, CAMS data)</td>
+</tr>
+<tr>
+<td>Spatial resolution</td>
+<td>Point-based (single lat/lon coordinate)</td>
+</tr>
+<tr>
+<td>Temporal resolution</td>
+<td>Hourly</td>
+</tr>
+<tr>
+<td>Coverage</td>
+<td>Global</td>
+</tr>
+<tr>
+<td>Forecast window</td>
+<td>Current + ~5 days</td>
+</tr>
+<tr>
+<td>Format</td>
+<td>JSON</td>
+</tr>
+<tr>
+<td>CRS</td>
+<td>EPSG:4326 (WGS 84)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="api-endpoints">API endpoints<a class="headerlink" href="#api-endpoints" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Base URL</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Historical</td>
+<td><code>https://archive-api.open-meteo.com/v1/archive</code></td>
+<td>Weather data 1940--present</td>
+</tr>
+<tr>
+<td>Forecast</td>
+<td><code>https://api.open-meteo.com/v1/forecast</code></td>
+<td>Weather forecast up to 16 days</td>
+</tr>
+<tr>
+<td>Air Quality</td>
+<td><code>https://air-quality-api.open-meteo.com/v1/air-quality</code></td>
+<td>Air quality current + forecast</td>
+</tr>
+</tbody>
+</table>
+<p>All endpoints accept the same core parameters:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>?latitude={lat}&amp;longitude={lon}&amp;hourly={variables}&amp;timezone=UTC
+</code></pre></div>
+<p>The historical endpoint additionally requires <code>start_date</code> and <code>end_date</code>
+parameters in <code>YYYY-MM-DD</code> format.</p>
+<h2 id="response-format">Response format<a class="headerlink" href="#response-format" title="Permanent link">&para;</a></h2>
+<p>All endpoints return JSON with an <code>hourly</code> object containing parallel arrays
+of timestamps and variable values:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;latitude&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.5</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;longitude&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-13.25</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">&quot;hourly&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">&quot;time&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="s2">&quot;2024-01-15T00:00&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">      </span><span class="s2">&quot;2024-01-15T01:00&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">      </span><span class="s2">&quot;2024-01-15T02:00&quot;</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="p">],</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">&quot;temperature_2m&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">24.1</span><span class="p">,</span><span class="w"> </span><span class="mf">23.8</span><span class="p">,</span><span class="w"> </span><span class="mf">23.5</span><span class="p">],</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="nt">&quot;precipitation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">],</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="nt">&quot;relative_humidity_2m&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">82</span><span class="p">,</span><span class="w"> </span><span class="mi">84</span><span class="p">,</span><span class="w"> </span><span class="mi">85</span><span class="p">]</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">}</span>
+</code></pre></div>
+<p>Missing values are represented as <code>null</code> in the JSON arrays.</p>
+<h2 id="variable-catalog">Variable catalog<a class="headerlink" href="#variable-catalog" title="Permanent link">&para;</a></h2>
+<h3 id="weather-variables-historical-forecast">Weather variables (historical + forecast)<a class="headerlink" href="#weather-variables-historical-forecast" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>API parameter</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>temperature_2m</code></td>
+<td>Air temperature at 2 metres</td>
+<td>Celsius</td>
+</tr>
+<tr>
+<td><code>precipitation</code></td>
+<td>Total precipitation (rain + snow)</td>
+<td>mm</td>
+</tr>
+<tr>
+<td><code>relative_humidity_2m</code></td>
+<td>Relative humidity at 2 metres</td>
+<td>%</td>
+</tr>
+<tr>
+<td><code>wind_speed_10m</code></td>
+<td>Wind speed at 10 metres</td>
+<td>m/s</td>
+</tr>
+<tr>
+<td><code>cloud_cover</code></td>
+<td>Total cloud cover</td>
+<td>%</td>
+</tr>
+<tr>
+<td><code>pressure_msl</code></td>
+<td>Mean sea-level pressure</td>
+<td>hPa</td>
+</tr>
+</tbody>
+</table>
+<h3 id="air-quality-variables">Air quality variables<a class="headerlink" href="#air-quality-variables" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>API parameter</th>
+<th>Description</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pm2_5</code></td>
+<td>Fine particulate matter (diameter &lt; 2.5 um)</td>
+<td>ug/m3</td>
+</tr>
+<tr>
+<td><code>pm10</code></td>
+<td>Coarse particulate matter (diameter &lt; 10 um)</td>
+<td>ug/m3</td>
+</tr>
+<tr>
+<td><code>ozone</code></td>
+<td>Ground-level ozone (O3)</td>
+<td>ug/m3</td>
+</tr>
+<tr>
+<td><code>nitrogen_dioxide</code></td>
+<td>Nitrogen dioxide (NO2)</td>
+<td>ug/m3</td>
+</tr>
+<tr>
+<td><code>sulphur_dioxide</code></td>
+<td>Sulphur dioxide (SO2)</td>
+<td>ug/m3</td>
+</tr>
+<tr>
+<td><code>carbon_monoxide</code></td>
+<td>Carbon monoxide (CO)</td>
+<td>ug/m3</td>
+</tr>
+<tr>
+<td><code>european_aqi</code></td>
+<td>European Air Quality Index</td>
+<td>index (0--500+)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="daily-aggregation">Daily aggregation<a class="headerlink" href="#daily-aggregation" title="Permanent link">&para;</a></h2>
+<p>The pipeline requests hourly data and aggregates to daily values:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Aggregation</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temperature</td>
+<td>Mean</td>
+<td>Representative daily temperature</td>
+</tr>
+<tr>
+<td>Precipitation</td>
+<td>Sum</td>
+<td>Total daily accumulation</td>
+</tr>
+<tr>
+<td>Humidity</td>
+<td>Mean</td>
+<td>Average daily moisture</td>
+</tr>
+<tr>
+<td>Wind speed</td>
+<td>Mean</td>
+<td>Average daily wind conditions</td>
+</tr>
+<tr>
+<td>Cloud cover</td>
+<td>Mean</td>
+<td>Average daily sky conditions</td>
+</tr>
+<tr>
+<td>Pressure</td>
+<td>Mean</td>
+<td>Average daily atmospheric pressure</td>
+</tr>
+<tr>
+<td>PM2.5</td>
+<td>Mean</td>
+<td>Average daily exposure</td>
+</tr>
+<tr>
+<td>PM10</td>
+<td>Mean</td>
+<td>Average daily exposure</td>
+</tr>
+<tr>
+<td>Ozone</td>
+<td>Mean</td>
+<td>Average daily concentration</td>
+</tr>
+<tr>
+<td>NO2</td>
+<td>Mean</td>
+<td>Average daily concentration</td>
+</tr>
+<tr>
+<td>SO2</td>
+<td>Mean</td>
+<td>Average daily concentration</td>
+</tr>
+<tr>
+<td>CO</td>
+<td>Mean</td>
+<td>Average daily concentration</td>
+</tr>
+<tr>
+<td>European AQI</td>
+<td>Max</td>
+<td>Worst-case daily air quality</td>
+</tr>
+</tbody>
+</table>
+<p>The European AQI uses <code>max()</code> rather than <code>mean()</code> because the index
+represents the worst air quality condition during the day, which is the
+standard reporting convention.</p>
+<h2 id="centroid-approach">Centroid approach<a class="headerlink" href="#centroid-approach" title="Permanent link">&para;</a></h2>
+<p>Open-Meteo APIs accept a single (latitude, longitude) point. For each
+DHIS2 organisation unit with polygon geometry, the pipeline:</p>
+<ol>
+<li>Computes the centroid of the polygon (mean of all vertex coordinates)</li>
+<li>Queries the Open-Meteo API with that centroid</li>
+<li>Assigns the result to the entire org unit</li>
+</ol>
+<p>This is the same approach used by the yr.no integration.</p>
+<h2 id="dhis2-data-model">DHIS2 data model<a class="headerlink" href="#dhis2-data-model" title="Permanent link">&para;</a></h2>
+<h3 id="data-sets-3">Data sets (3)<a class="headerlink" href="#data-sets-3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>UID</th>
+<th>Name</th>
+<th>Period type</th>
+<th>Future periods</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OmHwDlySet1</code></td>
+<td>PR: OM: WH: Historical Weather</td>
+<td>Daily</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>OmFcDlySet1</code></td>
+<td>PR: OM: WF: Weather Forecast</td>
+<td>Daily</td>
+<td>17</td>
+</tr>
+<tr>
+<td><code>OmAqDlySet1</code></td>
+<td>PR: OM: AQ: Air Quality</td>
+<td>Daily</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data-elements-historical-weather-6">Data elements -- Historical Weather (6)<a class="headerlink" href="#data-elements-historical-weather-6" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>UID</th>
+<th>Name</th>
+<th>Short name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OmHwTmpEst1</code></td>
+<td>PR: OM: WH: Temperature</td>
+<td>PR: OM: WH: Temp</td>
+</tr>
+<tr>
+<td><code>OmHwPrcEst1</code></td>
+<td>PR: OM: WH: Precipitation</td>
+<td>PR: OM: WH: Precip</td>
+</tr>
+<tr>
+<td><code>OmHwHumEst1</code></td>
+<td>PR: OM: WH: Relative Humidity</td>
+<td>PR: OM: WH: Rel Humidity</td>
+</tr>
+<tr>
+<td><code>OmHwWndEst1</code></td>
+<td>PR: OM: WH: Wind Speed</td>
+<td>PR: OM: WH: Wind Speed</td>
+</tr>
+<tr>
+<td><code>OmHwCldEst1</code></td>
+<td>PR: OM: WH: Cloud Cover</td>
+<td>PR: OM: WH: Cloud Cover</td>
+</tr>
+<tr>
+<td><code>OmHwPrsEst1</code></td>
+<td>PR: OM: WH: Air Pressure</td>
+<td>PR: OM: WH: Air Pressure</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data-elements-weather-forecast-6">Data elements -- Weather Forecast (6)<a class="headerlink" href="#data-elements-weather-forecast-6" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>UID</th>
+<th>Name</th>
+<th>Short name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OmFcTmpEst1</code></td>
+<td>PR: OM: WF: Temperature</td>
+<td>PR: OM: WF: Temp</td>
+</tr>
+<tr>
+<td><code>OmFcPrcEst1</code></td>
+<td>PR: OM: WF: Precipitation</td>
+<td>PR: OM: WF: Precip</td>
+</tr>
+<tr>
+<td><code>OmFcHumEst1</code></td>
+<td>PR: OM: WF: Relative Humidity</td>
+<td>PR: OM: WF: Rel Humidity</td>
+</tr>
+<tr>
+<td><code>OmFcWndEst1</code></td>
+<td>PR: OM: WF: Wind Speed</td>
+<td>PR: OM: WF: Wind Speed</td>
+</tr>
+<tr>
+<td><code>OmFcCldEst1</code></td>
+<td>PR: OM: WF: Cloud Cover</td>
+<td>PR: OM: WF: Cloud Cover</td>
+</tr>
+<tr>
+<td><code>OmFcPrsEst1</code></td>
+<td>PR: OM: WF: Air Pressure</td>
+<td>PR: OM: WF: Air Pressure</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data-elements-air-quality-7">Data elements -- Air Quality (7)<a class="headerlink" href="#data-elements-air-quality-7" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>UID</th>
+<th>Name</th>
+<th>Short name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OmAqPm2Est1</code></td>
+<td>PR: OM: AQ: PM2.5</td>
+<td>PR: OM: AQ: PM2.5</td>
+</tr>
+<tr>
+<td><code>OmAqP10Est1</code></td>
+<td>PR: OM: AQ: PM10</td>
+<td>PR: OM: AQ: PM10</td>
+</tr>
+<tr>
+<td><code>OmAqO3xEst1</code></td>
+<td>PR: OM: AQ: Ozone</td>
+<td>PR: OM: AQ: Ozone</td>
+</tr>
+<tr>
+<td><code>OmAqNo2Est1</code></td>
+<td>PR: OM: AQ: Nitrogen Dioxide</td>
+<td>PR: OM: AQ: NO2</td>
+</tr>
+<tr>
+<td><code>OmAqSo2Est1</code></td>
+<td>PR: OM: AQ: Sulphur Dioxide</td>
+<td>PR: OM: AQ: SO2</td>
+</tr>
+<tr>
+<td><code>OmAqCoxEst1</code></td>
+<td>PR: OM: AQ: Carbon Monoxide</td>
+<td>PR: OM: AQ: CO</td>
+</tr>
+<tr>
+<td><code>OmAqAqiEst1</code></td>
+<td>PR: OM: AQ: European AQI</td>
+<td>PR: OM: AQ: EU AQI</td>
+</tr>
+</tbody>
+</table>
+<h2 id="health-relevance">Health relevance<a class="headerlink" href="#health-relevance" title="Permanent link">&para;</a></h2>
+<h3 id="weather-data">Weather data<a class="headerlink" href="#weather-data" title="Permanent link">&para;</a></h3>
+<p>Historical and forecast weather data supports disease surveillance models:</p>
+<ul>
+<li><strong>Temperature</strong> and <strong>humidity</strong> are key predictors for vector-borne
+  diseases (malaria, dengue) and respiratory infections</li>
+<li><strong>Precipitation</strong> drives water-borne disease risk and flooding events</li>
+<li><strong>Wind speed</strong> affects pollutant dispersion and vector movement</li>
+<li>Historical data (1940--present) enables long-term climate-health analysis</li>
+</ul>
+<h3 id="air-quality-data">Air quality data<a class="headerlink" href="#air-quality-data" title="Permanent link">&para;</a></h3>
+<p>Air pollution is a leading environmental health risk globally:</p>
+<ul>
+<li><strong>PM2.5</strong> is the most health-relevant pollutant (WHO limit: 15 ug/m3 daily)</li>
+<li><strong>PM10</strong> causes respiratory and cardiovascular effects</li>
+<li><strong>Ozone</strong> triggers asthma and reduces lung function</li>
+<li><strong>NO2</strong> and <strong>SO2</strong> are markers of traffic and industrial pollution</li>
+<li><strong>CO</strong> is toxic at high concentrations</li>
+<li><strong>European AQI</strong> provides a single composite health risk indicator</li>
+</ul>
+<h2 id="comparison-with-other-data-sources">Comparison with other data sources<a class="headerlink" href="#comparison-with-other-data-sources" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Open-Meteo</th>
+<th>yr.no</th>
+<th>ERA5-Land</th>
+<th>CHIRPS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Historical data</td>
+<td>1940--present</td>
+<td>None</td>
+<td>1950--present</td>
+<td>1981--present</td>
+</tr>
+<tr>
+<td>Forecast</td>
+<td>16 days</td>
+<td>~9 days</td>
+<td>None</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Air quality</td>
+<td>Yes (7 variables)</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Spatial type</td>
+<td>Point-based</td>
+<td>Point-based</td>
+<td>Gridded (~9 km)</td>
+<td>Gridded (~5 km)</td>
+</tr>
+<tr>
+<td>API key</td>
+<td>None</td>
+<td>None (User-Agent)</td>
+<td>CDS API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Rate limit</td>
+<td>10k calls/day</td>
+<td>Fair use</td>
+<td>Quota-based</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Weather variables</td>
+<td>6</td>
+<td>6</td>
+<td>7</td>
+<td>1 (precip only)</td>
+</tr>
+<tr>
+<td>Period type</td>
+<td>Daily</td>
+<td>Daily</td>
+<td>Monthly</td>
+<td>Monthly</td>
+</tr>
+<tr>
+<td>Zonal stats</td>
+<td>No (centroid)</td>
+<td>No (centroid)</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="running-the-flows">Running the flows<a class="headerlink" href="#running-the-flows" title="Permanent link">&para;</a></h2>
+<h3 id="historical-weather">Historical weather<a class="headerlink" href="#historical-weather" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Import 2024 weather for all months</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>deployments/dhis2_openmeteo_import_docker/dhis2_openmeteo_historical_import.py
+</code></pre></div>
+<p>Uses <code>query.year</code> and <code>query.months</code> to select the time window.</p>
+<h3 id="weather-forecast">Weather forecast<a class="headerlink" href="#weather-forecast" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Import current 16-day forecast</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>deployments/dhis2_openmeteo_import_docker/dhis2_openmeteo_forecast_import.py
+</code></pre></div>
+<p>Ignores <code>query.year</code>/<code>query.months</code> -- always fetches the current window.</p>
+<h3 id="air-quality">Air quality<a class="headerlink" href="#air-quality" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Import current + 5-day air quality forecast</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>deployments/dhis2_openmeteo_import_docker/dhis2_openmeteo_air_quality_import.py
+</code></pre></div>
+<p>Ignores <code>query.year</code>/<code>query.months</code> -- always fetches the current window.</p>
+<h2 id="direct-api-usage">Direct API usage<a class="headerlink" href="#direct-api-usage" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">prefect_climate.openmeteo</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">fetch_daily_forecast</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">fetch_daily_historical</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">fetch_daily_air_quality</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">)</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># Weather forecast (16 days)</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">forecast</span> <span class="o">=</span> <span class="n">fetch_daily_forecast</span><span class="p">(</span><span class="n">lat</span><span class="o">=</span><span class="mf">8.48</span><span class="p">,</span> <span class="n">lon</span><span class="o">=-</span><span class="mf">13.23</span><span class="p">)</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">forecast</span><span class="p">[:</span><span class="mi">3</span><span class="p">]:</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">date</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">temperature</span><span class="si">}</span><span class="s2">C, </span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">precipitation</span><span class="si">}</span><span class="s2">mm&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="c1"># Historical weather (specific year/months)</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="n">historical</span> <span class="o">=</span> <span class="n">fetch_daily_historical</span><span class="p">(</span><span class="n">lat</span><span class="o">=</span><span class="mf">8.48</span><span class="p">,</span> <span class="n">lon</span><span class="o">=-</span><span class="mf">13.23</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2024</span><span class="p">,</span> <span class="n">months</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">historical</span><span class="p">[:</span><span class="mi">3</span><span class="p">]:</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">date</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">temperature</span><span class="si">}</span><span class="s2">C, </span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">precipitation</span><span class="si">}</span><span class="s2">mm&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="c1"># Air quality</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="n">air_quality</span> <span class="o">=</span> <span class="n">fetch_daily_air_quality</span><span class="p">(</span><span class="n">lat</span><span class="o">=</span><span class="mf">8.48</span><span class="p">,</span> <span class="n">lon</span><span class="o">=-</span><span class="mf">13.23</span><span class="p">)</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">air_quality</span><span class="p">[:</span><span class="mi">3</span><span class="p">]:</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">date</span><span class="si">}</span><span class="s2">: PM2.5=</span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">pm2_5</span><span class="si">}</span><span class="s2">, AQI=</span><span class="si">{</span><span class="n">day</span><span class="o">.</span><span class="n">european_aqi</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://open-meteo.com/en/docs">Open-Meteo documentation</a></li>
+<li><a href="https://open-meteo.com/en/docs/historical-weather-api">Open-Meteo Historical Weather API</a></li>
+<li><a href="https://open-meteo.com/en/docs/air-quality-api">Open-Meteo Air Quality API</a></li>
+<li><a href="https://www.eea.europa.eu/themes/air/air-quality-index">European Air Quality Index</a></li>
+<li><a href="https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health">WHO Air Quality Guidelines</a></li>
+<li><a href="https://atmosphere.copernicus.eu/">CAMS (Copernicus Atmosphere Monitoring Service)</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
