@@ -23,8 +23,37 @@ The flow imports **monthly averaged 2m temperature**
 (`reanalysis-era5-land-monthly-means`, variable `2m_temperature`). The raw
 data is in Kelvin; the pipeline converts to Celsius before import.
 
-Other commonly used ERA5-Land variables include total precipitation,
-soil moisture, and evaporation.
+### Available ERA5-Land variables
+
+ERA5-Land provides many variables relevant to health and climate analysis.
+Below are commonly used ones:
+
+| CDS variable name | NetCDF column | Native units | Description |
+|---|---|---|---|
+| `2m_temperature` | `t2m` | Kelvin | Air temperature at 2 m height |
+| `total_precipitation` | `tp` | metres (cumulative) | Total precipitation per hour |
+| `2m_dewpoint_temperature` | `d2m` | Kelvin | Dewpoint temperature at 2 m |
+| `surface_pressure` | `sp` | Pa | Pressure at the surface |
+| `10m_u_component_of_wind` | `u10` | m/s | Eastward wind component at 10 m |
+| `10m_v_component_of_wind` | `v10` | m/s | Northward wind component at 10 m |
+| `volumetric_soil_water_layer_1` | `swvl1` | m3/m3 | Top-level soil moisture (0-7 cm) |
+| `total_evaporation` | `e` | metres (cumulative) | Total evaporation per hour |
+| `skin_temperature` | `skt` | Kelvin | Land surface temperature |
+| `surface_solar_radiation_downwards` | `ssrd` | J/m2 (cumulative) | Incoming solar radiation |
+
+Cumulative variables (precipitation, evaporation, radiation) store running
+totals that reset at specific intervals. They must be de-accumulated
+(differenced) before temporal aggregation.
+
+The full variable catalogue is available at
+<https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land>.
+
+### CDS datasets
+
+| Dataset ID | Description |
+|---|---|
+| `reanalysis-era5-land-monthly-means` | Monthly averaged values (used by the temperature flow) |
+| `reanalysis-era5-land` | Hourly values (higher temporal resolution, larger downloads) |
 
 ## CDS API setup
 

@@ -86,6 +86,14 @@ def fetch_era5_monthly(
         logger.warning("Expected 1 data variable, got %d: %s", len(data_vars), data_vars)
     var_name = data_vars[0]
 
+    # CDS may return "time" or "forecast_reference_time" as the temporal dim.
+    time_dim = "time"
+    for candidate in ("time", "forecast_reference_time", "valid_time"):
+        if candidate in xds.dims:
+            time_dim = candidate
+            break
+    logger.info("Using temporal dimension: %s", time_dim)
+
     for month in months:
         dest = cache_dir / f"era5_{variable}_{year}_{month:02d}.tif"
         if dest.exists():
@@ -94,7 +102,7 @@ def fetch_era5_monthly(
 
         # Select the time step for this month
         time_sel = f"{year}-{month:02d}"
-        da: xr.DataArray = xds[var_name].sel(time=time_sel)
+        da: xr.DataArray = xds[var_name].sel({time_dim: time_sel})
 
         # Convert Kelvin to Celsius for temperature variables
         if "temperature" in variable.lower() or var_name in ("t2m", "t2m_mean"):
@@ -106,8 +114,8 @@ def fetch_era5_monthly(
             da = da.rio.write_crs("EPSG:4326")
 
         # Drop time dimension for single-band GeoTIFF
-        if "time" in da.dims:
-            da = da.squeeze("time", drop=True)
+        if time_dim in da.dims:
+            da = da.squeeze(time_dim, drop=True)
 
         # Ensure spatial dims are named correctly for rioxarray
         spatial_dims = {"latitude": "y", "longitude": "x"}
