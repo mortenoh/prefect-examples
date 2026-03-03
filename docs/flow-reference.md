@@ -1,6 +1,6 @@
 # Flow Reference
 
-Detailed walkthrough of all 113 example flows, organised by category.
+Detailed walkthrough of all 134 example flows, organised by category.
 
 ---
 
@@ -2490,7 +2490,7 @@ lineage tracking, and a rich markdown dashboard artifact.
 
 ---
 
-## DHIS2 Integration (101--108)
+## DHIS2 Integration (101--118)
 
 ### DHIS2 Connection Block
 
@@ -2787,6 +2787,131 @@ categoryOptionCombo UIDs, (2) query the WorldPop `wpgpas` API for each org unit
 polygon, summing M_0..M_16 for male and F_0..F_16 for female totals, (3) build
 data values with categoryOptionCombo disaggregation (2 per org unit), (4) POST
 all values in a single import. Org units with Point geometry are skipped.
+
+---
+
+### DHIS2 WorldPop GeoTIFF Population Import
+
+**What it demonstrates:** Downloads WorldPop R2025A sex-disaggregated GeoTIFF
+rasters, extracts zonal population statistics for DHIS2 org unit boundaries,
+and writes male/female population values using category combinations.
+
+**Airflow equivalent:** PythonOperator chain with GeoTIFF download + zonal stats + DHIS2 POST.
+
+```python
+@flow(name="dhis2_worldpop_geotiff_import", log_prints=True)
+def dhis2_worldpop_geotiff_import_flow(query: ImportQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    metadata = ensure_dhis2_metadata(client, query.org_unit_level)
+    for year in query.years:
+        rasters = download_worldpop_rasters(query.iso3, year, cache_dir)
+        for ou in metadata.org_units:
+            results.append(compute_population(ou, rasters))
+        data_value_set = build_data_values(results, year, metadata.coc_mapping)
+    result = import_to_dhis2(client, dhis2_url, metadata.org_units, merged_dvs)
+```
+
+Unlike the API-based WorldPop flow, this uses pre-aggregated total-male /
+total-female summary rasters covering 231 countries (2015-2030). Zonal sums
+are computed per org unit polygon using `rioxarray` clipping. The
+`prefect-climate` package handles GeoTIFF download and caching.
+
+---
+
+### DHIS2 WorldPop GeoTIFF Age Import
+
+**What it demonstrates:** Downloads WorldPop R2025A age/sex-disaggregated
+GeoTIFF rasters (40 per country/year), extracts zonal population for DHIS2
+org unit boundaries, and writes age-sex values using a Sex x Age category
+combination (2 x 20 = 40 category option combos).
+
+**Airflow equivalent:** PythonOperator chain with 40 GeoTIFF downloads + zonal stats + DHIS2 POST.
+
+```python
+@flow(name="dhis2_worldpop_geotiff_age_import", log_prints=True)
+def dhis2_worldpop_geotiff_age_import_flow(query: ImportQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    metadata = ensure_dhis2_metadata(client, query.org_unit_level)
+    for year in query.years:
+        for sex in ("M", "F"):
+            for age in AGE_GROUPS:
+                rasters[(sex, age)] = download_single_raster(query.iso3, year, sex, age, cache_dir)
+        for ou in metadata.org_units:
+            results.append(compute_population(ou, rasters))
+        data_value_set = build_data_values(results, year, metadata.coc_mapping)
+    result = import_to_dhis2(client, dhis2_url, metadata.org_units, merged_dvs)
+```
+
+This flow creates a full DHIS2 category model: 2 category options (Male,
+Female) x 20 age groups (0, 1, 2, ..., 80+) = 40 category option combos.
+Each org unit receives 40 data values per year. The `prefect-climate`
+package handles per-raster download with caching.
+
+---
+
+### DHIS2 CHIRPS Rainfall Import
+
+**What it demonstrates:** Downloads CHIRPS v2.0 Africa monthly rainfall
+GeoTIFFs, computes zonal mean rainfall for each DHIS2 org unit, and writes
+monthly values into DHIS2 (period format: `YYYYMM`).
+
+**Airflow equivalent:** PythonOperator chain with CHIRPS download + zonal stats + DHIS2 POST.
+
+```python
+@flow(name="dhis2_chirps_rainfall_import", log_prints=True)
+def dhis2_chirps_rainfall_import_flow(query: ClimateQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    for month in query.months:
+        monthly_rasters[month] = download_chirps_raster(query.year, month, cache_dir)
+    for ou in org_units:
+        results.append(compute_rainfall(ou, monthly_rasters))
+    data_value_set = build_data_values(results, query.year)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_value_set)
+```
+
+CHIRPS files are gzipped GeoTIFFs (~50 MB compressed) from the Climate
+Hazards Center at UCSB. Values are millimetres of rainfall. Zonal mean is
+computed per org unit polygon using `rioxarray`. See [CHIRPS](chirps.md) for
+dataset details.
+
+---
+
+### DHIS2 ERA5 Climate Import
+
+**What it demonstrates:** Downloads 8 ERA5-Land monthly-mean variables via
+`earthkit-data`, applies unit conversions (Kelvin to Celsius, J/m2 to W/m2,
+m/day to mm/month), derives relative humidity and wind speed, and imports 7
+monthly climate indicators into DHIS2 per org unit.
+
+**Airflow equivalent:** PythonOperator chain with CDS API download + zonal stats + DHIS2 POST.
+
+```python
+@flow(name="dhis2_era5_climate_import", log_prints=True)
+def dhis2_era5_climate_import_flow(query: ClimateQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    area = bounding_box(org_units)
+    temp_rasters = download_era5_variable("2m_temperature", ...)
+    precip_rasters = download_era5_variable("total_precipitation", ...)
+    dewpoint_rasters = download_era5_variable("2m_dewpoint_temperature", ...)
+    wind_u_rasters = download_era5_variable("10m_u_component_of_wind", ...)
+    wind_v_rasters = download_era5_variable("10m_v_component_of_wind", ...)
+    skin_temp_rasters = download_era5_variable("skin_temperature", ...)
+    solar_rad_rasters = download_era5_variable("surface_solar_radiation_downwards", ...)
+    soil_moisture_rasters = download_era5_variable("volumetric_soil_water_layer_1", ...)
+    for ou in org_units:
+        climate_data = compute_climate(ou, temp_rasters, precip_rasters, ...)
+    data_values = build_data_values(climate_results, query.year)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_values)
+```
+
+Seven DHIS2 data elements are produced: mean temperature (C), total
+precipitation (mm/month), relative humidity (%), wind speed (m/s), skin
+temperature (C), solar radiation (W/m2), and soil moisture (m3/m3).
+Relative humidity is derived from temperature and dewpoint using the Magnus
+formula; wind speed from u/v components via vector magnitude. See
+[ERA5-Land](era5-land.md) for dataset details and unit conversions.
 
 ---
 
@@ -3395,6 +3520,120 @@ def dhis2_worldpop_population_import_flow(query: ImportQuery | None = None) -> I
     for ou in org_units:
         results.append(fetch_worldpop_population(ou, query.year))
     data_values = build_data_values(results, query.year, coc_mapping)
+    result = import_to_dhis2(client, dhis2_url, org_units, data_values)
+    return result
+```
+
+### dhis2_worldbank_population_import -- DHIS2 World Bank Population Import
+
+**What it demonstrates:** Deployment wrapper for the World Bank population
+import flow. Fetches SP.POP.TOTL data and imports yearly population values
+into a DHIS2 data element.
+
+```python
+@flow(name="dhis2_worldbank_population_import", log_prints=True)
+def dhis2_worldbank_population_import_flow(query: PopulationQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_unit = ensure_dhis2_metadata(client)
+    populations = fetch_population_data(query.iso3_codes, query.start_year, query.end_year)
+    data_values = build_data_values(org_unit, populations)
+    result = import_to_dhis2(client, dhis2_url, org_unit, data_values)
+    return result
+```
+
+### dhis2_worldbank_health_import -- DHIS2 World Bank Health Import
+
+**What it demonstrates:** Deployment wrapper for the World Bank health
+indicators import flow. Fetches 10 health indicators and imports them into
+DHIS2 across 10 data elements within a single data set.
+
+```python
+@flow(name="dhis2_worldbank_health_import", log_prints=True)
+def dhis2_worldbank_health_import_flow(query: HealthQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_unit = ensure_dhis2_metadata(client)
+    for indicator in INDICATORS:
+        all_values.extend(fetch_wb_data(indicator, query.iso3_codes, ...))
+    data_values = build_data_values(org_unit, all_values)
+    result = import_to_dhis2(client, dhis2_url, org_unit, data_values)
+    return result
+```
+
+### dhis2_worldpop_geotiff_import -- DHIS2 WorldPop GeoTIFF Import
+
+**What it demonstrates:** Deployment wrapper (with Docker variant) for the
+WorldPop GeoTIFF population import flow. Downloads sex-disaggregated rasters
+and writes zonal population sums into DHIS2.
+
+```python
+@flow(name="dhis2_worldpop_geotiff_import", log_prints=True)
+def dhis2_worldpop_geotiff_import_flow(query: ImportQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    metadata = ensure_dhis2_metadata(client, query.org_unit_level)
+    for year in query.years:
+        rasters = download_worldpop_rasters(query.iso3, year, cache_dir)
+        for ou in metadata.org_units:
+            results.append(compute_population(ou, rasters))
+    result = import_to_dhis2(client, dhis2_url, metadata.org_units, merged_dvs)
+    return result
+```
+
+### dhis2_worldpop_geotiff_age_import -- DHIS2 WorldPop GeoTIFF Age Import
+
+**What it demonstrates:** Deployment wrapper (with Docker variant) for the
+WorldPop age-sex GeoTIFF import flow. Downloads 40 rasters per country/year
+and writes age-sex population values into DHIS2.
+
+```python
+@flow(name="dhis2_worldpop_geotiff_age_import", log_prints=True)
+def dhis2_worldpop_geotiff_age_import_flow(query: ImportQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    metadata = ensure_dhis2_metadata(client, query.org_unit_level)
+    for year in query.years:
+        for sex in ("M", "F"):
+            for age in AGE_GROUPS:
+                rasters[(sex, age)] = download_single_raster(...)
+        for ou in metadata.org_units:
+            results.append(compute_population(ou, rasters))
+    result = import_to_dhis2(client, dhis2_url, metadata.org_units, merged_dvs)
+    return result
+```
+
+### dhis2_chirps_rainfall_import -- DHIS2 CHIRPS Rainfall Import
+
+**What it demonstrates:** Deployment wrapper (with Docker variant) for the
+CHIRPS monthly rainfall import flow. Downloads Africa GeoTIFFs and writes
+zonal mean rainfall values into DHIS2.
+
+```python
+@flow(name="dhis2_chirps_rainfall_import", log_prints=True)
+def dhis2_chirps_rainfall_import_flow(query: ClimateQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    for month in query.months:
+        monthly_rasters[month] = download_chirps_raster(query.year, month, cache_dir)
+    for ou in org_units:
+        results.append(compute_rainfall(ou, monthly_rasters))
+    result = import_to_dhis2(client, dhis2_url, org_units, data_value_set)
+    return result
+```
+
+### dhis2_era5_climate_import -- DHIS2 ERA5 Climate Import
+
+**What it demonstrates:** Deployment wrapper (Docker-based) for the ERA5-Land
+climate import flow. Downloads 8 ERA5-Land variables, derives 7 climate
+indicators, and writes monthly values into DHIS2.
+
+```python
+@flow(name="dhis2_era5_climate_import", log_prints=True)
+def dhis2_era5_climate_import_flow(query: ClimateQuery | None = None) -> ImportResult:
+    client = get_dhis2_credentials().get_client()
+    org_units = ensure_dhis2_metadata(client, query.org_unit_level)
+    area = bounding_box(org_units)
+    temp_rasters = download_era5_variable("2m_temperature", ...)
+    # ... 7 more downloads ...
+    for ou in org_units:
+        climate_data = compute_climate(ou, temp_rasters, precip_rasters, ...)
     result = import_to_dhis2(client, dhis2_url, org_units, data_values)
     return result
 ```

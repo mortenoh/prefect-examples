@@ -30,14 +30,15 @@ make docs                                  # serve documentation locally
 ```
 flows/
   basics/               20 flows -- core Prefect concepts
-  core/                 20 flows -- caching, async, blocks, deployments
-  patterns/             20 flows -- Pydantic, factories, error handling
+  core/                 23 flows -- caching, async, blocks, deployments
+  patterns/             21 flows -- Pydantic, factories, error handling
   data_engineering/     20 flows -- file I/O, APIs, config-driven pipelines
   analytics/            20 flows -- statistics, dimensional modeling, lineage
-  dhis2/                11 flows -- DHIS2 integration
-  cloud/                 2 flows -- S3/cloud patterns
+  dhis2/                18 flows -- DHIS2 integration, climate/population import
+  cloud/                12 flows -- S3/cloud, WorldPop, World Bank patterns
 src/prefect_examples/   Shared task library
 packages/prefect-dhis2/ DHIS2 integration package (workspace dependency)
+packages/prefect-climate/ Climate/population raster package (ERA5, CHIRPS, WorldPop)
 deployments/            Prefect deployment definitions
 scripts/                Operational scripts (block creation, setup)
 tests/                  Test suite (mirrors flows/ structure)
@@ -54,8 +55,8 @@ Flows are organized into topic groups:
 - **patterns/** -- Intermediate patterns (Pydantic, factories, error handling, testing)
 - **data_engineering/** -- Data engineering (file I/O, APIs, config-driven pipelines, idempotency)
 - **analytics/** -- Analytics and capstone (statistics, dimensional modeling, lineage)
-- **dhis2/** -- DHIS2 integration (custom blocks, metadata, analytics API)
-- **cloud/** -- Cloud patterns (S3, parquet)
+- **dhis2/** -- DHIS2 integration (custom blocks, metadata, analytics, climate/population data import)
+- **cloud/** -- Cloud and API patterns (S3, WorldPop, World Bank)
 
 | Group | Name | Concepts |
 |-------|------|----------|
@@ -170,8 +171,25 @@ Flows are organized into topic groups:
 | dhis2 | DHIS2 Pipeline | End-to-end DHIS2 pipeline with quality checks and dashboard |
 | dhis2 | DHIS2 Env Config | Environment-based configuration strategies |
 | dhis2 | DHIS2 Authenticated API | Reusable authenticated API pattern (api_key, bearer, basic) |
+| dhis2 | DHIS2 World Bank Population Import | World Bank SP.POP.TOTL fetch, DHIS2 metadata sync, data value import |
+| dhis2 | DHIS2 World Bank Health Import | 10 World Bank health indicators, multi-DE data set, bulk import |
+| dhis2 | DHIS2 WorldPop Population Import | WorldPop API spatial query, sex-disaggregated category combos |
+| dhis2 | DHIS2 WorldPop GeoTIFF Import | WorldPop constrained GeoTIFF, zonal sum, population estimates |
+| dhis2 | DHIS2 WorldPop GeoTIFF Age Import | Age-disaggregated WorldPop GeoTIFF, category combos per age group |
+| dhis2 | DHIS2 CHIRPS Rainfall Import | CHIRPS v2.0 Africa monthly GeoTIFF, zonal mean rainfall |
+| dhis2 | DHIS2 ERA5 Climate Import | ERA5-Land 7 climate variables, unit conversions, derived indicators |
 | cloud | S3 Parquet Export | Pydantic models, pandas transform, parquet write to S3 (RustFS) |
 | cloud | DHIS2 GeoParquet Export | GeoDataFrame, GeoParquet, DHIS2 geometry to S3 |
+| cloud | WorldPop Dataset Catalog | Hierarchical REST API navigation, dataset discovery |
+| cloud | WorldPop Population Stats | GeoJSON spatial queries, async polling pattern |
+| cloud | WorldPop Age-Sex Pyramid | Demographic transformation, dependency ratio, sex ratio |
+| cloud | WorldPop Country Comparison | Parallel `.map()` multi-country queries, aggregation |
+| cloud | WorldPop Country Report | Multi-source API aggregation (WorldPop + World Bank) |
+| cloud | WorldPop Population Time-Series | Sequential API pagination, growth rate computation |
+| cloud | World Bank GDP Comparison | Batch multi-country API, time-series analysis |
+| cloud | World Bank Indicator Time-Series | Single-indicator time-series, trend analysis |
+| cloud | World Bank Country Profile | Parallel multi-indicator fetch for one country |
+| cloud | World Bank Poverty Analysis | Multi-indicator poverty analysis, threshold classification |
 
 ## Makefile targets
 
