@@ -101,25 +101,25 @@ def ensure_dhis2_metadata(
             Dhis2DataElement(
                 id=HUMIDITY_DE_UID,
                 name="PR: OM: WH: Relative Humidity",
-                shortName="PR: OM: WH: Humidity",
+                shortName="PR: OM: WH: Rel Humidity",
                 description="Daily mean relative humidity from Open-Meteo historical archive. Unit: percent (%).",
             ),
             Dhis2DataElement(
                 id=WIND_SPEED_DE_UID,
                 name="PR: OM: WH: Wind Speed",
-                shortName="PR: OM: WH: Wind",
+                shortName="PR: OM: WH: Wind Speed",
                 description="Daily mean wind speed from Open-Meteo historical archive. Unit: metres per second (m/s).",
             ),
             Dhis2DataElement(
                 id=CLOUD_COVER_DE_UID,
                 name="PR: OM: WH: Cloud Cover",
-                shortName="PR: OM: WH: Cloud",
+                shortName="PR: OM: WH: Cloud Cover",
                 description="Daily mean cloud cover from Open-Meteo historical archive. Unit: percent (%).",
             ),
             Dhis2DataElement(
                 id=PRESSURE_DE_UID,
                 name="PR: OM: WH: Air Pressure",
-                shortName="PR: OM: WH: Pressure",
+                shortName="PR: OM: WH: Air Pressure",
                 description=(
                     "Daily mean sea-level air pressure from Open-Meteo historical archive."
                     " Unit: hectopascals (hPa)."

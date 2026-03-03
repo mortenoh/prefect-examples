@@ -160,10 +160,10 @@ This is the same approach used by the yr.no integration.
 |-----|------|------------|
 | `OmHwTmpEst1` | PR: OM: WH: Temperature | PR: OM: WH: Temp |
 | `OmHwPrcEst1` | PR: OM: WH: Precipitation | PR: OM: WH: Precip |
-| `OmHwHumEst1` | PR: OM: WH: Relative Humidity | PR: OM: WH: Humidity |
-| `OmHwWndEst1` | PR: OM: WH: Wind Speed | PR: OM: WH: Wind |
-| `OmHwCldEst1` | PR: OM: WH: Cloud Cover | PR: OM: WH: Cloud |
-| `OmHwPrsEst1` | PR: OM: WH: Air Pressure | PR: OM: WH: Pressure |
+| `OmHwHumEst1` | PR: OM: WH: Relative Humidity | PR: OM: WH: Rel Humidity |
+| `OmHwWndEst1` | PR: OM: WH: Wind Speed | PR: OM: WH: Wind Speed |
+| `OmHwCldEst1` | PR: OM: WH: Cloud Cover | PR: OM: WH: Cloud Cover |
+| `OmHwPrsEst1` | PR: OM: WH: Air Pressure | PR: OM: WH: Air Pressure |
 
 ### Data elements -- Weather Forecast (6)
 
@@ -171,10 +171,10 @@ This is the same approach used by the yr.no integration.
 |-----|------|------------|
 | `OmFcTmpEst1` | PR: OM: WF: Temperature | PR: OM: WF: Temp |
 | `OmFcPrcEst1` | PR: OM: WF: Precipitation | PR: OM: WF: Precip |
-| `OmFcHumEst1` | PR: OM: WF: Relative Humidity | PR: OM: WF: Humidity |
-| `OmFcWndEst1` | PR: OM: WF: Wind Speed | PR: OM: WF: Wind |
-| `OmFcCldEst1` | PR: OM: WF: Cloud Cover | PR: OM: WF: Cloud |
-| `OmFcPrsEst1` | PR: OM: WF: Air Pressure | PR: OM: WF: Pressure |
+| `OmFcHumEst1` | PR: OM: WF: Relative Humidity | PR: OM: WF: Rel Humidity |
+| `OmFcWndEst1` | PR: OM: WF: Wind Speed | PR: OM: WF: Wind Speed |
+| `OmFcCldEst1` | PR: OM: WF: Cloud Cover | PR: OM: WF: Cloud Cover |
+| `OmFcPrsEst1` | PR: OM: WF: Air Pressure | PR: OM: WF: Air Pressure |
 
 ### Data elements -- Air Quality (7)
 
