@@ -113,6 +113,21 @@ The worker additionally sets:
 |---|---|---|
 | `PREFECT_API_URL` | `http://prefect-server:4200/api` | Connect worker to server |
 
+### Docker deployment requirements
+
+Each Docker deployment service loads `.env` via `env_file`. Beyond the shared
+Prefect variables above, deployments require credentials for the external
+services they access:
+
+| Deployment | Required `.env` variables |
+|---|---|
+| All DHIS2 import flows | `DHIS2_BASE_URL`, `DHIS2_USERNAME`, `DHIS2_PASSWORD` |
+| `dhis2-era5-temperature-docker` | Above + `CDSAPI_KEY` |
+
+`CDSAPI_KEY` is your Copernicus Climate Data Store API key
+(see [ERA5-Land](era5-land.md#cds-api-setup)). `CDSAPI_URL` defaults to
+`https://cds.climate.copernicus.eu/api` and does not need to be set.
+
 ---
 
 ## Authentication
