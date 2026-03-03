@@ -356,6 +356,20 @@ wheels = [
 ]
 
 [[package]]
+name = "cdsapi"
+version = "0.7.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ecmwf-datastores-client" },
+    { name = "requests" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/55/f3/6cb5b4bf077c441978c5d5be3a568d37e1f07f3e7177a17fa66aec2594b6/cdsapi-0.7.7.tar.gz", hash = "sha256:bc0cf807c1b78aceba6a11c3a5180f885f47f71a4e58205e324cfedcee16f10b", size = 13322, upload-time = "2025-09-30T19:11:22.404Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4f/f4/4a65460d5cb6784128019fd707a87993f378db25e796eba01400a0903f62/cdsapi-0.7.7-py2.py3-none-any.whl", hash = "sha256:384c1658572d6dc53f4111f6dd46fcdfe6fea54a688af9756d71f6fe9118b66d", size = 12293, upload-time = "2025-09-30T19:11:21.184Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -735,6 +749,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/88/54/75305f9ba797d039b700bc5f10999f8d1de642f4f3839dfc3d7df4ffbe99/earthkit_data-0.19.1-py3-none-any.whl", hash = "sha256:82577efadbbcb59423a3ac43b4bc88abf9a3cedc1d6e9a9f1d9ce8711f6fa5a4", size = 395990, upload-time = "2026-02-24T18:47:36.713Z" },
 ]
 
+[package.optional-dependencies]
+cds = [
+    { name = "cdsapi" },
+]
+
 [[package]]
 name = "earthkit-meteo"
 version = "0.6.1"
@@ -774,6 +793,21 @@ sdist = { url = "https://files.pythonhosted.org/packages/20/45/2c765fbf9315a9f93
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a3/ac/584883c6d327f9eafef31f06ef992d828dbbc4e8e1b2e5ed21e3d3452351/eccodes-2.46.0-cp313-cp313-win_amd64.whl", hash = "sha256:48a35a99913b05960e9a7f99a82d079993cc513d6188853144f89da2aa42085f", size = 7431109, upload-time = "2026-02-24T12:27:08.358Z" },
     { url = "https://files.pythonhosted.org/packages/ae/80/81d98622ebcb57b8fd6b6b5cd0f1083ac1b767706c612d20035d5d056069/eccodes-2.46.0-py3-none-any.whl", hash = "sha256:9898d0e6126e52f141edc76cdd89aa631925edbe6b1d29ca04540c4fd93ad74c", size = 91505, upload-time = "2026-02-24T12:27:37.288Z" },
+]
+
+[[package]]
+name = "ecmwf-datastores-client"
+version = "0.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "multiurl" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/51/60/f86eb3e57baf2b1780a7046148c234e9e57b0aeb550d30f39e50991da253/ecmwf_datastores_client-0.4.2.tar.gz", hash = "sha256:7cee1f5e5dab34edcc794cd62bee02c603fafb6f4cc2121c5f012806e0f7934d", size = 48205, upload-time = "2026-01-21T15:27:31.665Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/40/2ccf4c87a5f9c8198fe71600d5f307f5dada201c091af8774a9c1e360865/ecmwf_datastores_client-0.4.2-py3-none-any.whl", hash = "sha256:d22a675b35263286de09969502ec897da9ceb9e4c8ec4d709f7ebb3b90d3ae98", size = 29092, upload-time = "2026-01-21T15:27:30.452Z" },
 ]
 
 [[package]]
@@ -2130,7 +2164,7 @@ name = "prefect-climate"
 version = "0.1.0"
 source = { editable = "packages/prefect-climate" }
 dependencies = [
-    { name = "earthkit-data" },
+    { name = "earthkit-data", extra = ["cds"] },
     { name = "httpx" },
     { name = "numpy" },
     { name = "prefect-dhis2" },
@@ -2147,7 +2181,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "earthkit-data" },
+    { name = "earthkit-data", extras = ["cds"] },
     { name = "httpx", specifier = ">=0.24" },
     { name = "numpy" },
     { name = "prefect-dhis2", editable = "packages/prefect-dhis2" },

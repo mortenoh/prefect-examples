@@ -17,7 +17,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "earthkit-data",
+    "earthkit-data[cds]",
     "httpx>=0.24",
     "numpy",
     "prefect-dhis2",
