@@ -12,6 +12,7 @@ from __future__ import annotations
 import calendar
 from collections import defaultdict
 from statistics import mean
+from typing import Any
 
 from prefect_climate.openmeteo.client import fetch_openmeteo_hourly
 from prefect_climate.openmeteo.schemas import DailyWeather
@@ -26,7 +27,7 @@ WEATHER_PARAMS = [
 ]
 
 
-def _aggregate_weather_daily(data: dict) -> list[DailyWeather]:
+def _aggregate_weather_daily(data: dict[str, Any]) -> list[DailyWeather]:
     """Aggregate hourly Open-Meteo weather data to daily values.
 
     Groups hourly values by date and computes:

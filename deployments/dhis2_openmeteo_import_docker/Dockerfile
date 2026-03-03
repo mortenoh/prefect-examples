@@ -8,9 +8,9 @@ COPY packages/prefect-climate /tmp/prefect-climate
 RUN pip install --no-cache-dir /tmp/prefect-dhis2 /tmp/prefect-climate python-dotenv pydantic \
     && rm -rf /tmp/prefect-dhis2 /tmp/prefect-climate
 
-COPY flows/dhis2/dhis2_openmeteo_historical_import.py /opt/prefect/dhis2_openmeteo_historical_import.py
-COPY flows/dhis2/dhis2_openmeteo_forecast_import.py /opt/prefect/dhis2_openmeteo_forecast_import.py
-COPY flows/dhis2/dhis2_openmeteo_air_quality_import.py /opt/prefect/dhis2_openmeteo_air_quality_import.py
+COPY deployments/dhis2_openmeteo_import_docker/dhis2_openmeteo_historical_import.py /opt/prefect/dhis2_openmeteo_historical_import.py
+COPY deployments/dhis2_openmeteo_import_docker/dhis2_openmeteo_forecast_import.py /opt/prefect/dhis2_openmeteo_forecast_import.py
+COPY deployments/dhis2_openmeteo_import_docker/dhis2_openmeteo_air_quality_import.py /opt/prefect/dhis2_openmeteo_air_quality_import.py
 COPY deployments/dhis2_openmeteo_import_docker/flow.py /opt/prefect/flow.py
 
 WORKDIR /opt/prefect

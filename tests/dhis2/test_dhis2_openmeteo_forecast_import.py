@@ -13,7 +13,10 @@ import pytest
 
 _spec = importlib.util.spec_from_file_location(
     "dhis2_openmeteo_forecast_import",
-    Path(__file__).resolve().parent.parent.parent / "flows" / "dhis2" / "dhis2_openmeteo_forecast_import.py",
+    Path(__file__).resolve().parent.parent.parent
+    / "deployments"
+    / "dhis2_openmeteo_import_docker"
+    / "dhis2_openmeteo_forecast_import.py",
 )
 assert _spec and _spec.loader
 _mod = importlib.util.module_from_spec(_spec)
@@ -60,11 +63,10 @@ SAMPLE_OU_WITH_GEOM = [
     }
 ]
 
-SAMPLE_OU_POINT = [
+SAMPLE_OU_NO_GEOM = [
     {
-        "id": "POINT_OU",
-        "name": "Point Org",
-        "geometry": {"type": "Point", "coordinates": [-13.3, 8.4]},
+        "id": "NO_GEOM_OU",
+        "name": "No Geometry Org",
     }
 ]
 
@@ -176,11 +178,11 @@ def test_ensure_dhis2_metadata() -> None:
     assert len(ds["dataSetElements"]) == 6
 
 
-def test_ensure_dhis2_metadata_no_polygon() -> None:
+def test_ensure_dhis2_metadata_no_geometry() -> None:
     mock_client = MagicMock(spec=Dhis2Client)
-    mock_client.fetch_metadata.return_value = SAMPLE_OU_POINT
+    mock_client.fetch_metadata.return_value = SAMPLE_OU_NO_GEOM
 
-    with pytest.raises(ValueError, match="No level-4 org units with Polygon"):
+    with pytest.raises(ValueError, match="No level-4 org units with geometry"):
         ensure_dhis2_metadata.fn(mock_client, 4)
 
 

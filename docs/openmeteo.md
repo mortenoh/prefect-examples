@@ -231,7 +231,7 @@ Air pollution is a leading environmental health risk globally:
 
 ```bash
 # Import 2024 weather for all months
-uv run python flows/dhis2/dhis2_openmeteo_historical_import.py
+uv run python deployments/dhis2_openmeteo_import_docker/dhis2_openmeteo_historical_import.py
 ```
 
 Uses `query.year` and `query.months` to select the time window.
@@ -240,7 +240,7 @@ Uses `query.year` and `query.months` to select the time window.
 
 ```bash
 # Import current 16-day forecast
-uv run python flows/dhis2/dhis2_openmeteo_forecast_import.py
+uv run python deployments/dhis2_openmeteo_import_docker/dhis2_openmeteo_forecast_import.py
 ```
 
 Ignores `query.year`/`query.months` -- always fetches the current window.
@@ -249,7 +249,7 @@ Ignores `query.year`/`query.months` -- always fetches the current window.
 
 ```bash
 # Import current + 5-day air quality forecast
-uv run python flows/dhis2/dhis2_openmeteo_air_quality_import.py
+uv run python deployments/dhis2_openmeteo_import_docker/dhis2_openmeteo_air_quality_import.py
 ```
 
 Ignores `query.year`/`query.months` -- always fetches the current window.

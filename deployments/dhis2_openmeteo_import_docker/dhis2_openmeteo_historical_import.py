@@ -76,12 +76,12 @@ def ensure_dhis2_metadata(
     org_units = [
         OrgUnitGeo(id=ou["id"], name=ou.get("name", ""), geometry=ou["geometry"])
         for ou in raw_ous
-        if ou.get("geometry", {}).get("type") in ("Polygon", "MultiPolygon")
+        if ou.get("geometry", {}).get("type") in ("Point", "Polygon", "MultiPolygon")
     ]
-    print(f"Found {len(org_units)} level-{org_unit_level} org units with polygon geometry")
+    print(f"Found {len(org_units)} level-{org_unit_level} org units with geometry")
 
     if not org_units:
-        msg = f"No level-{org_unit_level} org units with Polygon/MultiPolygon geometry"
+        msg = f"No level-{org_unit_level} org units with geometry"
         raise ValueError(msg)
 
     payload = Dhis2MetadataPayload(
@@ -121,8 +121,7 @@ def ensure_dhis2_metadata(
                 name="PR: OM: WH: Air Pressure",
                 shortName="PR: OM: WH: Air Pressure",
                 description=(
-                    "Daily mean sea-level air pressure from Open-Meteo historical archive."
-                    " Unit: hectopascals (hPa)."
+                    "Daily mean sea-level air pressure from Open-Meteo historical archive. Unit: hectopascals (hPa)."
                 ),
             ),
         ],
@@ -305,7 +304,7 @@ def dhis2_openmeteo_historical_import_flow(
         ImportResult with counts and markdown summary.
     """
     if query is None:
-        query = ClimateQuery(org_unit_level=4)
+        query = ClimateQuery(org_unit_level=2)
         print(
             f"No query provided, using default: org_unit_level={query.org_unit_level}, "
             f"year={query.year}, months={query.months}"
